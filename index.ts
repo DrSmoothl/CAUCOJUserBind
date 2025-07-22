@@ -258,23 +258,6 @@ class UserBindSuccessHandler extends Handler {
     }
 }
 
-// 强制绑定检查处理器
-class UserBindCheckHandler extends Handler {
-    async get() {
-        if (!this.user._id) {
-            this.response.redirect = '/login';
-            return;
-        }
-
-        const user = await UserModel.getById('system', this.user._id);
-        if (user.isSchoolStudent && !await userBindModel.isUserBound(this.user._id)) {
-            this.response.template = 'user_bind_required.html';
-        } else {
-            this.response.redirect = '/';
-        }
-    }
-}
-
 // 删除学生记录
 class UserBindDeleteHandler extends Handler {
     async post(domainId: string) {
@@ -359,30 +342,65 @@ export async function apply(ctx: Context) {
     
     // 使用 hook 在所有路由处理前检查本校学生绑定状态
     ctx.on('handler/before-prepare', async (h) => {
-        if (h.user && h.user._id) {
+        // 确保用户已登录且有用户信息
+        if (!h.user || !h.user._id) {
+            return;
+        }
+
+        try {
             const user = await UserModel.getById('system', h.user._id);
+            const isSchoolStudent = user.isSchoolStudent === true;
+            const isBound = await userBindModel.isUserBound(h.user._id);
+            
+            // 调试日志
+            console.log(`绑定检查 - 用户: ${user.uname}, 本校学生: ${isSchoolStudent}, 已绑定: ${isBound}, 路径: ${h.request.path}`);
+            
             // 只有被明确标记为本校学生的用户才需要强制绑定
-            if (user.isSchoolStudent === true && !await userBindModel.isUserBound(h.user._id)) {
-                // 排除特定路径，避免循环重定向
-                const excludePaths = ['/user-bind/', '/logout', '/api/', '/login', '/register'];
-                const shouldRedirect = !excludePaths.some(path => h.request.path.startsWith(path));
+            if (isSchoolStudent && !isBound) {
+                // 更全面的路径排除，避免循环重定向
+                const currentPath = h.request.path;
+                const excludePaths = [
+                    '/user-bind',
+                    '/logout', 
+                    '/api/', 
+                    '/login', 
+                    '/register',
+                    '/assets/',
+                    '/favicon.ico'
+                ];
+                
+                const shouldRedirect = !excludePaths.some(path => 
+                    currentPath === path || currentPath.startsWith(path)
+                );
+                
+                console.log(`需要重定向: ${shouldRedirect}, 当前路径: ${currentPath}`);
                 
                 if (shouldRedirect) {
+                    console.log('执行重定向到绑定页面');
                     h.response.redirect = '/user-bind';
                     return;
                 }
             }
+        } catch (error) {
+            // 如果获取用户信息失败，不执行重定向
+            console.error('用户绑定检查失败:', error);
         }
     });
 
     // 在用户登录成功后检查绑定状态
     ctx.on('handler/after/UserLogin#post', async (h) => {
-        if (h.user && h.user._id) {
+        if (!h.user || !h.user._id) {
+            return;
+        }
+
+        try {
             const user = await UserModel.getById('system', h.user._id);
             // 只有被明确标记为本校学生的用户才需要强制绑定
             if (user.isSchoolStudent === true && !await userBindModel.isUserBound(h.user._id)) {
                 h.response.redirect = '/user-bind';
             }
+        } catch (error) {
+            console.error('登录后绑定检查失败:', error);
         }
     });
 
