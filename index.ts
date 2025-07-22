@@ -107,7 +107,15 @@ const userBindModel = {
 
     // 管理员设置用户为本校学生
     async setUserAsSchoolStudent(userId: number, isSchoolStudent: boolean): Promise<void> {
-        await UserModel.setById(userId, { isSchoolStudent });
+        console.log(`setUserAsSchoolStudent 调用: userId=${userId}, isSchoolStudent=${isSchoolStudent}`);
+        
+        try {
+            await UserModel.setById(userId, { isSchoolStudent });
+            console.log(`setUserAsSchoolStudent 成功: 用户 ${userId} 设置为 ${isSchoolStudent}`);
+        } catch (error) {
+            console.error(`setUserAsSchoolStudent 失败: userId=${userId}, error=`, error);
+            throw error;
+        }
     }
 };
 
@@ -274,15 +282,47 @@ class UserBindSetSchoolStudentHandler extends Handler {
         this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
         const { userId, isSchoolStudent } = this.request.body;
         
+        console.log('设置本校学生 - 收到请求:', { userId, isSchoolStudent });
+        
         if (!userId) {
+            console.log('设置本校学生 - 错误: 缺少用户ID');
             throw new Error('缺少用户ID');
         }
         
-        await userBindModel.setUserAsSchoolStudent(parseInt(userId), isSchoolStudent === 'true');
-        
-        // 返回JSON响应用于AJAX调用
-        this.response.body = { success: true };
-        this.response.type = 'application/json';
+        try {
+            const parsedUserId = parseInt(userId);
+            const isSchoolStudentBool = isSchoolStudent === 'true';
+            
+            console.log('设置本校学生 - 解析参数:', { parsedUserId, isSchoolStudentBool });
+            
+            // 先检查用户是否存在
+            const existingUser = await UserModel.getById('system', parsedUserId);
+            console.log('设置本校学生 - 现有用户状态:', { 
+                username: existingUser.uname, 
+                currentIsSchoolStudent: existingUser.isSchoolStudent 
+            });
+            
+            await userBindModel.setUserAsSchoolStudent(parsedUserId, isSchoolStudentBool);
+            
+            // 验证设置是否成功
+            const updatedUser = await UserModel.getById('system', parsedUserId);
+            console.log('设置本校学生 - 更新后用户状态:', { 
+                username: updatedUser.uname, 
+                newIsSchoolStudent: updatedUser.isSchoolStudent 
+            });
+            
+            // 返回JSON响应用于AJAX调用
+            this.response.body = { 
+                success: true, 
+                message: `用户 ${updatedUser.uname} 已${isSchoolStudentBool ? '设置为' : '取消'}本校学生状态`,
+                isSchoolStudent: updatedUser.isSchoolStudent
+            };
+            this.response.type = 'application/json';
+        } catch (error: any) {
+            console.error('设置本校学生失败:', error);
+            this.response.body = { success: false, error: error.message };
+            this.response.type = 'application/json';
+        }
     }
 }
 
@@ -343,6 +383,35 @@ class UserBindDebugHandler extends Handler {
             this.response.type = 'application/json';
         } catch (error: any) {
             this.response.body = { error: error.message };
+            this.response.type = 'application/json';
+        }
+    }
+    
+    // 添加POST方法用于测试设置功能
+    async post(domainId: string) {
+        this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
+        const { userId, isSchoolStudent } = this.request.body;
+        
+        try {
+            const parsedUserId = parseInt(userId);
+            const isSchoolStudentBool = isSchoolStudent === 'true';
+            
+            console.log('测试设置本校学生:', { parsedUserId, isSchoolStudentBool });
+            
+            await userBindModel.setUserAsSchoolStudent(parsedUserId, isSchoolStudentBool);
+            
+            const updatedUser = await UserModel.getById('system', parsedUserId);
+            
+            this.response.body = {
+                success: true,
+                userId: updatedUser._id,
+                username: updatedUser.uname,
+                isSchoolStudent: updatedUser.isSchoolStudent,
+                message: `用户 ${updatedUser.uname} 状态已更新`
+            };
+            this.response.type = 'application/json';
+        } catch (error: any) {
+            this.response.body = { success: false, error: error.message };
             this.response.type = 'application/json';
         }
     }
