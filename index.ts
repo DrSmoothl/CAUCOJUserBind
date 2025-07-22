@@ -106,10 +106,20 @@ const userBindModel = {
 
     async getDisplayName(userId: number, showRealName = false): Promise<string> {
         const user = await UserModel.getById('system', userId);
-        if (showRealName && user.isSchoolStudent && user.studentName) {
+        // 直接从数据库获取 isSchoolStudent 状态
+        const userColl = db.collection('user');
+        const dbUser = await userColl.findOne({ _id: userId });
+        if (showRealName && dbUser?.isSchoolStudent && user.studentName) {
             return `${user.studentName}(${user.uname})`;
         }
         return user.uname;
+    },
+
+    // 直接从数据库获取用户的 isSchoolStudent 状态
+    async getUserSchoolStudentStatus(userId: number): Promise<boolean> {
+        const userColl = db.collection('user');
+        const user = await userColl.findOne({ _id: userId });
+        return user?.isSchoolStudent === true;
     },
 
     // 管理员设置用户为本校学生
@@ -401,10 +411,13 @@ class UserBindDebugHandler extends Handler {
 
         try {
             const user = await UserModel.getById('system', this.user._id);
+            // 直接从数据库获取 isSchoolStudent 状态
+            const userColl = db.collection('user');
+            const dbUser = await userColl.findOne({ _id: this.user._id });
             this.response.body = {
                 userId: user._id,
                 username: user.uname,
-                isSchoolStudent: user.isSchoolStudent,
+                isSchoolStudent: dbUser?.isSchoolStudent,  // 使用数据库中的值
                 studentId: user.studentId,
                 studentName: user.studentName,
                 isBound: await userBindModel.isUserBound(this.user._id)
@@ -429,13 +442,16 @@ class UserBindDebugHandler extends Handler {
             
             await userBindModel.setUserAsSchoolStudent(parsedUserId, isSchoolStudentBool);
             
+            // 直接从数据库获取更新后的状态进行验证
+            const userColl = db.collection('user');
+            const updatedDbUser = await userColl.findOne({ _id: parsedUserId });
             const updatedUser = await UserModel.getById('system', parsedUserId);
             
             this.response.body = {
                 success: true,
                 userId: updatedUser._id,
                 username: updatedUser.uname,
-                isSchoolStudent: updatedUser.isSchoolStudent,
+                isSchoolStudent: updatedDbUser?.isSchoolStudent,  // 使用数据库中的实际值
                 message: `用户 ${updatedUser.uname} 状态已更新`
             };
             this.response.type = 'application/json';
@@ -509,7 +525,8 @@ export async function apply(ctx: Context) {
             }
 
             const user = await UserModel.getById('system', h.user._id);
-            const isSchoolStudent = user.isSchoolStudent === true;
+            // 使用直接数据库查询获取 isSchoolStudent 状态
+            const isSchoolStudent = await userBindModel.getUserSchoolStudentStatus(h.user._id);
             const isBound = await userBindModel.isUserBound(h.user._id);
             
             // 调试日志
@@ -535,8 +552,10 @@ export async function apply(ctx: Context) {
 
         try {
             const user = await UserModel.getById('system', h.user._id);
+            // 使用直接数据库查询获取 isSchoolStudent 状态
+            const isSchoolStudent = await userBindModel.getUserSchoolStudentStatus(h.user._id);
             // 只有被明确标记为本校学生的用户才需要强制绑定
-            if (user.isSchoolStudent === true && !await userBindModel.isUserBound(h.user._id)) {
+            if (isSchoolStudent && !await userBindModel.isUserBound(h.user._id)) {
                 h.response.redirect = '/user-bind';
             }
         } catch (error) {
@@ -546,13 +565,18 @@ export async function apply(ctx: Context) {
 
     // 在用户详情页面添加绑定信息显示
     ctx.on('handler/after/UserDetail#get', async (h) => {
-        if (h.response.body.udoc.isSchoolStudent) {
-            h.response.body.showBindInfo = true;
-            h.response.body.bindInfo = {
-                studentId: h.response.body.udoc.studentId || '未绑定',
-                studentName: h.response.body.udoc.studentName || '未绑定',
-                isBound: !!(h.response.body.udoc.studentId && h.response.body.udoc.studentName)
-            };
+        if (h.response.body.udoc) {
+            // 直接从数据库获取 isSchoolStudent 状态
+            const userColl = db.collection('user');
+            const dbUser = await userColl.findOne({ _id: h.response.body.udoc._id });
+            if (dbUser?.isSchoolStudent) {
+                h.response.body.showBindInfo = true;
+                h.response.body.bindInfo = {
+                    studentId: h.response.body.udoc.studentId || '未绑定',
+                    studentName: h.response.body.udoc.studentName || '未绑定',
+                    isBound: !!(h.response.body.udoc.studentId && h.response.body.udoc.studentName)
+                };
+            }
         }
     });
 
@@ -560,9 +584,14 @@ export async function apply(ctx: Context) {
     ctx.on('handler/after/ContestScoreboard#get', async (h) => {
         if (h.user && h.checkPriv(PRIV.PRIV_EDIT_SYSTEM, false)) {
             const rows = h.response.body.rows || [];
+            const userColl = db.collection('user');
             for (const row of rows) {
-                if (row[1] && row[1].isSchoolStudent && row[1].studentName) {
-                    row[1].displayName = `${row[1].studentName}(${row[1].uname})`;
+                if (row[1] && row[1].studentName) {
+                    // 直接从数据库检查 isSchoolStudent 状态
+                    const dbUser = await userColl.findOne({ _id: row[1]._id });
+                    if (dbUser?.isSchoolStudent) {
+                        row[1].displayName = `${row[1].studentName}(${row[1].uname})`;
+                    }
                 }
             }
         }
