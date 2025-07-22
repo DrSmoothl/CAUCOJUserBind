@@ -321,6 +321,33 @@ class UserBindUserManageHandler extends Handler {
     }
 }
 
+// 调试接口 - 检查当前用户状态
+class UserBindDebugHandler extends Handler {
+    async get(domainId: string) {
+        if (!this.user) {
+            this.response.body = { error: '未登录' };
+            this.response.type = 'application/json';
+            return;
+        }
+
+        try {
+            const user = await UserModel.getById('system', this.user._id);
+            this.response.body = {
+                userId: user._id,
+                username: user.uname,
+                isSchoolStudent: user.isSchoolStudent,
+                studentId: user.studentId,
+                studentName: user.studentName,
+                isBound: await userBindModel.isUserBound(this.user._id)
+            };
+            this.response.type = 'application/json';
+        } catch (error: any) {
+            this.response.body = { error: error.message };
+            this.response.type = 'application/json';
+        }
+    }
+}
+
 // 插件配置和路由
 export async function apply(ctx: Context) {
     // 添加用户设置项
@@ -335,6 +362,7 @@ export async function apply(ctx: Context) {
     ctx.Route('user_bind_manage', '/user-bind/manage', UserBindManageHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('user_bind_import', '/user-bind/import', UserBindImportHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('user_bind_user_manage', '/user-bind/user-manage', UserBindUserManageHandler, PRIV.PRIV_EDIT_SYSTEM);
+    ctx.Route('user_bind_debug', '/user-bind/debug', UserBindDebugHandler);
     ctx.Route('user_bind_form', '/user-bind', UserBindFormHandler);
     ctx.Route('user_bind_success', '/user-bind/success', UserBindSuccessHandler);
     ctx.Route('user_bind_delete', '/user-bind/delete', UserBindDeleteHandler, PRIV.PRIV_EDIT_SYSTEM);
@@ -348,38 +376,52 @@ export async function apply(ctx: Context) {
         }
 
         try {
+            // 更全面的路径排除，避免循环重定向和检查静态资源
+            const currentPath = h.request.path;
+            const excludePaths = [
+                '/user-bind',
+                '/logout', 
+                '/api/', 
+                '/login', 
+                '/register',
+                '/assets/',
+                '/favicon.ico',
+                '.js',
+                '.css',
+                '.map',
+                '.png',
+                '.jpg',
+                '.jpeg',
+                '.gif',
+                '.svg',
+                '.woff',
+                '.woff2',
+                '.ttf'
+            ];
+            
+            // 检查是否应该跳过此路径
+            const shouldSkip = excludePaths.some(path => 
+                currentPath === path || 
+                currentPath.startsWith(path) ||
+                currentPath.endsWith(path)
+            );
+            
+            if (shouldSkip) {
+                return;
+            }
+
             const user = await UserModel.getById('system', h.user._id);
             const isSchoolStudent = user.isSchoolStudent === true;
             const isBound = await userBindModel.isUserBound(h.user._id);
             
             // 调试日志
-            console.log(`绑定检查 - 用户: ${user.uname}, 本校学生: ${isSchoolStudent}, 已绑定: ${isBound}, 路径: ${h.request.path}`);
+            console.log(`绑定检查 - 用户: ${user.uname}, 本校学生: ${isSchoolStudent}, 已绑定: ${isBound}, 路径: ${currentPath}`);
             
             // 只有被明确标记为本校学生的用户才需要强制绑定
             if (isSchoolStudent && !isBound) {
-                // 更全面的路径排除，避免循环重定向
-                const currentPath = h.request.path;
-                const excludePaths = [
-                    '/user-bind',
-                    '/logout', 
-                    '/api/', 
-                    '/login', 
-                    '/register',
-                    '/assets/',
-                    '/favicon.ico'
-                ];
-                
-                const shouldRedirect = !excludePaths.some(path => 
-                    currentPath === path || currentPath.startsWith(path)
-                );
-                
-                console.log(`需要重定向: ${shouldRedirect}, 当前路径: ${currentPath}`);
-                
-                if (shouldRedirect) {
-                    console.log('执行重定向到绑定页面');
-                    h.response.redirect = '/user-bind';
-                    return;
-                }
+                console.log('执行重定向到绑定页面');
+                h.response.redirect = '/user-bind';
+                return;
             }
         } catch (error) {
             // 如果获取用户信息失败，不执行重定向
