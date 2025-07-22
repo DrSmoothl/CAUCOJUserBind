@@ -323,9 +323,18 @@ class UserBindSetSchoolStudentHandler extends Handler {
             
             await userBindModel.setUserAsSchoolStudent(parsedUserId, isSchoolStudentBool);
             
-            // 验证设置是否成功
+            // 验证设置是否成功 - 直接从数据库读取而不是通过UserModel
+            const userColl = db.collection('user');
+            const dbUser = await userColl.findOne({ _id: parsedUserId });
+            console.log('设置本校学生 - 数据库中的实际数据:', {
+                username: dbUser?.uname,
+                isSchoolStudent: dbUser?.isSchoolStudent,
+                _id: dbUser?._id
+            });
+            
+            // 同时也检查UserModel的结果
             const updatedUser = await UserModel.getById('system', parsedUserId);
-            console.log('设置本校学生 - 更新后用户状态:', { 
+            console.log('设置本校学生 - UserModel读取结果:', { 
                 username: updatedUser.uname, 
                 newIsSchoolStudent: updatedUser.isSchoolStudent 
             });
@@ -334,7 +343,8 @@ class UserBindSetSchoolStudentHandler extends Handler {
             this.response.body = { 
                 success: true, 
                 message: `用户 ${updatedUser.uname} 已${isSchoolStudentBool ? '设置为' : '取消'}本校学生状态`,
-                isSchoolStudent: updatedUser.isSchoolStudent
+                isSchoolStudent: dbUser?.isSchoolStudent,  // 使用数据库中的实际值
+                userModelValue: updatedUser.isSchoolStudent  // 显示UserModel的值用于对比
             };
             this.response.type = 'application/json';
         } catch (error: any) {
