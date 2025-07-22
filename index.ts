@@ -85,11 +85,18 @@ const userBindModel = {
     },
 
     async bindUser(userId: number, studentId: string, studentName: string): Promise<void> {
-        await UserModel.setById(userId, {
-            studentId,
-            studentName,
-            isSchoolStudent: true  // 绑定成功后自动设置为本校学生
-        });
+        // 使用直接数据库操作而不是UserModel.setById
+        const userColl = db.collection('user');
+        await userColl.updateOne(
+            { _id: userId },
+            { 
+                $set: { 
+                    studentId,
+                    studentName,
+                    isSchoolStudent: true  // 绑定成功后自动设置为本校学生
+                }
+            }
+        );
     },
 
     async isUserBound(userId: number): Promise<boolean> {
@@ -110,7 +117,19 @@ const userBindModel = {
         console.log(`setUserAsSchoolStudent 调用: userId=${userId}, isSchoolStudent=${isSchoolStudent}`);
         
         try {
-            await UserModel.setById(userId, { isSchoolStudent });
+            // 直接操作数据库，而不是使用UserModel.setById
+            const userColl = db.collection('user');
+            const result = await userColl.updateOne(
+                { _id: userId },
+                { $set: { isSchoolStudent: isSchoolStudent } }
+            );
+            
+            console.log(`setUserAsSchoolStudent 数据库操作结果:`, result);
+            
+            if (result.matchedCount === 0) {
+                throw new Error(`用户 ${userId} 不存在`);
+            }
+            
             console.log(`setUserAsSchoolStudent 成功: 用户 ${userId} 设置为 ${isSchoolStudent}`);
         } catch (error) {
             console.error(`setUserAsSchoolStudent 失败: userId=${userId}, error=`, error);
