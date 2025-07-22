@@ -88,7 +88,7 @@ const userBindModel = {
         await UserModel.setById(userId, {
             studentId,
             studentName,
-            isSchoolStudent: true
+            isSchoolStudent: true  // 绑定成功后自动设置为本校学生
         });
     },
 
@@ -103,6 +103,11 @@ const userBindModel = {
             return `${user.studentName}(${user.uname})`;
         }
         return user.uname;
+    },
+
+    // 管理员设置用户为本校学生
+    async setUserAsSchoolStudent(userId: number, isSchoolStudent: boolean): Promise<void> {
+        await UserModel.setById(userId, { isSchoolStudent });
     }
 };
 
@@ -280,35 +285,90 @@ class UserBindDeleteHandler extends Handler {
     }
 }
 
+// 管理员设置用户为本校学生
+class UserBindSetSchoolStudentHandler extends Handler {
+    async post(domainId: string) {
+        this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
+        const { userId, isSchoolStudent } = this.request.body;
+        
+        if (!userId) {
+            throw new Error('缺少用户ID');
+        }
+        
+        await userBindModel.setUserAsSchoolStudent(parseInt(userId), isSchoolStudent === 'true');
+        
+        // 返回JSON响应用于AJAX调用
+        this.response.body = { success: true };
+        this.response.type = 'application/json';
+    }
+}
+
+// 用户管理界面 - 设置本校学生
+class UserBindUserManageHandler extends Handler {
+    async get(domainId: string) {
+        this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
+        const page = +(this.request.query.page || '1');
+        const search = this.request.query.search || '';
+        const limit = 20;
+        const skip = (page - 1) * limit;
+        
+        // 构建搜索条件
+        let filter: any = {};
+        if (search) {
+            filter.$or = [
+                { uname: { $regex: search, $options: 'i' } },
+                { mail: { $regex: search, $options: 'i' } }
+            ];
+        }
+        
+        // 获取用户列表
+        const userColl = db.collection('user');
+        const total = await userColl.countDocuments(filter);
+        const users = await userColl
+            .find(filter)
+            .sort({ _id: -1 })
+            .skip(skip)
+            .limit(limit)
+            .toArray();
+        
+        const pageCount = Math.ceil(total / limit);
+        
+        this.response.template = 'user_bind_user_manage.html';
+        this.response.body = { users, total, page, pageCount, search };
+    }
+}
+
 // 插件配置和路由
 export async function apply(ctx: Context) {
     // 添加用户设置项
     ctx.inject(['setting'], (c) => {
         c.setting.AccountSetting(
             SettingModel.Setting('user_info', 'studentId', '', 'text', '学号', '学生学号', 10),
-            SettingModel.Setting('user_info', 'studentName', '', 'text', '姓名', '真实姓名', 11),
-            SettingModel.Setting('user_info', 'isSchoolStudent', false, 'boolean', '本校学生', '是否为本校学生', 12)
+            SettingModel.Setting('user_info', 'studentName', '', 'text', '姓名', '真实姓名', 11)
         );
     });
 
     // 注册路由
     ctx.Route('user_bind_manage', '/user-bind/manage', UserBindManageHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('user_bind_import', '/user-bind/import', UserBindImportHandler, PRIV.PRIV_EDIT_SYSTEM);
+    ctx.Route('user_bind_user_manage', '/user-bind/user-manage', UserBindUserManageHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('user_bind_form', '/user-bind', UserBindFormHandler);
     ctx.Route('user_bind_success', '/user-bind/success', UserBindSuccessHandler);
     ctx.Route('user_bind_delete', '/user-bind/delete', UserBindDeleteHandler, PRIV.PRIV_EDIT_SYSTEM);
+    ctx.Route('user_bind_set_school_student', '/user-bind/set-school-student', UserBindSetSchoolStudentHandler, PRIV.PRIV_EDIT_SYSTEM);
     
     // 使用 hook 在所有路由处理前检查本校学生绑定状态
     ctx.on('handler/before-prepare', async (h) => {
         if (h.user && h.user._id) {
             const user = await UserModel.getById('system', h.user._id);
-            if (user.isSchoolStudent && !await userBindModel.isUserBound(h.user._id)) {
+            // 只有被明确标记为本校学生的用户才需要强制绑定
+            if (user.isSchoolStudent === true && !await userBindModel.isUserBound(h.user._id)) {
                 // 排除特定路径，避免循环重定向
                 const excludePaths = ['/user-bind/', '/logout', '/api/', '/login', '/register'];
                 const shouldRedirect = !excludePaths.some(path => h.request.path.startsWith(path));
                 
                 if (shouldRedirect) {
-                    h.response.redirect = '/user-bind/form';
+                    h.response.redirect = '/user-bind';
                     return;
                 }
             }
@@ -319,8 +379,9 @@ export async function apply(ctx: Context) {
     ctx.on('handler/after/UserLogin#post', async (h) => {
         if (h.user && h.user._id) {
             const user = await UserModel.getById('system', h.user._id);
-            if (user.isSchoolStudent && !await userBindModel.isUserBound(h.user._id)) {
-                h.response.redirect = '/user-bind/form';
+            // 只有被明确标记为本校学生的用户才需要强制绑定
+            if (user.isSchoolStudent === true && !await userBindModel.isUserBound(h.user._id)) {
+                h.response.redirect = '/user-bind';
             }
         }
     });

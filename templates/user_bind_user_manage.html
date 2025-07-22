@@ -1,0 +1,144 @@
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="medium-12 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">用户管理 - 本校学生设置</h1>
+        <div class="section__tools">
+          <a href="/user-bind/manage">
+            <button class="rounded button">返回绑定管理</button>
+          </a>
+        </div>
+      </div>
+      <div class="section__body">
+        <div class="alert alert--info">
+          <p>在这里您可以设置哪些用户是本校学生。被设置为本校学生的用户在登录时将被要求进行身份绑定。</p>
+        </div>
+        
+        <!-- 搜索表单 -->
+        <form method="get" class="search-form" style="margin-bottom: 20px;">
+          <div class="row">
+            <div class="medium-4 columns">
+              <input type="text" name="search" class="textbox" placeholder="搜索用户名或邮箱" value="{{ search or '' }}">
+            </div>
+            <div class="medium-2 columns">
+              <button type="submit" class="primary button">搜索</button>
+            </div>
+          </div>
+        </form>
+        
+        {% if users.length %}
+        <table class="data-table">
+          <colgroup>
+            <col class="col--user-id">
+            <col class="col--username">
+            <col class="col--email">
+            <col class="col--student-status">
+            <col class="col--bind-status">
+            <col class="col--operations">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="col--user-id">用户ID</th>
+              <th class="col--username">用户名</th>
+              <th class="col--email">邮箱</th>
+              <th class="col--student-status">学生状态</th>
+              <th class="col--bind-status">绑定状态</th>
+              <th class="col--operations">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in users %}
+            <tr>
+              <td class="col--user-id">{{ user._id }}</td>
+              <td class="col--username">
+                <a href="/user/{{ user._id }}">{{ user.uname }}</a>
+              </td>
+              <td class="col--email">{{ user.mail }}</td>
+              <td class="col--student-status">
+                {% if user.isSchoolStudent %}
+                  <span class="tag tag--success">本校学生</span>
+                {% else %}
+                  <span class="tag tag--info">非本校学生</span>
+                {% endif %}
+              </td>
+              <td class="col--bind-status">
+                {% if user.studentId and user.studentName %}
+                  <span class="tag tag--success">已绑定</span>
+                  <br><small>{{ user.studentId }} - {{ user.studentName }}</small>
+                {% else %}
+                  <span class="tag tag--warning">未绑定</span>
+                {% endif %}
+              </td>
+              <td class="col--operations">
+                {% if user.isSchoolStudent %}
+                  <button class="button button--small" onclick="setSchoolStudent({{ user._id }}, false)">
+                    取消本校学生
+                  </button>
+                {% else %}
+                  <button class="button button--small button--primary" onclick="setSchoolStudent({{ user._id }}, true)">
+                    设为本校学生
+                  </button>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        
+        {% if pageCount > 1 %}
+        <div class="section__footer">
+          <ul class="pager">
+            {% if page > 1 %}
+            <li><a href="?page={{ page - 1 }}{{ ('&search=' + search) if search else '' }}" class="pager__item">&laquo; 上一页</a></li>
+            {% endif %}
+            
+            <li class="pager__item current">第 {{ page }} 页，共 {{ pageCount }} 页</li>
+            
+            {% if page < pageCount %}
+            <li><a href="?page={{ page + 1 }}{{ ('&search=' + search) if search else '' }}" class="pager__item">下一页 &raquo;</a></li>
+            {% endif %}
+          </ul>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="alert alert--info">
+          <p>没有找到用户记录。</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function setSchoolStudent(userId, isSchoolStudent) {
+    const action = isSchoolStudent ? '设为本校学生' : '取消本校学生';
+    if (!confirm(`确认要${action}吗？`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/user-bind/set-school-student', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `userId=${userId}&isSchoolStudent=${isSchoolStudent}`
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            location.reload();
+        } else {
+            alert('操作失败，请稍后重试');
+        }
+    } catch (error) {
+        alert('操作失败：' + error.message);
+    }
+}
+</script>
+{% endblock %}

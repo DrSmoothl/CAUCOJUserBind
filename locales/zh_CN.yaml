@@ -5,6 +5,7 @@ user_bind_manage: 学生绑定管理
 user_bind_import: 批量导入学生
 user_bind_form: 学生身份绑定
 user_bind_success: 绑定成功
+user_bind_user_manage: 用户管理
 
 # 按钮和操作
 import_students: 导入学生
@@ -12,6 +13,9 @@ bind_account: 绑定账号
 delete_student: 删除
 return_manage: 返回管理
 continue: 继续使用
+user_manage: 用户管理
+set_school_student: 设为本校学生
+unset_school_student: 取消本校学生
 
 # 表单标签
 student_id: 学号
