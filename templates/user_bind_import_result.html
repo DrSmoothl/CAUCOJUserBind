@@ -1,0 +1,133 @@
+{% set page_name = "user_bind_import_result" %}
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="medium-12 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">导入结果</h1>
+        <div class="section__tools">
+          <a href="/user-bind/manage">
+            <button class="primary rounded button">返回管理</button>
+          </a>
+          <a href="/user-bind/import">
+            <button class="button button--secondary">继续导入</button>
+          </a>
+        </div>
+      </div>
+      <div class="section__body no-padding">
+        <table class="data-table">
+          <colgroup>
+            <col class="col--student-id">
+            <col class="col--student-name">
+            <col class="col--status">
+            <col class="col--invite-code">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="col--student-id">学号</th>
+              <th class="col--student-name">姓名</th>
+              <th class="col--status">状态</th>
+              <th class="col--invite-code">邀请链接</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for result in results %}
+            <tr class="{% if result.success %}success-row{% else %}error-row{% endif %}">
+              <td class="col--student-id">{{ result.studentId }}</td>
+              <td class="col--student-name">{{ result.studentName }}</td>
+              <td class="col--status">
+                {% if result.success %}
+                  <span class="tag tag--success">成功</span>
+                {% else %}
+                  <span class="tag tag--error">失败</span>
+                {% endif %}
+              </td>
+              <td class="col--invite-code">
+                {% if result.success %}
+                  <a href="/user-bind/{{ result.inviteCode }}" target="_blank" class="invite-link">
+                    /user-bind/{{ result.inviteCode }}
+                  </a>
+                  <button class="copy-button" onclick="copyToClipboard('/user-bind/{{ result.inviteCode }}')">复制</button>
+                {% else %}
+                  <span class="error-text">{{ result.error }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.col--student-id { width: 120px; }
+.col--student-name { width: 120px; }
+.col--status { width: 80px; }
+.col--invite-code { width: auto; }
+
+.success-row {
+  background-color: #f8fff8;
+}
+
+.error-row {
+  background-color: #fff8f8;
+}
+
+.tag {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.tag--success {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.tag--error {
+  background-color: #f44336;
+  color: white;
+}
+
+.invite-link {
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.copy-button {
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 11px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.copy-button:hover {
+  background: #0056b3;
+}
+
+.error-text {
+  color: #f44336;
+  font-size: 12px;
+}
+</style>
+
+<script>
+function copyToClipboard(text) {
+  const fullUrl = window.location.origin + text;
+  navigator.clipboard.writeText(fullUrl).then(function() {
+    alert('链接已复制到剪贴板: ' + fullUrl);
+  }, function(err) {
+    console.error('复制失败: ', err);
+    prompt('请手动复制以下链接:', fullUrl);
+  });
+}
+</script>
+{% endblock %}

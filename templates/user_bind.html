@@ -1,0 +1,110 @@
+{% set page_name = "user_bind" %}
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="medium-6 medium-centered columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">绑定学号信息</h1>
+      </div>
+      <div class="section__body">
+        <div class="bind-info">
+          <h3>待绑定信息：</h3>
+          <div class="info-card">
+            <div class="info-item">
+              <label>学号：</label>
+              <span class="info-value">{{ invite.studentId }}</span>
+            </div>
+            <div class="info-item">
+              <label>姓名：</label>
+              <span class="info-value">{{ invite.studentName }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="bind-notice">
+          <h4>重要提醒：</h4>
+          <ul>
+            <li>请确认上述信息是否正确</li>
+            <li>绑定后将无法修改或解绑</li>
+            <li>每个邀请链接只能使用一次</li>
+            <li>绑定完成后您将成为本校学生，登录时需要完成学号绑定</li>
+          </ul>
+        </div>
+
+        <form method="post" class="bind-form">
+          <input type="hidden" name="code" value="{{ invite._id }}">
+          <div class="row">
+            <div class="columns">
+              <button type="submit" class="primary rounded button expand">确认绑定</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.bind-info {
+  margin-bottom: 24px;
+}
+
+.info-card {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 12px;
+}
+
+.info-item {
+  display: flex;
+  margin-bottom: 8px;
+}
+
+.info-item:last-child {
+  margin-bottom: 0;
+}
+
+.info-item label {
+  font-weight: bold;
+  min-width: 60px;
+  color: #666;
+}
+
+.info-value {
+  color: #333;
+  font-weight: 500;
+}
+
+.bind-notice {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.bind-notice h4 {
+  color: #856404;
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.bind-notice ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.bind-notice li {
+  color: #856404;
+  margin-bottom: 4px;
+}
+
+.bind-form {
+  margin-top: 24px;
+}
+</style>
+{% endblock %}

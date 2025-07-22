@@ -1,0 +1,49 @@
+# 用户绑定插件国际化文件
+
+# 菜单和导航
+user_bind_manage: 用户绑定管理
+user_bind_import: 批量导入学生
+user_bind: 绑定学号
+user_bind_required: 需要绑定学号
+
+# 表单字段
+student_id: 学号
+student_name: 姓名  
+is_school_student: 本校学生
+invite_code: 邀请码
+bind_link: 绑定链接
+create_time: 创建时间
+used_time: 使用时间
+used_by: 绑定用户
+
+# 状态
+status: 状态
+used: 已使用
+unused: 未使用
+success: 成功
+failed: 失败
+
+# 按钮和操作
+import_students: 批量导入学生
+generate_invite_links: 生成邀请链接
+confirm_bind: 确认绑定
+delete_invite: 删除邀请
+copy_link: 复制链接
+back_to_manage: 返回管理
+continue_import: 继续导入
+refresh_page: 刷新页面
+logout: 退出登录
+
+# 消息和提示
+invite_not_found: 邀请链接不存在或已失效
+invite_already_used: 此邀请链接已被使用
+user_already_bound: 您已经绑定过学号，无法重复绑定
+please_login_first: 请先登录
+bind_success: 绑定成功
+import_success: 导入成功
+link_copied: 链接已复制到剪贴板
+
+# 帮助文本
+import_help: 每行输入一个学生信息，格式为：学号 姓名
+bind_notice: 绑定后将无法修改或解绑
+contact_admin: 如有疑问，请联系系统管理员

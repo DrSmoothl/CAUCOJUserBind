@@ -1,0 +1,59 @@
+{% set page_name = "user_bind_import" %}
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="medium-8 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">批量导入学生信息</h1>
+        <div class="section__tools">
+          <a href="/user-bind/manage">
+            <button class="button button--secondary">返回管理</button>
+          </a>
+        </div>
+      </div>
+      <div class="section__body">
+        <form method="post">
+          <div class="row">
+            <div class="columns">
+              <label for="studentsData">学生信息</label>
+              <textarea name="studentsData" id="studentsData" rows="15" placeholder="请输入学生信息，每行一个，格式：学号 姓名&#10;例如：&#10;202301001 张三&#10;202301002 李四&#10;202301003 王五" required></textarea>
+              <p class="help-text">
+                每行输入一个学生信息，格式为：学号 姓名<br>
+                学号和姓名之间用空格分隔，如果姓名包含多个字，会自动合并
+              </p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="columns">
+              <button type="submit" class="primary rounded button">生成邀请链接</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="medium-4 columns">
+    <div class="section">
+      <div class="section__header">
+        <h3 class="section__title">使用说明</h3>
+      </div>
+      <div class="section__body">
+        <ol>
+          <li>在左侧文本框中输入学生信息</li>
+          <li>每行一个学生，格式：学号 姓名</li>
+          <li>点击"生成邀请链接"按钮</li>
+          <li>系统会为每个学生生成唯一的绑定链接</li>
+          <li>学生通过链接进行绑定，绑定后不可修改</li>
+        </ol>
+        
+        <h4>示例格式：</h4>
+        <pre>202301001 张三
+202301002 李四
+202301003 王五明</pre>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,117 @@
+{% set page_name = "user_bind_manage" %}
+{% extends "layout/basic.html" %}
+{% import "components/paginator.html" as paginator with context %}
+{% import "components/nothing.html" as nothing with context %}
+
+{% block content %}
+<div class="row">
+  <div class="medium-12 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">用户绑定管理</h1>
+        <div class="section__tools">
+          <a href="/user-bind/import">
+            <button class="primary rounded button">批量导入学生</button>
+          </a>
+        </div>
+      </div>
+      <div class="section__body no-padding">
+        {% if not invites.length %}
+          {{ nothing.render('暂无邀请链接') }}
+        {% else %}
+          <table class="data-table">
+            <colgroup>
+              <col class="col--student-id">
+              <col class="col--student-name">
+              <col class="col--invite-code">
+              <col class="col--status">
+              <col class="col--used-by">
+              <col class="col--create-time">
+              <col class="col--operations">
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="col--student-id">学号</th>
+                <th class="col--student-name">姓名</th>
+                <th class="col--invite-code">邀请码</th>
+                <th class="col--status">状态</th>
+                <th class="col--used-by">绑定用户</th>
+                <th class="col--create-time">创建时间</th>
+                <th class="col--operations">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for invite in invites %}
+              <tr>
+                <td class="col--student-id">{{ invite.studentId }}</td>
+                <td class="col--student-name">{{ invite.studentName }}</td>
+                <td class="col--invite-code">
+                  <code>{{ invite._id }}</code>
+                  {% if not invite.used %}
+                  <br>
+                  <small><a href="/user-bind/{{ invite._id }}" target="_blank">绑定链接</a></small>
+                  {% endif %}
+                </td>
+                <td class="col--status">
+                  {% if invite.used %}
+                    <span class="tag tag--success">已使用</span>
+                  {% else %}
+                    <span class="tag tag--pending">未使用</span>
+                  {% endif %}
+                </td>
+                <td class="col--used-by">
+                  {% if invite.usedBy and users[invite.usedBy] %}
+                    <a href="/user/{{ invite.usedBy }}">{{ users[invite.usedBy].uname }}</a>
+                    <br><small>{{ moment(invite.usedTime).format('YYYY-MM-DD HH:mm') }}</small>
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+                <td class="col--create-time">
+                  {{ moment(invite.createTime).format('YYYY-MM-DD HH:mm') }}
+                </td>
+                <td class="col--operations">
+                  {% if not invite.used %}
+                  <form method="post" action="/user-bind/delete/{{ invite._id }}" style="display: inline;">
+                    <button type="submit" class="button button--danger button--small" 
+                            onclick="return confirm('确认删除此邀请链接？')">删除</button>
+                  </form>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {{ paginator.render(page, pageCount) }}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.col--student-id { width: 120px; }
+.col--student-name { width: 120px; }
+.col--invite-code { width: 300px; }
+.col--status { width: 80px; }
+.col--used-by { width: 150px; }
+.col--create-time { width: 140px; }
+.col--operations { width: 100px; }
+
+.tag {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.tag--success {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.tag--pending {
+  background-color: #FF9800;
+  color: white;
+}
+</style>
+{% endblock %}

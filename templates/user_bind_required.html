@@ -1,0 +1,129 @@
+{% set page_name = "user_bind_required" %}
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="medium-6 medium-centered columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">需要绑定学号</h1>
+      </div>
+      <div class="section__body">
+        <div class="notice-card">
+          <div class="notice-icon">
+            <i class="icon icon-warning"></i>
+          </div>
+          <div class="notice-content">
+            <h3>您需要绑定学号信息</h3>
+            <p>检测到您是本校学生，但尚未绑定学号和姓名信息。根据系统规定，本校学生必须完成学号绑定才能继续使用系统。</p>
+          </div>
+        </div>
+
+        <div class="steps">
+          <h4>如何获取绑定链接：</h4>
+          <ol>
+            <li>联系管理员或任课教师</li>
+            <li>提供您的真实姓名和学号</li>
+            <li>获取专属绑定链接</li>
+            <li>通过链接完成绑定</li>
+          </ol>
+        </div>
+
+        <div class="contact-info">
+          <h4>联系方式：</h4>
+          <p>如有疑问，请联系系统管理员</p>
+        </div>
+
+        <div class="actions">
+          <a href="/logout" class="button button--secondary">退出登录</a>
+          <button onclick="location.reload()" class="primary rounded button">刷新页面</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.notice-card {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: flex-start;
+}
+
+.notice-icon {
+  margin-right: 16px;
+  color: #856404;
+  font-size: 24px;
+}
+
+.notice-content h3 {
+  color: #856404;
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.notice-content p {
+  color: #856404;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.steps {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.steps h4 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.steps ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.steps li {
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.contact-info {
+  background: #e7f3ff;
+  border: 1px solid #b3d9ff;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.contact-info h4 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  color: #0056b3;
+}
+
+.contact-info p {
+  margin: 0;
+  color: #0056b3;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.actions .button {
+  flex: 1;
+  text-align: center;
+}
+</style>
+{% endblock %}
