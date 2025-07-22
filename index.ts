@@ -400,67 +400,67 @@ class UserBindUserManageHandler extends Handler {
     }
 }
 
-// 调试接口 - 检查当前用户状态
-class UserBindDebugHandler extends Handler {
-    async get(domainId: string) {
-        if (!this.user) {
-            this.response.body = { error: '未登录' };
-            this.response.type = 'application/json';
-            return;
-        }
+// // 调试接口 - 检查当前用户状态
+// class UserBindDebugHandler extends Handler {
+//     async get(domainId: string) {
+//         if (!this.user) {
+//             this.response.body = { error: '未登录' };
+//             this.response.type = 'application/json';
+//             return;
+//         }
 
-        try {
-            const user = await UserModel.getById('system', this.user._id);
-            // 直接从数据库获取 isSchoolStudent 状态
-            const userColl = db.collection('user');
-            const dbUser = await userColl.findOne({ _id: this.user._id });
-            this.response.body = {
-                userId: user._id,
-                username: user.uname,
-                isSchoolStudent: dbUser?.isSchoolStudent,  // 使用数据库中的值
-                studentId: user.studentId,
-                studentName: user.studentName,
-                isBound: await userBindModel.isUserBound(this.user._id)
-            };
-            this.response.type = 'application/json';
-        } catch (error: any) {
-            this.response.body = { error: error.message };
-            this.response.type = 'application/json';
-        }
-    }
+//         try {
+//             const user = await UserModel.getById('system', this.user._id);
+//             // 直接从数据库获取 isSchoolStudent 状态
+//             const userColl = db.collection('user');
+//             const dbUser = await userColl.findOne({ _id: this.user._id });
+//             this.response.body = {
+//                 userId: user._id,
+//                 username: user.uname,
+//                 isSchoolStudent: dbUser?.isSchoolStudent,  // 使用数据库中的值
+//                 studentId: user.studentId,
+//                 studentName: user.studentName,
+//                 isBound: await userBindModel.isUserBound(this.user._id)
+//             };
+//             this.response.type = 'application/json';
+//         } catch (error: any) {
+//             this.response.body = { error: error.message };
+//             this.response.type = 'application/json';
+//         }
+//     }
     
-    // 添加POST方法用于测试设置功能
-    async post(domainId: string) {
-        this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
-        const { userId, isSchoolStudent } = this.request.body;
+//     // 添加POST方法用于测试设置功能
+//     async post(domainId: string) {
+//         this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
+//         const { userId, isSchoolStudent } = this.request.body;
         
-        try {
-            const parsedUserId = parseInt(userId);
-            const isSchoolStudentBool = isSchoolStudent === 'true';
+//         try {
+//             const parsedUserId = parseInt(userId);
+//             const isSchoolStudentBool = isSchoolStudent === 'true';
             
-            console.log('测试设置本校学生:', { parsedUserId, isSchoolStudentBool });
+//             console.log('测试设置本校学生:', { parsedUserId, isSchoolStudentBool });
             
-            await userBindModel.setUserAsSchoolStudent(parsedUserId, isSchoolStudentBool);
+//             await userBindModel.setUserAsSchoolStudent(parsedUserId, isSchoolStudentBool);
             
-            // 直接从数据库获取更新后的状态进行验证
-            const userColl = db.collection('user');
-            const updatedDbUser = await userColl.findOne({ _id: parsedUserId });
-            const updatedUser = await UserModel.getById('system', parsedUserId);
+//             // 直接从数据库获取更新后的状态进行验证
+//             const userColl = db.collection('user');
+//             const updatedDbUser = await userColl.findOne({ _id: parsedUserId });
+//             const updatedUser = await UserModel.getById('system', parsedUserId);
             
-            this.response.body = {
-                success: true,
-                userId: updatedUser._id,
-                username: updatedUser.uname,
-                isSchoolStudent: updatedDbUser?.isSchoolStudent,  // 使用数据库中的实际值
-                message: `用户 ${updatedUser.uname} 状态已更新`
-            };
-            this.response.type = 'application/json';
-        } catch (error: any) {
-            this.response.body = { success: false, error: error.message };
-            this.response.type = 'application/json';
-        }
-    }
-}
+//             this.response.body = {
+//                 success: true,
+//                 userId: updatedUser._id,
+//                 username: updatedUser.uname,
+//                 isSchoolStudent: updatedDbUser?.isSchoolStudent,  // 使用数据库中的实际值
+//                 message: `用户 ${updatedUser.uname} 状态已更新`
+//             };
+//             this.response.type = 'application/json';
+//         } catch (error: any) {
+//             this.response.body = { success: false, error: error.message };
+//             this.response.type = 'application/json';
+//         }
+//     }
+// }
 
 // 插件配置和路由
 export async function apply(ctx: Context) {
@@ -476,7 +476,7 @@ export async function apply(ctx: Context) {
     ctx.Route('user_bind_manage', '/user-bind/manage', UserBindManageHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('user_bind_import', '/user-bind/import', UserBindImportHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('user_bind_user_manage', '/user-bind/user-manage', UserBindUserManageHandler, PRIV.PRIV_EDIT_SYSTEM);
-    ctx.Route('user_bind_debug', '/user-bind/debug', UserBindDebugHandler);
+    // ctx.Route('user_bind_debug', '/user-bind/debug', UserBindDebugHandler);
     ctx.Route('user_bind_form', '/user-bind', UserBindFormHandler);
     ctx.Route('user_bind_success', '/user-bind/success', UserBindSuccessHandler);
     ctx.Route('user_bind_delete', '/user-bind/delete', UserBindDeleteHandler, PRIV.PRIV_EDIT_SYSTEM);
