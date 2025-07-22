@@ -53,13 +53,13 @@
                 <td class="col--used-by">
                   {% if student.usedBy and users[student.usedBy] %}
                     <a href="/user/{{ student.usedBy }}">{{ users[student.usedBy].uname }}</a>
-                    <br><small>{{ moment(student.usedTime).format('YYYY-MM-DD HH:mm') }}</small>
+                    <br><small>{{ datetimeSpan(student.usedTime)|safe }}</small>
                   {% else %}
                     -
                   {% endif %}
                 </td>
                 <td class="col--create-time">
-                  {{ moment(student.createTime).format('YYYY-MM-DD HH:mm') }}
+                  {{ datetimeSpan(student.createTime)|safe }}
                 </td>
                 <td class="col--operations">
                   {% if not student.used %}

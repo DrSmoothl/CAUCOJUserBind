@@ -111,7 +111,7 @@ global.Hydro.model.userBind = userBindModel;
 // 管理界面 - 显示所有学生记录
 class UserBindManageHandler extends Handler {
     async get(domainId: string) {
-        this.checkPriv(PRIV.PRIV_CREATE_DOMAIN);
+        this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
         const page = +(this.request.query.page || '1');
         const { students, total, pageCount } = await userBindModel.getAllStudents(page);
         
@@ -127,12 +127,12 @@ class UserBindManageHandler extends Handler {
 // 管理界面 - 批量导入学生信息
 class UserBindImportHandler extends Handler {
     async get() {
-        this.checkPriv(PRIV.PRIV_CREATE_DOMAIN);
+        this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
         this.response.template = 'user_bind_import.html';
     }
 
     async post(domainId: string) {
-        this.checkPriv(PRIV.PRIV_CREATE_DOMAIN);
+        this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
         const studentsData = this.request.body.studentsData || '';
         
         const lines = studentsData.trim().split('\n');
@@ -273,7 +273,7 @@ class UserBindCheckHandler extends Handler {
 // 删除学生记录
 class UserBindDeleteHandler extends Handler {
     async post(domainId: string) {
-        this.checkPriv(PRIV.PRIV_CREATE_DOMAIN);
+        this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
         const { studentId, studentName } = this.request.body;
         await userBindModel.deleteStudentRecord(studentId, studentName);
         this.response.redirect = '/user-bind/manage';
@@ -292,12 +292,11 @@ export async function apply(ctx: Context) {
     });
 
     // 注册路由
-    ctx.Route('user_bind_manage', '/user-bind/manage', UserBindManageHandler, PRIV.PRIV_CREATE_DOMAIN);
-    ctx.Route('user_bind_import', '/user-bind/import', UserBindImportHandler, PRIV.PRIV_CREATE_DOMAIN);
-    ctx.Route('user_bind_form', '/user-bind/form', UserBindFormHandler);
-    ctx.Route('user_bind_success', '/user-bind/success', UserBindSuccessHandler, PRIV.PRIV_USER_PROFILE);
-    ctx.Route('user_bind_check', '/user-bind/check', UserBindCheckHandler, PRIV.PRIV_USER_PROFILE);
-    ctx.Route('user_bind_delete', '/user-bind/delete', UserBindDeleteHandler, PRIV.PRIV_CREATE_DOMAIN);
+    ctx.Route('user_bind_manage', '/user-bind/manage', UserBindManageHandler, PRIV.PRIV_EDIT_SYSTEM);
+    ctx.Route('user_bind_import', '/user-bind/import', UserBindImportHandler, PRIV.PRIV_EDIT_SYSTEM);
+    ctx.Route('user_bind_form', '/user-bind', UserBindFormHandler);
+    ctx.Route('user_bind_success', '/user-bind/success', UserBindSuccessHandler);
+    ctx.Route('user_bind_delete', '/user-bind/delete', UserBindDeleteHandler, PRIV.PRIV_EDIT_SYSTEM);
     
     // 使用 hook 在所有路由处理前检查本校学生绑定状态
     ctx.on('handler/before-prepare', async (h) => {
@@ -340,7 +339,7 @@ export async function apply(ctx: Context) {
 
     // 在比赛排行榜中显示真实姓名
     ctx.on('handler/after/ContestScoreboard#get', async (h) => {
-        if (h.user && h.checkPriv(PRIV.PRIV_CREATE_DOMAIN, false)) {
+        if (h.user && h.checkPriv(PRIV.PRIV_EDIT_SYSTEM, false)) {
             const rows = h.response.body.rows || [];
             for (const row of rows) {
                 if (row[1] && row[1].isSchoolStudent && row[1].studentName) {
