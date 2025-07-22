@@ -15,10 +15,19 @@
       </div>
       <div class="section__body">
         <form method="post">
+          <div class="alert alert--info" style="margin-bottom: 20px;">
+            <p>请按以下格式导入学生信息：</p>
+            <ul>
+              <li>每行一个学生，格式：学号 姓名</li>
+              <li>使用空格分隔学号和姓名</li>
+              <li>示例：2023001 张三</li>
+            </ul>
+          </div>
+          
           <div class="row">
             <div class="columns">
               <label for="studentsData">学生信息</label>
-              <textarea name="studentsData" id="studentsData" rows="15" placeholder="请输入学生信息，每行一个，格式：学号 姓名&#10;例如：&#10;202301001 张三&#10;202301002 李四&#10;202301003 王五" required></textarea>
+              <textarea name="studentsData" id="studentsData" rows="15" placeholder="请输入学生信息，每行一个，格式：学号 姓名&#10;例如：&#10;202301001 张三&#10;202301002 李四&#10;202301003 王五" required>{{ content or '' }}</textarea>
               <p class="help-text">
                 每行输入一个学生信息，格式为：学号 姓名<br>
                 学号和姓名之间用空格分隔，如果姓名包含多个字，会自动合并
@@ -27,10 +36,56 @@
           </div>
           <div class="row">
             <div class="columns">
-              <button type="submit" class="primary rounded button">生成邀请链接</button>
+              <button type="submit" class="primary rounded button">导入学生</button>
             </div>
           </div>
         </form>
+        
+        {% if results %}
+        <div class="section section--table" style="margin-top: 20px;">
+          <div class="section__header">
+            <h2 class="section__title">导入结果</h2>
+          </div>
+          <div class="section__body no-padding">
+            <table class="data-table">
+              <colgroup>
+                <col class="col--student-id">
+                <col class="col--student-name">
+                <col class="col--status">
+                <col class="col--message">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th class="col--student-id">学号</th>
+                  <th class="col--student-name">姓名</th>
+                  <th class="col--status">状态</th>
+                  <th class="col--message">备注</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for result in results %}
+                <tr>
+                  <td class="col--student-id">{{ result.studentId }}</td>
+                  <td class="col--student-name">{{ result.studentName }}</td>
+                  <td class="col--status">
+                    {% if result.success %}
+                      <span class="tag tag--success">成功</span>
+                    {% else %}
+                      <span class="tag tag--error">失败</span>
+                    {% endif %}
+                  </td>
+                  <td class="col--message">{{ result.message }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <div class="alert alert--success" style="margin-top: 20px;">
+          <p>导入成功后，学生可以访问 <strong>/user-bind</strong> 页面进行身份绑定。</p>
+        </div>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -43,15 +98,18 @@
         <ol>
           <li>在左侧文本框中输入学生信息</li>
           <li>每行一个学生，格式：学号 姓名</li>
-          <li>点击"生成邀请链接"按钮</li>
-          <li>系统会为每个学生生成唯一的绑定链接</li>
-          <li>学生通过链接进行绑定，绑定后不可修改</li>
+          <li>点击"导入学生"按钮</li>
+          <li>系统会将学生信息保存到数据库</li>
+          <li>学生通过统一的绑定页面输入学号和姓名进行匹配绑定</li>
         </ol>
         
         <h4>示例格式：</h4>
         <pre>202301001 张三
 202301002 李四
 202301003 王五明</pre>
+        
+        <h4>绑定流程：</h4>
+        <p>学生访问 <code>/user-bind</code> 页面，输入学号和姓名，系统自动匹配已导入的学生记录进行绑定。</p>
       </div>
     </div>
   </div>

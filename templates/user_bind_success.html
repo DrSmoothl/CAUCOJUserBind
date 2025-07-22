@@ -1,0 +1,130 @@
+{% set page_name = "user_bind_success" %}
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="medium-6 medium-centered columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">绑定成功</h1>
+      </div>
+      <div class="section__body">
+        <div class="success-card">
+          <div class="success-icon">
+            <i class="icon icon-check-circle"></i>
+          </div>
+          <div class="success-content">
+            <h3>恭喜！绑定成功</h3>
+            <p>您已成功绑定学号和姓名信息</p>
+          </div>
+        </div>
+
+        <div class="bind-info">
+          <h4>绑定信息：</h4>
+          <div class="info-card">
+            <div class="info-item">
+              <label>学号：</label>
+              <span class="info-value">{{ studentId }}</span>
+            </div>
+            <div class="info-item">
+              <label>姓名：</label>
+              <span class="info-value">{{ studentName }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="notice">
+          <p><strong>注意：</strong>绑定信息一旦确认无法修改，请确保信息准确无误。</p>
+        </div>
+
+        <div class="actions">
+          <a href="/" class="primary rounded button expand">返回首页</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.success-card {
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+}
+
+.success-icon {
+  margin-right: 16px;
+  color: #155724;
+  font-size: 48px;
+}
+
+.success-content h3 {
+  color: #155724;
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.success-content p {
+  color: #155724;
+  margin: 0;
+  font-size: 16px;
+}
+
+.bind-info {
+  margin-bottom: 24px;
+}
+
+.bind-info h4 {
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.info-card {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.info-item {
+  display: flex;
+  margin-bottom: 8px;
+}
+
+.info-item:last-child {
+  margin-bottom: 0;
+}
+
+.info-item label {
+  font-weight: bold;
+  min-width: 60px;
+  color: #666;
+}
+
+.info-value {
+  color: #333;
+  font-weight: 500;
+}
+
+.notice {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.notice p {
+  margin: 0;
+  color: #856404;
+}
+
+.actions {
+  margin-top: 24px;
+}
+</style>
+{% endblock %}

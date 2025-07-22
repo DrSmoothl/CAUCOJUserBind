@@ -1,6 +1,6 @@
 import {
     db, Context, UserModel, Handler, NotFoundError, ForbiddenError, 
-    PRIV, Types, SettingModel, moment, _
+    PRIV, Types, SettingModel, moment
 } from 'hydrooj';
 
 const coll = db.collection('user_bind_invites');
@@ -31,25 +31,38 @@ declare module 'hydrooj' {
 
 // 用户绑定数据模型
 const userBindModel = {
-    async createInvite(studentId: string, studentName: string): Promise<string> {
-        const inviteCode = _.randomString(32);
+    // 创建学生记录（不再生成邀请码）
+    async createStudentRecord(studentId: string, studentName: string): Promise<void> {
+        // 检查是否已存在
+        const existing = await coll.findOne({ studentId, studentName });
+        if (existing) {
+            throw new Error(`学生记录已存在: ${studentId} ${studentName}`);
+        }
+        
         await coll.insertOne({
-            _id: inviteCode,
+            _id: `${studentId}_${studentName}`,
             studentId,
             studentName,
             createTime: new Date(),
             used: false
         });
-        return inviteCode;
     },
 
-    async getInvite(inviteCode: string): Promise<UserBindInvite | null> {
-        return await coll.findOne({ _id: inviteCode });
+    // 根据学号或姓名查找学生记录
+    async findStudentRecord(studentId: string, studentName: string): Promise<UserBindInvite | null> {
+        return await coll.findOne({
+            $or: [
+                { studentId, studentName }, // 完全匹配
+                { studentId }, // 学号匹配
+                { studentName } // 姓名匹配
+            ],
+            used: false
+        });
     },
 
-    async useInvite(inviteCode: string, userId: number): Promise<void> {
+    async useStudentRecord(recordId: string, userId: number): Promise<void> {
         await coll.updateOne(
-            { _id: inviteCode },
+            { _id: recordId },
             {
                 $set: {
                     used: true,
@@ -60,15 +73,15 @@ const userBindModel = {
         );
     },
 
-    async getAllInvites(page: number, limit: number = 50) {
+    async getAllStudents(page: number, limit: number = 50) {
         const skip = (page - 1) * limit;
         const total = await coll.countDocuments();
-        const invites = await coll.find().sort({ createTime: -1 }).skip(skip).limit(limit).toArray();
-        return { invites, total, pageCount: Math.ceil(total / limit) };
+        const students = await coll.find().sort({ createTime: -1 }).skip(skip).limit(limit).toArray();
+        return { students, total, pageCount: Math.ceil(total / limit) };
     },
 
-    async deleteInvite(inviteCode: string): Promise<void> {
-        await coll.deleteOne({ _id: inviteCode });
+    async deleteStudentRecord(studentId: string, studentName: string): Promise<void> {
+        await coll.deleteOne({ studentId, studentName });
     },
 
     async bindUser(userId: number, studentId: string, studentName: string): Promise<void> {
@@ -95,19 +108,19 @@ const userBindModel = {
 
 global.Hydro.model.userBind = userBindModel;
 
-// 管理界面 - 显示所有邀请链接
+// 管理界面 - 显示所有学生记录
 class UserBindManageHandler extends Handler {
     async get(domainId: string) {
         this.checkPriv(PRIV.PRIV_CREATE_DOMAIN);
         const page = +(this.request.query.page || '1');
-        const { invites, total, pageCount } = await userBindModel.getAllInvites(page);
+        const { students, total, pageCount } = await userBindModel.getAllStudents(page);
         
         // 获取用户信息
-        const userIds = invites.filter(i => i.usedBy).map(i => i.usedBy!);
+        const userIds = students.filter(s => s.usedBy).map(s => s.usedBy!);
         const users = await UserModel.getList('system', userIds);
 
         this.response.template = 'user_bind_manage.html';
-        this.response.body = { invites, total, pageCount, page, users };
+        this.response.body = { students, total, pageCount, page, users };
     }
 }
 
@@ -135,11 +148,10 @@ class UserBindImportHandler extends Handler {
             const studentName = parts.slice(1).join(' ');
             
             try {
-                const inviteCode = await userBindModel.createInvite(studentId, studentName);
+                await userBindModel.createStudentRecord(studentId, studentName);
                 results.push({
                     studentId,
                     studentName,
-                    inviteCode,
                     success: true
                 });
             } catch (error: any) {
@@ -153,30 +165,19 @@ class UserBindImportHandler extends Handler {
         }
 
         this.response.template = 'user_bind_import_result.html';
-        this.response.body = { results };
+        this.response.body = { results, bindUrl: '/user-bind/form' };
     }
 }
 
-// 用户绑定界面
-class UserBindHandler extends Handler {
+// 用户绑定表单界面
+class UserBindFormHandler extends Handler {
     async get(domainId: string) {
-        const { code } = this.request.params;
-        const invite = await userBindModel.getInvite(code);
-        if (!invite) {
-            throw new NotFoundError('邀请链接不存在或已失效');
-        }
-
-        if (invite.used) {
-            throw new ForbiddenError('此邀请链接已被使用');
-        }
-
         // 检查用户是否已经绑定
-        if (this.user._id && await userBindModel.isUserBound(this.user._id)) {
+        if (this.user && this.user._id && await userBindModel.isUserBound(this.user._id)) {
             throw new ForbiddenError('您已经绑定过学号，无法重复绑定');
         }
 
-        this.response.template = 'user_bind.html';
-        this.response.body = { invite };
+        this.response.template = 'user_bind_form.html';
     }
 
     async post(domainId: string) {
@@ -184,26 +185,71 @@ class UserBindHandler extends Handler {
             throw new ForbiddenError('请先登录');
         }
 
-        const { code } = this.request.params;
-        const invite = await userBindModel.getInvite(code);
-        if (!invite) {
-            throw new NotFoundError('邀请链接不存在或已失效');
-        }
-
-        if (invite.used) {
-            throw new ForbiddenError('此邀请链接已被使用');
-        }
-
         // 检查用户是否已经绑定
         if (await userBindModel.isUserBound(this.user._id)) {
             throw new ForbiddenError('您已经绑定过学号，无法重复绑定');
         }
 
-        // 执行绑定
-        await userBindModel.bindUser(this.user._id, invite.studentId, invite.studentName);
-        await userBindModel.useInvite(code, this.user._id);
+        const { studentId, studentName } = this.request.body;
+        if (!studentId || !studentName) {
+            this.response.template = 'user_bind_form.html';
+            this.response.body = { 
+                error: '请填写学号和姓名',
+                studentId,
+                studentName
+            };
+            return;
+        }
 
-        this.response.redirect = '/';
+        // 查找匹配的学生记录
+        const studentRecord = await userBindModel.findStudentRecord(studentId, studentName);
+        if (!studentRecord) {
+            this.response.template = 'user_bind_form.html';
+            this.response.body = { 
+                error: '未找到匹配的学生信息，请检查学号和姓名是否正确',
+                studentId,
+                studentName
+            };
+            return;
+        }
+
+        if (studentRecord.used) {
+            this.response.template = 'user_bind_form.html';
+            this.response.body = { 
+                error: '该学生信息已被其他用户绑定',
+                studentId,
+                studentName
+            };
+            return;
+        }
+
+        // 执行绑定
+        await userBindModel.bindUser(this.user._id, studentRecord.studentId, studentRecord.studentName);
+        await userBindModel.useStudentRecord(studentRecord._id, this.user._id);
+
+        this.response.redirect = '/user-bind/success';
+    }
+}
+
+// 绑定成功页面
+class UserBindSuccessHandler extends Handler {
+    async get() {
+        if (!this.user._id) {
+            this.response.redirect = '/login';
+            return;
+        }
+
+        const user = await UserModel.getById('system', this.user._id);
+        if (!user.studentId || !user.studentName) {
+            this.response.redirect = '/user-bind/form';
+            return;
+        }
+
+        this.response.template = 'user_bind_success.html';
+        this.response.body = { 
+            studentId: user.studentId,
+            studentName: user.studentName
+        };
     }
 }
 
@@ -224,12 +270,12 @@ class UserBindCheckHandler extends Handler {
     }
 }
 
-// 删除邀请链接
+// 删除学生记录
 class UserBindDeleteHandler extends Handler {
     async post(domainId: string) {
         this.checkPriv(PRIV.PRIV_CREATE_DOMAIN);
-        const { code } = this.request.params;
-        await userBindModel.deleteInvite(code);
+        const { studentId, studentName } = this.request.body;
+        await userBindModel.deleteStudentRecord(studentId, studentName);
         this.response.redirect = '/user-bind/manage';
     }
 }
@@ -248,9 +294,10 @@ export async function apply(ctx: Context) {
     // 注册路由
     ctx.Route('user_bind_manage', '/user-bind/manage', UserBindManageHandler, PRIV.PRIV_CREATE_DOMAIN);
     ctx.Route('user_bind_import', '/user-bind/import', UserBindImportHandler, PRIV.PRIV_CREATE_DOMAIN);
-    ctx.Route('user_bind', '/user-bind/:code', UserBindHandler);
+    ctx.Route('user_bind_form', '/user-bind/form', UserBindFormHandler);
+    ctx.Route('user_bind_success', '/user-bind/success', UserBindSuccessHandler, PRIV.PRIV_USER_PROFILE);
     ctx.Route('user_bind_check', '/user-bind/check', UserBindCheckHandler, PRIV.PRIV_USER_PROFILE);
-    ctx.Route('user_bind_delete', '/user-bind/delete/:code', UserBindDeleteHandler, PRIV.PRIV_CREATE_DOMAIN);
+    ctx.Route('user_bind_delete', '/user-bind/delete', UserBindDeleteHandler, PRIV.PRIV_CREATE_DOMAIN);
     
     // 使用 hook 在所有路由处理前检查本校学生绑定状态
     ctx.on('handler/before-prepare', async (h) => {
@@ -262,7 +309,7 @@ export async function apply(ctx: Context) {
                 const shouldRedirect = !excludePaths.some(path => h.request.path.startsWith(path));
                 
                 if (shouldRedirect) {
-                    h.response.redirect = '/user-bind/check';
+                    h.response.redirect = '/user-bind/form';
                     return;
                 }
             }
@@ -274,7 +321,7 @@ export async function apply(ctx: Context) {
         if (h.user && h.user._id) {
             const user = await UserModel.getById('system', h.user._id);
             if (user.isSchoolStudent && !await userBindModel.isUserBound(h.user._id)) {
-                h.response.redirect = '/user-bind/check';
+                h.response.redirect = '/user-bind/form';
             }
         }
     });
