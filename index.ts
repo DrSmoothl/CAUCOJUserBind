@@ -663,19 +663,48 @@ export async function apply(ctx: Context) {
             const rows = h.response.body.rows || [];
             const userColl = db.collection('user');
             console.log('Processing', rows.length, 'rows');
-            for (const row of rows) {
-                if (row[1] && row[1]._id) {
-                    // 直接从数据库检查 isSchoolStudent 状态和学生信息
-                    const dbUser = await userColl.findOne({ _id: row[1]._id });
-                    console.log('User', row[1]._id, 'dbUser:', {
-                        isSchoolStudent: dbUser?.isSchoolStudent,
-                        studentName: dbUser?.studentName,
-                        studentId: dbUser?.studentId
-                    });
-                    if (dbUser?.isSchoolStudent && dbUser.studentName && dbUser.studentId) {
-                        const oldName = row[1].uname;
-                        row[1].displayName = `${dbUser.studentName}(${row[1].uname})`;
-                        console.log('Set displayName for user', row[1]._id, 'from', oldName, 'to', row[1].displayName);
+            
+            // 检查 rows 的结构
+            console.log('First few rows structure:', rows.slice(0, 3).map((row, i) => ({
+                index: i,
+                length: row.length,
+                columns: row.map((col, j) => ({
+                    index: j,
+                    type: col?.type,
+                    hasUserId: !!col?._id,
+                    userId: col?._id,
+                    uname: col?.uname
+                }))
+            })));
+            
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                if (i === 0) {
+                    continue; // 跳过表头
+                }
+                
+                // 寻找用户列
+                for (let j = 0; j < row.length; j++) {
+                    const col = row[j];
+                    if (col && col._id && col.uname) {
+                        console.log('Found user column at row', i, 'col', j, ':', {
+                            _id: col._id,
+                            uname: col.uname
+                        });
+                        
+                        // 直接从数据库检查 isSchoolStudent 状态和学生信息
+                        const dbUser = await userColl.findOne({ _id: col._id });
+                        console.log('User', col._id, 'dbUser:', {
+                            isSchoolStudent: dbUser?.isSchoolStudent,
+                            studentName: dbUser?.studentName,
+                            studentId: dbUser?.studentId
+                        });
+                        
+                        if (dbUser?.isSchoolStudent && dbUser.studentName && dbUser.studentId) {
+                            const oldName = col.uname;
+                            col.displayName = `${dbUser.studentName}(${col.uname})`;
+                            console.log('Set displayName for user', col._id, 'from', oldName, 'to', col.displayName);
+                        }
                     }
                 }
             }
