@@ -512,7 +512,7 @@ export async function apply(ctx: Context) {
     ctx.Route('user_bind_manage', '/user-bind/manage', UserBindManageHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('user_bind_import', '/user-bind/import', UserBindImportHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('user_bind_user_manage', '/user-bind/user-manage', UserBindUserManageHandler, PRIV.PRIV_EDIT_SYSTEM);
-    ctx.Route('user_bind_debug', '/user-bind/debug', UserBindDebugHandler, PRIV.PRIV_EDIT_SYSTEM);
+    // ctx.Route('user_bind_debug', '/user-bind/debug', UserBindDebugHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('user_bind_form', '/user-bind', UserBindFormHandler);
     ctx.Route('user_bind_success', '/user-bind/success', UserBindSuccessHandler);
     ctx.Route('user_bind_delete', '/user-bind/delete', UserBindDeleteHandler, PRIV.PRIV_EDIT_SYSTEM);
@@ -680,8 +680,8 @@ export async function apply(ctx: Context) {
                             const dbUser = await userColl.findOne({ _id: userId });
                             
                             if (dbUser?.isSchoolStudent && dbUser.studentName && dbUser.studentId) {
-                                // 修改显示值为真实姓名，供模板使用
-                                col.value = `${dbUser.studentName}(${userName})`;
+                                // 修改显示值为学号+姓名+用户名格式，供模板使用
+                                col.value = `${dbUser.studentId}${dbUser.studentName}(${userName})`;
                             }
                         }
                     }
