@@ -555,7 +555,7 @@ export async function apply(ctx: Context) {
     ctx.Route('user_bind_delete', '/user-bind/delete', UserBindDeleteHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('user_bind_set_school_student', '/user-bind/set-school-student', UserBindSetSchoolStudentHandler, PRIV.PRIV_EDIT_SYSTEM);
     
-    // 使用 hook 在所有路由处理前检查本校学生绑定状态
+    // 使用 hook 在所有路由处理前检查本校学生绑定状态和访问权限
     ctx.on('handler/before-prepare', async (h) => {
         // 确保用户已登录且有用户信息
         if (!h.user || !h.user._id) {
@@ -563,8 +563,17 @@ export async function apply(ctx: Context) {
         }
 
         try {
-            // 更全面的路径排除，避免循环重定向和检查静态资源
             const currentPath = h.request.path;
+            
+            // 定义只有本校学生才能访问的路径
+            const schoolStudentOnlyPaths = [
+                '/training',
+                '/homework',
+                '/contest',
+                '/p'
+            ];
+            
+            // 需要排除的路径（不进行任何检查）
             const excludePaths = [
                 '/user-bind',
                 '/logout', 
@@ -602,16 +611,37 @@ export async function apply(ctx: Context) {
             const isSchoolStudent = await userBindModel.getUserSchoolStudentStatus(h.user._id);
             const isBound = await userBindModel.isUserBound(h.user._id);
             
-            // 调试日志
-            console.log(`绑定检查 - 用户: ${user.uname}, 本校学生: ${isSchoolStudent}, 已绑定: ${isBound}, 路径: ${currentPath}`);
+            // 检查是否访问本校学生专用路径
+            const isSchoolStudentOnlyPath = schoolStudentOnlyPaths.some(path => 
+                currentPath === path || currentPath.startsWith(path + '/')
+            );
             
-            // 只有被明确标记为本校学生的用户才需要强制绑定
-            if (isSchoolStudent && !isBound) {
-                console.log('执行重定向到绑定页面');
+            if (isSchoolStudentOnlyPath) {
+                // 非本校学生禁止访问
+                if (!isSchoolStudent) {
+                    console.log(`访问控制 - 用户 ${user.uname} 试图访问本校学生专用路径: ${currentPath}`);
+                    throw new ForbiddenError('此功能仅限本校学生使用，请联系管理员');
+                }
+                
+                // 本校学生但未绑定，重定向到绑定页面
+                if (!isBound) {
+                    console.log(`绑定检查 - 本校学生 ${user.uname} 未绑定，重定向到绑定页面`);
+                    h.response.redirect = '/user-bind';
+                    return;
+                }
+                
+                console.log(`访问允许 - 本校学生 ${user.uname} 访问路径: ${currentPath}`);
+            } else if (isSchoolStudent && !isBound) {
+                // 非本校学生专用路径，只检查本校学生的绑定状态
+                console.log(`绑定检查 - 本校学生 ${user.uname} 未绑定，重定向到绑定页面`);
                 h.response.redirect = '/user-bind';
                 return;
             }
         } catch (error) {
+            // 如果是权限错误，直接抛出
+            if (error instanceof ForbiddenError) {
+                throw error;
+            }
             // 如果获取用户信息失败，不执行重定向
             console.error('用户绑定检查失败:', error);
         }
