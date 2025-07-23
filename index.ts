@@ -695,7 +695,7 @@ export async function apply(ctx: Context) {
 
     // 在比赛排行榜中显示真实姓名
     ctx.on('handler/after/ContestScoreboard#get', async (h) => {
-        if (h.user && h.checkPriv(PRIV.PRIV_EDIT_SYSTEM, false)) {
+        if (h.user && h.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)) {
             const rows = h.response.body.rows || [];
             const userColl = db.collection('user');
             for (const row of rows) {
@@ -712,7 +712,7 @@ export async function apply(ctx: Context) {
 
     // 为训练、作业等其他地方也添加相似的处理
     ctx.on('handler/after/TrainingScoreboard#get', async (h) => {
-        if (h.user && h.checkPriv(PRIV.PRIV_EDIT_SYSTEM, false)) {
+        if (h.user && h.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)) {
             const rows = h.response.body.rows || [];
             const userColl = db.collection('user');
             for (const row of rows) {
@@ -728,7 +728,7 @@ export async function apply(ctx: Context) {
 
     // 为作业排行榜添加处理
     ctx.on('handler/after/HomeworkScoreboard#get', async (h) => {
-        if (h.user && h.checkPriv(PRIV.PRIV_EDIT_SYSTEM, false)) {
+        if (h.user && h.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)) {
             const rows = h.response.body.rows || [];
             const userColl = db.collection('user');
             for (const row of rows) {
@@ -744,7 +744,7 @@ export async function apply(ctx: Context) {
 
     // 为记录页面添加处理，管理员查看时显示真实姓名
     ctx.on('handler/after/RecordList#get', async (h) => {
-        if (h.user && h.checkPriv(PRIV.PRIV_EDIT_SYSTEM, false)) {
+        if (h.user && h.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)) {
             const udict = h.response.body.udict || {};
             const userColl = db.collection('user');
             
@@ -762,7 +762,7 @@ export async function apply(ctx: Context) {
 
     // 为排名页面添加处理，管理员查看时显示真实姓名
     ctx.on('handler/after/Ranking#get', async (h) => {
-        if (h.user && h.checkPriv(PRIV.PRIV_EDIT_SYSTEM, false)) {
+        if (h.user && h.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)) {
             const udocs = h.response.body.udocs || [];
             const userColl = db.collection('user');
             
