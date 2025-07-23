@@ -474,66 +474,29 @@ class UserBindUserManageHandler extends Handler {
 }
 
 // // 调试接口 - 检查当前用户状态
-// class UserBindDebugHandler extends Handler {
-//     async get(domainId: string) {
-//         if (!this.user) {
-//             this.response.body = { error: '未登录' };
-//             this.response.type = 'application/json';
-//             return;
-//         }
-
-//         try {
-//             const user = await UserModel.getById('system', this.user._id);
-//             // 直接从数据库获取 isSchoolStudent 状态
-//             const userColl = db.collection('user');
-//             const dbUser = await userColl.findOne({ _id: this.user._id });
-//             this.response.body = {
-//                 userId: user._id,
-//                 username: user.uname,
-//                 isSchoolStudent: dbUser?.isSchoolStudent,  // 使用数据库中的值
-//                 studentId: user.studentId,
-//                 studentName: user.studentName,
-//                 isBound: await userBindModel.isUserBound(this.user._id)
-//             };
-//             this.response.type = 'application/json';
-//         } catch (error: any) {
-//             this.response.body = { error: error.message };
-//             this.response.type = 'application/json';
-//         }
-//     }
-    
-//     // 添加POST方法用于测试设置功能
-//     async post(domainId: string) {
-//         this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
-//         const { userId, isSchoolStudent } = this.request.body;
+class UserBindDebugHandler extends Handler {
+    async get(domainId: string) {
+        this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
         
-//         try {
-//             const parsedUserId = parseInt(userId);
-//             const isSchoolStudentBool = isSchoolStudent === 'true';
-            
-//             console.log('测试设置本校学生:', { parsedUserId, isSchoolStudentBool });
-            
-//             await userBindModel.setUserAsSchoolStudent(parsedUserId, isSchoolStudentBool);
-            
-//             // 直接从数据库获取更新后的状态进行验证
-//             const userColl = db.collection('user');
-//             const updatedDbUser = await userColl.findOne({ _id: parsedUserId });
-//             const updatedUser = await UserModel.getById('system', parsedUserId);
-            
-//             this.response.body = {
-//                 success: true,
-//                 userId: updatedUser._id,
-//                 username: updatedUser.uname,
-//                 isSchoolStudent: updatedDbUser?.isSchoolStudent,  // 使用数据库中的实际值
-//                 message: `用户 ${updatedUser.uname} 状态已更新`
-//             };
-//             this.response.type = 'application/json';
-//         } catch (error: any) {
-//             this.response.body = { success: false, error: error.message };
-//             this.response.type = 'application/json';
-//         }
-//     }
-// }
+        const userColl = db.collection('user');
+        const users = await userColl.find().limit(10).toArray();
+        
+        this.response.body = {
+            currentUser: {
+                _id: this.user._id,
+                hasPriv: this.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)
+            },
+            sampleUsers: users.map(u => ({
+                _id: u._id,
+                uname: u.uname,
+                isSchoolStudent: u.isSchoolStudent,
+                studentId: u.studentId,
+                studentName: u.studentName
+            }))
+        };
+        this.response.type = 'application/json';
+    }
+}
 
 // 插件配置和路由
 export async function apply(ctx: Context) {
@@ -549,7 +512,7 @@ export async function apply(ctx: Context) {
     ctx.Route('user_bind_manage', '/user-bind/manage', UserBindManageHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('user_bind_import', '/user-bind/import', UserBindImportHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('user_bind_user_manage', '/user-bind/user-manage', UserBindUserManageHandler, PRIV.PRIV_EDIT_SYSTEM);
-    // ctx.Route('user_bind_debug', '/user-bind/debug', UserBindDebugHandler);
+    ctx.Route('user_bind_debug', '/user-bind/debug', UserBindDebugHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('user_bind_form', '/user-bind', UserBindFormHandler);
     ctx.Route('user_bind_success', '/user-bind/success', UserBindSuccessHandler);
     ctx.Route('user_bind_delete', '/user-bind/delete', UserBindDeleteHandler, PRIV.PRIV_EDIT_SYSTEM);
@@ -695,15 +658,24 @@ export async function apply(ctx: Context) {
 
     // 在比赛排行榜中显示真实姓名
     ctx.on('handler/after/ContestScoreboard#get', async (h) => {
+        console.log('ContestScoreboard hook triggered, user:', h.user?._id, 'hasPriv:', h.user?.hasPriv(PRIV.PRIV_EDIT_SYSTEM));
         if (h.user && h.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)) {
             const rows = h.response.body.rows || [];
             const userColl = db.collection('user');
+            console.log('Processing', rows.length, 'rows');
             for (const row of rows) {
                 if (row[1] && row[1]._id) {
                     // 直接从数据库检查 isSchoolStudent 状态和学生信息
                     const dbUser = await userColl.findOne({ _id: row[1]._id });
+                    console.log('User', row[1]._id, 'dbUser:', {
+                        isSchoolStudent: dbUser?.isSchoolStudent,
+                        studentName: dbUser?.studentName,
+                        studentId: dbUser?.studentId
+                    });
                     if (dbUser?.isSchoolStudent && dbUser.studentName && dbUser.studentId) {
+                        const oldName = row[1].uname;
                         row[1].displayName = `${dbUser.studentName}(${row[1].uname})`;
+                        console.log('Set displayName for user', row[1]._id, 'from', oldName, 'to', row[1].displayName);
                     }
                 }
             }
@@ -762,15 +734,24 @@ export async function apply(ctx: Context) {
 
     // 为排名页面添加处理，管理员查看时显示真实姓名
     ctx.on('handler/after/Ranking#get', async (h) => {
+        console.log('Ranking hook triggered, user:', h.user?._id, 'hasPriv:', h.user?.hasPriv(PRIV.PRIV_EDIT_SYSTEM));
         if (h.user && h.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)) {
             const udocs = h.response.body.udocs || [];
             const userColl = db.collection('user');
+            console.log('Processing', udocs.length, 'users in ranking');
             
             for (const udoc of udocs) {
                 if (udoc._id) {
                     const dbUser = await userColl.findOne({ _id: udoc._id });
+                    console.log('Ranking user', udoc._id, 'dbUser:', {
+                        isSchoolStudent: dbUser?.isSchoolStudent,
+                        studentName: dbUser?.studentName,
+                        studentId: dbUser?.studentId
+                    });
                     if (dbUser?.isSchoolStudent && dbUser.studentName && dbUser.studentId) {
+                        const oldName = udoc.uname;
                         udoc.displayName = `${dbUser.studentName}(${udoc.uname})`;
+                        console.log('Set displayName for ranking user', udoc._id, 'from', oldName, 'to', udoc.displayName);
                     }
                 }
             }
