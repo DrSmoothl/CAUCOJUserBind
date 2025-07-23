@@ -565,6 +565,11 @@ export async function apply(ctx: Context) {
         try {
             const currentPath = h.request.path;
             
+            // 超级管理员 root（uid=2）可以访问所有页面，无需检查
+            if (h.user._id === 2) {
+                return;
+            }
+            
             // 定义只有本校学生才能访问的路径
             const schoolStudentOnlyPaths = [
                 '/training',
@@ -654,6 +659,11 @@ export async function apply(ctx: Context) {
         }
 
         try {
+            // 超级管理员 root（uid=2）无需检查绑定状态
+            if (h.user._id === 2) {
+                return;
+            }
+            
             const user = await UserModel.getById('system', h.user._id);
             // 使用直接数据库查询获取 isSchoolStudent 状态
             const isSchoolStudent = await userBindModel.getUserSchoolStudentStatus(h.user._id);
