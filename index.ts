@@ -664,52 +664,45 @@ export async function apply(ctx: Context) {
             const userColl = db.collection('user');
             console.log('Processing', rows.length, 'rows');
             
-            // 检查 rows 的结构 - 显示更详细的信息
-            console.log('First few rows detailed structure:');
-            rows.slice(0, 3).forEach((row, i) => {
-                console.log(`Row ${i} (length: ${row.length}):`);
-                row.forEach((col, j) => {
-                    if (col && typeof col === 'object') {
-                        console.log(`  Col ${j}:`, {
-                            _id: col._id,
-                            uname: col.uname,
-                            displayName: col.displayName,
-                            type: col.type,
-                            allKeys: Object.keys(col)
-                        });
-                    } else {
-                        console.log(`  Col ${j}:`, col);
-                    }
-                });
-            });
-            
             for (let i = 0; i < rows.length; i++) {
                 const row = rows[i];
                 if (i === 0) {
                     continue; // 跳过表头
                 }
                 
-                // 寻找用户列
+                // 寻找用户列 (type === 'user')
                 for (let j = 0; j < row.length; j++) {
                     const col = row[j];
-                    if (col && col._id && col.uname) {
-                        console.log('Found user column at row', i, 'col', j, ':', {
-                            _id: col._id,
-                            uname: col.uname
+                    if (col && col.type === 'user') {
+                        console.log('Found user column at row', i, 'col', j);
+                        console.log('User column structure:', {
+                            type: col.type,
+                            value: col.value,
+                            raw: col.raw,
+                            allKeys: Object.keys(col)
                         });
                         
-                        // 直接从数据库检查 isSchoolStudent 状态和学生信息
-                        const dbUser = await userColl.findOne({ _id: col._id });
-                        console.log('User', col._id, 'dbUser:', {
-                            isSchoolStudent: dbUser?.isSchoolStudent,
-                            studentName: dbUser?.studentName,
-                            studentId: dbUser?.studentId
-                        });
-                        
-                        if (dbUser?.isSchoolStudent && dbUser.studentName && dbUser.studentId) {
-                            const oldName = col.uname;
-                            col.displayName = `${dbUser.studentName}(${col.uname})`;
-                            console.log('Set displayName for user', col._id, 'from', oldName, 'to', col.displayName);
+                        // 用户信息可能在 value 或 raw 中
+                        const userInfo = col.raw || col.value;
+                        if (userInfo && userInfo._id && userInfo.uname) {
+                            console.log('Found user info:', {
+                                _id: userInfo._id,
+                                uname: userInfo.uname
+                            });
+                            
+                            // 直接从数据库检查 isSchoolStudent 状态和学生信息
+                            const dbUser = await userColl.findOne({ _id: userInfo._id });
+                            console.log('User', userInfo._id, 'dbUser:', {
+                                isSchoolStudent: dbUser?.isSchoolStudent,
+                                studentName: dbUser?.studentName,
+                                studentId: dbUser?.studentId
+                            });
+                            
+                            if (dbUser?.isSchoolStudent && dbUser.studentName && dbUser.studentId) {
+                                const oldName = userInfo.uname;
+                                userInfo.displayName = `${dbUser.studentName}(${userInfo.uname})`;
+                                console.log('Set displayName for user', userInfo._id, 'from', oldName, 'to', userInfo.displayName);
+                            }
                         }
                     }
                 }
