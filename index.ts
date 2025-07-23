@@ -309,8 +309,81 @@ class UserBindDeleteHandler extends Handler {
 class UserBindSetSchoolStudentHandler extends Handler {
     async post(domainId: string) {
         this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
-        const { userId, isSchoolStudent } = this.request.body;
+        const { userId, isSchoolStudent, userIds } = this.request.body;
         
+        // 批量操作
+        if (userIds) {
+            console.log('批量设置本校学生 - 收到请求:', { userIds, isSchoolStudent });
+            
+            try {
+                // 解析 userIds，可能是 JSON 字符串或数组
+                let parsedUserIds: string[];
+                if (typeof userIds === 'string') {
+                    try {
+                        parsedUserIds = JSON.parse(userIds);
+                    } catch {
+                        // 如果不是 JSON，尝试按逗号分割
+                        parsedUserIds = userIds.split(',').map(id => id.trim()).filter(id => id);
+                    }
+                } else if (Array.isArray(userIds)) {
+                    parsedUserIds = userIds;
+                } else {
+                    throw new Error('无效的用户ID列表格式');
+                }
+                
+                const isSchoolStudentBool = isSchoolStudent === 'true';
+                const results: Array<{
+                    userId: number | string;
+                    username: string;
+                    success: boolean;
+                    error?: string;
+                }> = [];
+                
+                for (const uid of parsedUserIds) {
+                    try {
+                        const parsedUserId = parseInt(uid);
+                        if (isNaN(parsedUserId)) {
+                            throw new Error(`无效的用户ID: ${uid}`);
+                        }
+                        
+                        await userBindModel.setUserAsSchoolStudent(parsedUserId, isSchoolStudentBool);
+                        
+                        const user = await UserModel.getById('system', parsedUserId);
+                        results.push({
+                            userId: parsedUserId,
+                            username: user.uname,
+                            success: true
+                        });
+                    } catch (error: any) {
+                        results.push({
+                            userId: uid,
+                            username: '未知',
+                            success: false,
+                            error: error.message
+                        });
+                    }
+                }
+                
+                const successCount = results.filter(r => r.success).length;
+                const failCount = results.filter(r => !r.success).length;
+                
+                this.response.body = {
+                    success: true,
+                    message: `批量操作完成：成功 ${successCount} 个，失败 ${failCount} 个`,
+                    results,
+                    isSchoolStudent: isSchoolStudentBool
+                };
+                this.response.type = 'application/json';
+                return;
+            } catch (error: any) {
+                console.error('批量设置本校学生失败:', error);
+                this.response.body = { success: false, error: error.message };
+                this.response.type = 'application/json';
+                return;
+            }
+        }
+        
+        // 单个操作
         console.log('设置本校学生 - 收到请求:', { userId, isSchoolStudent });
         
         if (!userId) {

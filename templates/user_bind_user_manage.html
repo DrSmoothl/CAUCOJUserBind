@@ -30,8 +30,30 @@
         </form>
         
         {% if users.length %}
+        <!-- 批量操作工具栏 -->
+        <div class="batch-operations" style="margin-bottom: 15px; padding: 10px; background-color: #f5f5f5; border-radius: 4px;">
+          <div class="row">
+            <div class="medium-6 columns">
+              <label>
+                <input type="checkbox" id="selectAll" onchange="toggleSelectAll()"> 
+                全选/取消全选
+              </label>
+              <span id="selectedCount" style="margin-left: 10px; color: #666;">已选择: 0 个用户</span>
+            </div>
+            <div class="medium-6 columns text-right">
+              <button class="button button--small button--primary" onclick="batchSetSchoolStudent(true)" id="batchSetBtn" disabled>
+                批量设为本校学生
+              </button>
+              <button class="button button--small" onclick="batchSetSchoolStudent(false)" id="batchUnsetBtn" disabled>
+                批量取消本校学生
+              </button>
+            </div>
+          </div>
+        </div>
+        
         <table class="data-table">
           <colgroup>
+            <col style="width: 40px;">
             <col class="col--user-id">
             <col class="col--username">
             <col class="col--email">
@@ -41,6 +63,7 @@
           </colgroup>
           <thead>
             <tr>
+              <th style="width: 40px;">选择</th>
               <th class="col--user-id">用户ID</th>
               <th class="col--username">用户名</th>
               <th class="col--email">邮箱</th>
@@ -52,6 +75,9 @@
           <tbody>
             {% for user in users %}
             <tr>
+              <td style="width: 40px;">
+                <input type="checkbox" class="user-checkbox" value="{{ user._id }}" onchange="updateBatchButtons()">
+              </td>
               <td class="col--user-id">{{ user._id }}</td>
               <td class="col--username">
                 <a href="/user/{{ user._id }}">{{ user.uname }}</a>
@@ -115,6 +141,7 @@
 </div>
 
 <script>
+// 单个用户操作
 async function setSchoolStudent(userId, isSchoolStudent) {
     const action = isSchoolStudent ? '设为本校学生' : '取消本校学生';
     if (!confirm(`确认要${action}吗？`)) {
@@ -134,11 +161,115 @@ async function setSchoolStudent(userId, isSchoolStudent) {
         if (result.success) {
             location.reload();
         } else {
-            alert('操作失败，请稍后重试');
+            alert('操作失败：' + (result.error || '未知错误'));
         }
     } catch (error) {
         alert('操作失败：' + error.message);
     }
 }
+
+// 全选/取消全选
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.user-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+    });
+    
+    updateBatchButtons();
+}
+
+// 更新批量操作按钮状态
+function updateBatchButtons() {
+    const checkboxes = document.querySelectorAll('.user-checkbox');
+    const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+    const selectedCount = checkedBoxes.length;
+    
+    // 更新选择计数
+    document.getElementById('selectedCount').textContent = `已选择: ${selectedCount} 个用户`;
+    
+    // 更新批量操作按钮状态
+    const batchSetBtn = document.getElementById('batchSetBtn');
+    const batchUnsetBtn = document.getElementById('batchUnsetBtn');
+    
+    if (selectedCount > 0) {
+        batchSetBtn.disabled = false;
+        batchUnsetBtn.disabled = false;
+    } else {
+        batchSetBtn.disabled = true;
+        batchUnsetBtn.disabled = true;
+    }
+    
+    // 更新全选复选框状态
+    const selectAll = document.getElementById('selectAll');
+    if (selectedCount === 0) {
+        selectAll.indeterminate = false;
+        selectAll.checked = false;
+    } else if (selectedCount === checkboxes.length) {
+        selectAll.indeterminate = false;
+        selectAll.checked = true;
+    } else {
+        selectAll.indeterminate = true;
+    }
+}
+
+// 批量操作
+async function batchSetSchoolStudent(isSchoolStudent) {
+    const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+    if (checkedBoxes.length === 0) {
+        alert('请选择要操作的用户');
+        return;
+    }
+    
+    const action = isSchoolStudent ? '设为本校学生' : '取消本校学生';
+    if (!confirm(`确认要将选中的 ${checkedBoxes.length} 个用户${action}吗？`)) {
+        return;
+    }
+    
+    // 收集选中的用户ID
+    const userIds = Array.from(checkedBoxes).map(checkbox => checkbox.value);
+    
+    // 显示加载状态
+    const batchSetBtn = document.getElementById('batchSetBtn');
+    const batchUnsetBtn = document.getElementById('batchUnsetBtn');
+    const originalSetText = batchSetBtn.textContent;
+    const originalUnsetText = batchUnsetBtn.textContent;
+    
+    batchSetBtn.disabled = true;
+    batchUnsetBtn.disabled = true;
+    batchSetBtn.textContent = '操作中...';
+    batchUnsetBtn.textContent = '操作中...';
+    
+    try {
+        const response = await fetch('/user-bind/set-school-student', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `userIds=${encodeURIComponent(JSON.stringify(userIds))}&isSchoolStudent=${isSchoolStudent}`
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            alert(result.message);
+            location.reload();
+        } else {
+            alert('批量操作失败：' + (result.error || '未知错误'));
+        }
+    } catch (error) {
+        alert('批量操作失败：' + error.message);
+    } finally {
+        // 恢复按钮状态
+        batchSetBtn.textContent = originalSetText;
+        batchUnsetBtn.textContent = originalUnsetText;
+        updateBatchButtons();
+    }
+}
+
+// 页面加载时初始化
+document.addEventListener('DOMContentLoaded', function() {
+    updateBatchButtons();
+});
 </script>
 {% endblock %}
