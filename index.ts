@@ -664,18 +664,24 @@ export async function apply(ctx: Context) {
             const userColl = db.collection('user');
             console.log('Processing', rows.length, 'rows');
             
-            // 检查 rows 的结构
-            console.log('First few rows structure:', rows.slice(0, 3).map((row, i) => ({
-                index: i,
-                length: row.length,
-                columns: row.map((col, j) => ({
-                    index: j,
-                    type: col?.type,
-                    hasUserId: !!col?._id,
-                    userId: col?._id,
-                    uname: col?.uname
-                }))
-            })));
+            // 检查 rows 的结构 - 显示更详细的信息
+            console.log('First few rows detailed structure:');
+            rows.slice(0, 3).forEach((row, i) => {
+                console.log(`Row ${i} (length: ${row.length}):`);
+                row.forEach((col, j) => {
+                    if (col && typeof col === 'object') {
+                        console.log(`  Col ${j}:`, {
+                            _id: col._id,
+                            uname: col.uname,
+                            displayName: col.displayName,
+                            type: col.type,
+                            allKeys: Object.keys(col)
+                        });
+                    } else {
+                        console.log(`  Col ${j}:`, col);
+                    }
+                });
+            });
             
             for (let i = 0; i < rows.length; i++) {
                 const row = rows[i];
