@@ -682,26 +682,31 @@ export async function apply(ctx: Context) {
                             allKeys: Object.keys(col)
                         });
                         
-                        // 用户信息可能在 value 或 raw 中
-                        const userInfo = col.raw || col.value;
-                        if (userInfo && userInfo._id && userInfo.uname) {
+                        // 在比赛排行榜中，用户信息的结构是：
+                        // col.value = 用户名 (uname)
+                        // col.raw = 用户ID (_id)
+                        const userId = col.raw;
+                        const userName = col.value;
+                        
+                        if (userId && userName) {
                             console.log('Found user info:', {
-                                _id: userInfo._id,
-                                uname: userInfo.uname
+                                _id: userId,
+                                uname: userName
                             });
                             
                             // 直接从数据库检查 isSchoolStudent 状态和学生信息
-                            const dbUser = await userColl.findOne({ _id: userInfo._id });
-                            console.log('User', userInfo._id, 'dbUser:', {
+                            const dbUser = await userColl.findOne({ _id: userId });
+                            console.log('User', userId, 'dbUser:', {
                                 isSchoolStudent: dbUser?.isSchoolStudent,
                                 studentName: dbUser?.studentName,
                                 studentId: dbUser?.studentId
                             });
                             
                             if (dbUser?.isSchoolStudent && dbUser.studentName && dbUser.studentId) {
-                                const oldName = userInfo.uname;
-                                userInfo.displayName = `${dbUser.studentName}(${userInfo.uname})`;
-                                console.log('Set displayName for user', userInfo._id, 'from', oldName, 'to', userInfo.displayName);
+                                const oldName = userName;
+                                // 修改显示值为真实姓名
+                                col.value = `${dbUser.studentName}(${userName})`;
+                                console.log('Set display name for user', userId, 'from', oldName, 'to', col.value);
                             }
                         }
                     }
