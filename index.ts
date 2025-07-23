@@ -699,11 +699,78 @@ export async function apply(ctx: Context) {
             const rows = h.response.body.rows || [];
             const userColl = db.collection('user');
             for (const row of rows) {
-                if (row[1] && row[1].studentName) {
-                    // 直接从数据库检查 isSchoolStudent 状态
+                if (row[1] && row[1]._id) {
+                    // 直接从数据库检查 isSchoolStudent 状态和学生信息
                     const dbUser = await userColl.findOne({ _id: row[1]._id });
-                    if (dbUser?.isSchoolStudent) {
-                        row[1].displayName = `${row[1].studentName}(${row[1].uname})`;
+                    if (dbUser?.isSchoolStudent && dbUser.studentName && dbUser.studentId) {
+                        row[1].displayName = `${dbUser.studentName}(${row[1].uname})`;
+                    }
+                }
+            }
+        }
+    });
+
+    // 为训练、作业等其他地方也添加相似的处理
+    ctx.on('handler/after/TrainingScoreboard#get', async (h) => {
+        if (h.user && h.checkPriv(PRIV.PRIV_EDIT_SYSTEM, false)) {
+            const rows = h.response.body.rows || [];
+            const userColl = db.collection('user');
+            for (const row of rows) {
+                if (row[1] && row[1]._id) {
+                    const dbUser = await userColl.findOne({ _id: row[1]._id });
+                    if (dbUser?.isSchoolStudent && dbUser.studentName && dbUser.studentId) {
+                        row[1].displayName = `${dbUser.studentName}(${row[1].uname})`;
+                    }
+                }
+            }
+        }
+    });
+
+    // 为作业排行榜添加处理
+    ctx.on('handler/after/HomeworkScoreboard#get', async (h) => {
+        if (h.user && h.checkPriv(PRIV.PRIV_EDIT_SYSTEM, false)) {
+            const rows = h.response.body.rows || [];
+            const userColl = db.collection('user');
+            for (const row of rows) {
+                if (row[1] && row[1]._id) {
+                    const dbUser = await userColl.findOne({ _id: row[1]._id });
+                    if (dbUser?.isSchoolStudent && dbUser.studentName && dbUser.studentId) {
+                        row[1].displayName = `${dbUser.studentName}(${row[1].uname})`;
+                    }
+                }
+            }
+        }
+    });
+
+    // 为记录页面添加处理，管理员查看时显示真实姓名
+    ctx.on('handler/after/RecordList#get', async (h) => {
+        if (h.user && h.checkPriv(PRIV.PRIV_EDIT_SYSTEM, false)) {
+            const udict = h.response.body.udict || {};
+            const userColl = db.collection('user');
+            
+            for (const uid in udict) {
+                const user = udict[uid];
+                if (user._id) {
+                    const dbUser = await userColl.findOne({ _id: user._id });
+                    if (dbUser?.isSchoolStudent && dbUser.studentName && dbUser.studentId) {
+                        user.displayName = `${dbUser.studentName}(${user.uname})`;
+                    }
+                }
+            }
+        }
+    });
+
+    // 为排名页面添加处理，管理员查看时显示真实姓名
+    ctx.on('handler/after/Ranking#get', async (h) => {
+        if (h.user && h.checkPriv(PRIV.PRIV_EDIT_SYSTEM, false)) {
+            const udocs = h.response.body.udocs || [];
+            const userColl = db.collection('user');
+            
+            for (const udoc of udocs) {
+                if (udoc._id) {
+                    const dbUser = await userColl.findOne({ _id: udoc._id });
+                    if (dbUser?.isSchoolStudent && dbUser.studentName && dbUser.studentId) {
+                        udoc.displayName = `${dbUser.studentName}(${udoc.uname})`;
                     }
                 }
             }
