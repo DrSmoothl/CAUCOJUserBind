@@ -656,13 +656,11 @@ export async function apply(ctx: Context) {
         }
     });
 
-    // 在比赛排行榜中显示真实姓名
+    // 在比赛排行榜中显示真实姓名 - 现在通过模板处理
     ctx.on('handler/after/ContestScoreboard#get', async (h) => {
-        console.log('ContestScoreboard hook triggered, user:', h.user?._id, 'hasPriv:', h.user?.hasPriv(PRIV.PRIV_EDIT_SYSTEM));
         if (h.user && h.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)) {
             const rows = h.response.body.rows || [];
             const userColl = db.collection('user');
-            console.log('Processing', rows.length, 'rows');
             
             for (let i = 0; i < rows.length; i++) {
                 const row = rows[i];
@@ -674,56 +672,16 @@ export async function apply(ctx: Context) {
                 for (let j = 0; j < row.length; j++) {
                     const col = row[j];
                     if (col && col.type === 'user') {
-                        console.log('Found user column at row', i, 'col', j);
-                        console.log('User column structure:', {
-                            type: col.type,
-                            value: col.value,
-                            raw: col.raw,
-                            allKeys: Object.keys(col)
-                        });
-                        
-                        // 在比赛排行榜中，用户信息的结构是：
-                        // col.value = 用户名 (uname)
-                        // col.raw = 用户ID (_id)
                         const userId = col.raw;
                         const userName = col.value;
                         
                         if (userId && userName) {
-                            console.log('Found user info:', {
-                                _id: userId,
-                                uname: userName
-                            });
-                            
                             // 直接从数据库检查 isSchoolStudent 状态和学生信息
                             const dbUser = await userColl.findOne({ _id: userId });
-                            console.log('User', userId, 'dbUser:', {
-                                isSchoolStudent: dbUser?.isSchoolStudent,
-                                studentName: dbUser?.studentName,
-                                studentId: dbUser?.studentId
-                            });
                             
                             if (dbUser?.isSchoolStudent && dbUser.studentName && dbUser.studentId) {
-                                const oldName = userName;
-                                const displayName = `${dbUser.studentName}(${userName})`;
-                                // 修改显示值为真实姓名
-                                col.value = displayName;
-                                // 同时设置 displayName 属性供模板使用
-                                if (typeof col.raw === 'object') {
-                                    col.raw.displayName = displayName;
-                                } else {
-                                    // 如果 raw 只是用户ID，我们需要创建用户对象
-                                    col.raw = {
-                                        _id: userId,
-                                        uname: userName,
-                                        displayName: displayName
-                                    };
-                                }
-                                console.log('Set display name for user', userId, 'from', oldName, 'to', displayName);
-                                console.log('Updated col structure:', {
-                                    type: col.type,
-                                    value: col.value,
-                                    raw: col.raw
-                                });
+                                // 修改显示值为真实姓名，供模板使用
+                                col.value = `${dbUser.studentName}(${userName})`;
                             }
                         }
                     }
