@@ -704,9 +704,26 @@ export async function apply(ctx: Context) {
                             
                             if (dbUser?.isSchoolStudent && dbUser.studentName && dbUser.studentId) {
                                 const oldName = userName;
+                                const displayName = `${dbUser.studentName}(${userName})`;
                                 // 修改显示值为真实姓名
-                                col.value = `${dbUser.studentName}(${userName})`;
-                                console.log('Set display name for user', userId, 'from', oldName, 'to', col.value);
+                                col.value = displayName;
+                                // 同时设置 displayName 属性供模板使用
+                                if (typeof col.raw === 'object') {
+                                    col.raw.displayName = displayName;
+                                } else {
+                                    // 如果 raw 只是用户ID，我们需要创建用户对象
+                                    col.raw = {
+                                        _id: userId,
+                                        uname: userName,
+                                        displayName: displayName
+                                    };
+                                }
+                                console.log('Set display name for user', userId, 'from', oldName, 'to', displayName);
+                                console.log('Updated col structure:', {
+                                    type: col.type,
+                                    value: col.value,
+                                    raw: col.raw
+                                });
                             }
                         }
                     }
