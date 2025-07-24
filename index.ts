@@ -1,6 +1,6 @@
 import {
     db, Context, UserModel, Handler, NotFoundError, ForbiddenError, 
-    PRIV, Types, SettingModel, moment
+    PRIV, Types, SettingModel, moment, PERM
 } from 'hydrooj';
 
 const coll = db.collection('user_bind_invites');
@@ -473,30 +473,30 @@ class UserBindUserManageHandler extends Handler {
     }
 }
 
-// // 调试接口 - 检查当前用户状态
-class UserBindDebugHandler extends Handler {
-    async get(domainId: string) {
-        this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
+// // // 调试接口 - 检查当前用户状态
+// class UserBindDebugHandler extends Handler {
+//     async get(domainId: string) {
+//         this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
         
-        const userColl = db.collection('user');
-        const users = await userColl.find().limit(10).toArray();
+//         const userColl = db.collection('user');
+//         const users = await userColl.find().limit(10).toArray();
         
-        this.response.body = {
-            currentUser: {
-                _id: this.user._id,
-                hasPriv: this.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)
-            },
-            sampleUsers: users.map(u => ({
-                _id: u._id,
-                uname: u.uname,
-                isSchoolStudent: u.isSchoolStudent,
-                studentId: u.studentId,
-                studentName: u.studentName
-            }))
-        };
-        this.response.type = 'application/json';
-    }
-}
+//         this.response.body = {
+//             currentUser: {
+//                 _id: this.user._id,
+//                 hasPriv: this.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)
+//             },
+//             sampleUsers: users.map(u => ({
+//                 _id: u._id,
+//                 uname: u.uname,
+//                 isSchoolStudent: u.isSchoolStudent,
+//                 studentId: u.studentId,
+//                 studentName: u.studentName
+//             }))
+//         };
+//         this.response.type = 'application/json';
+//     }
+// }
 
 // 插件配置和路由
 export async function apply(ctx: Context) {
