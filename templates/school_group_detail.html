@@ -250,6 +250,68 @@
   font-size: 14px;
   opacity: 0.9;
 }
+
+/* 编辑表单样式 */
+.edit-form {
+  display: none;
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.edit-form input {
+  margin: 4px;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.edit-form button {
+  margin: 4px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.edit-form .save-btn {
+  background: #10b981;
+  color: white;
+}
+
+.edit-form .cancel-btn {
+  background: #6b7280;
+  color: white;
+}
+
+/* 操作按钮样式 */
+.action-btn {
+  display: inline-block;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  text-decoration: none;
+  cursor: pointer;
+  margin: 2px;
+}
+
+.action-btn--edit {
+  background: #3b82f6;
+  color: white;
+}
+
+.action-btn--delete {
+  background: #ef4444;
+  color: white;
+}
+
+.action-btn:hover {
+  opacity: 0.8;
+}
 </style>
 
 <div class="section">
@@ -369,11 +431,12 @@
             <th>绑定状态</th>
             <th>绑定用户ID</th>
             <th>绑定时间</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
           {% for member in school.members %}
-          <tr>
+          <tr id="member-{{ member.studentId }}">
             <td>
               {% if not member.bound %}
               <input type="checkbox" name="selectedMembers" value="{{ member.studentId }}">
@@ -381,8 +444,22 @@
               <span style="color: #9ca3af; font-size: 12px;">已绑定</span>
               {% endif %}
             </td>
-            <td><strong>{{ member.studentId }}</strong></td>
-            <td>{{ member.realName }}</td>
+            <td>
+              <span class="display-mode">{{ member.studentId }}</span>
+              <div class="edit-form" id="edit-{{ member.studentId }}">
+                <form method="post" action="/school-group/detail/{{ school._id }}">
+                  <input type="hidden" name="action" value="edit_member">
+                  <input type="hidden" name="studentId" value="{{ member.studentId }}">
+                  <input type="text" name="newStudentId" value="{{ member.studentId }}" placeholder="新学号" required>
+                  <input type="text" name="newRealName" value="{{ member.realName }}" placeholder="新姓名" required>
+                  <button type="submit" class="save-btn">保存</button>
+                  <button type="button" class="cancel-btn" onclick="cancelEdit('{{ member.studentId }}')">取消</button>
+                </form>
+              </div>
+            </td>
+            <td>
+              <span class="display-mode">{{ member.realName }}</span>
+            </td>
             <td>
               {% if member.bound %}
                 <span class="badge badge--success">✓ 已绑定</span>
@@ -404,6 +481,19 @@
                 <span style="color: #9ca3af;">-</span>
               {% endif %}
             </td>
+            <td>
+              <button type="button" class="action-btn action-btn--edit" onclick="editMember('{{ member.studentId }}')">
+                ✏️ 编辑
+              </button>
+              <form method="post" action="/school-group/detail/{{ school._id }}" style="display: inline;">
+                <input type="hidden" name="action" value="delete_member">
+                <input type="hidden" name="studentId" value="{{ member.studentId }}">
+                <button type="submit" class="action-btn action-btn--delete" 
+                        onclick="return confirm('确定要删除成员「{{ member.realName }}({{ member.studentId }})」吗？\n{% if member.bound %}该成员已绑定，删除后将自动解绑。{% endif %}\n\n此操作不可撤销！')">
+                  🗑️ 删除
+                </button>
+              </form>
+            </td>
           </tr>
           {% endfor %}
         </tbody>
@@ -423,6 +513,28 @@
 function toggleAll(checkbox) {
   const checkboxes = document.querySelectorAll('input[name="selectedMembers"]');
   checkboxes.forEach(cb => cb.checked = checkbox.checked);
+}
+
+function editMember(studentId) {
+  // 隐藏显示模式
+  const row = document.getElementById('member-' + studentId);
+  const displayElements = row.querySelectorAll('.display-mode');
+  displayElements.forEach(el => el.style.display = 'none');
+  
+  // 显示编辑表单
+  const editForm = document.getElementById('edit-' + studentId);
+  editForm.style.display = 'block';
+}
+
+function cancelEdit(studentId) {
+  // 显示显示模式
+  const row = document.getElementById('member-' + studentId);
+  const displayElements = row.querySelectorAll('.display-mode');
+  displayElements.forEach(el => el.style.display = '');
+  
+  // 隐藏编辑表单
+  const editForm = document.getElementById('edit-' + studentId);
+  editForm.style.display = 'none';
 }
 </script>
 {% endblock %}

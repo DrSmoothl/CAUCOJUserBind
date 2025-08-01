@@ -752,6 +752,205 @@ const userBindModel = {
         }
         
         return result;
+    },
+
+    // 删除学校组（包括解绑所有成员、删除相关用户组）
+    async deleteSchoolGroup(schoolGroupId: any): Promise<void> {
+        console.log('deleteSchoolGroup: 删除学校组ID:', schoolGroupId);
+        
+        const school = await this.getSchoolGroupById(schoolGroupId);
+        if (!school) {
+            throw new Error('学校组不存在');
+        }
+
+        // 1. 解绑所有已绑定的成员
+        if (school.members && school.members.length > 0) {
+            const boundMembers = school.members.filter(m => m.bound && m.boundBy);
+            
+            for (const member of boundMembers) {
+                if (member.boundBy) {
+                    try {
+                        // 从用户文档中移除学校组信息
+                        await db.collection('user').updateOne(
+                            { _id: member.boundBy },
+                            { 
+                                $unset: { 
+                                    realName: '',
+                                    studentId: ''
+                                }
+                            }
+                        );
+                        console.log(`deleteSchoolGroup: 解绑用户 ${member.boundBy} (${member.studentId})`);
+                    } catch (error) {
+                        console.log(`deleteSchoolGroup: 解绑用户 ${member.boundBy} 失败:`, error);
+                    }
+                }
+            }
+        }
+
+        // 2. 删除属于该学校的所有用户组
+        const userGroups = await userGroupsColl.find({ parentSchoolId: school._id }).toArray();
+        for (const userGroup of userGroups) {
+            console.log(`deleteSchoolGroup: 删除用户组 ${userGroup.name}`);
+            
+            // 解绑用户组中的所有已绑定学生
+            if (userGroup.students && userGroup.students.length > 0) {
+                const boundStudents = userGroup.students.filter(s => s.bound && s.boundBy);
+                
+                for (const student of boundStudents) {
+                    if (student.boundBy) {
+                        try {
+                            // 只清除学生信息，不操作不存在的字段
+                            await db.collection('user').updateOne(
+                                { _id: student.boundBy },
+                                { 
+                                    $unset: { 
+                                        realName: '',
+                                        studentId: ''
+                                    }
+                                }
+                            );
+                            console.log(`deleteSchoolGroup: 从用户组解绑用户 ${student.boundBy} (${student.studentId})`);
+                        } catch (error) {
+                            console.log(`deleteSchoolGroup: 从用户组解绑用户 ${student.boundBy} 失败:`, error);
+                        }
+                    }
+                }
+            }
+            
+            // 删除用户组
+            await userGroupsColl.deleteOne({ _id: userGroup._id });
+        }
+
+        // 3. 删除学校组
+        await schoolGroupsColl.deleteOne({ _id: school._id });
+        console.log(`deleteSchoolGroup: 学校组 ${school.name} 删除完成`);
+    },
+
+    // 编辑学校组成员信息
+    async editSchoolGroupMember(schoolGroupId: any, oldStudentId: string, newStudentId: string, newRealName: string): Promise<void> {
+        console.log('editSchoolGroupMember: 编辑成员信息', { schoolGroupId, oldStudentId, newStudentId, newRealName });
+        
+        const school = await this.getSchoolGroupById(schoolGroupId);
+        if (!school) {
+            throw new Error('学校组不存在');
+        }
+
+        const member = school.members?.find(m => m.studentId === oldStudentId);
+        if (!member) {
+            throw new Error('成员不存在');
+        }
+
+        // 如果学号发生变化，检查新学号是否已存在
+        if (oldStudentId !== newStudentId) {
+            const existingMember = school.members?.find(m => m.studentId === newStudentId);
+            if (existingMember) {
+                throw new Error('新学号已存在');
+            }
+        }
+
+        // 更新学校组中的成员信息
+        await schoolGroupsColl.updateOne(
+            { _id: school._id, 'members.studentId': oldStudentId },
+            { 
+                $set: { 
+                    'members.$.studentId': newStudentId,
+                    'members.$.realName': newRealName
+                } 
+            }
+        );
+
+        // 如果成员已绑定，同时更新用户信息
+        if (member.bound && member.boundBy) {
+            await db.collection('user').updateOne(
+                { _id: member.boundBy },
+                { 
+                    $set: { 
+                        studentId: newStudentId,
+                        realName: newRealName
+                    }
+                }
+            );
+        }
+
+        // 同时更新相关用户组中的学生信息
+        const userGroups = await userGroupsColl.find({ parentSchoolId: school._id }).toArray();
+        for (const userGroup of userGroups) {
+            const student = userGroup.students?.find(s => s.studentId === oldStudentId);
+            if (student) {
+                await userGroupsColl.updateOne(
+                    { _id: userGroup._id, 'students.studentId': oldStudentId },
+                    { 
+                        $set: { 
+                            'students.$.studentId': newStudentId,
+                            'students.$.realName': newRealName
+                        } 
+                    }
+                );
+            }
+        }
+
+        console.log('editSchoolGroupMember: 成员信息编辑完成');
+    },
+
+    // 删除学校组成员（包括解绑操作）
+    async deleteSchoolGroupMember(schoolGroupId: any, studentId: string): Promise<void> {
+        console.log('deleteSchoolGroupMember: 删除成员', { schoolGroupId, studentId });
+        
+        const school = await this.getSchoolGroupById(schoolGroupId);
+        if (!school) {
+            throw new Error('学校组不存在');
+        }
+
+        const member = school.members?.find(m => m.studentId === studentId);
+        if (!member) {
+            throw new Error('成员不存在');
+        }
+
+        // 如果成员已绑定，先解绑
+        if (member.bound && member.boundBy) {
+            await db.collection('user').updateOne(
+                { _id: member.boundBy },
+                { 
+                    $unset: { 
+                        realName: '',
+                        studentId: ''
+                    }
+                }
+            );
+            console.log(`deleteSchoolGroupMember: 解绑用户 ${member.boundBy} (${studentId})`);
+        }
+
+        // 从学校组中移除成员
+        await schoolGroupsColl.updateOne(
+            { _id: school._id },
+            { $pull: { members: { studentId: studentId } } }
+        );
+
+        // 从相关用户组中移除学生
+        const userGroups = await userGroupsColl.find({ parentSchoolId: school._id }).toArray();
+        for (const userGroup of userGroups) {
+            const student = userGroup.students?.find(s => s.studentId === studentId);
+            if (student) {
+                // 如果学生已绑定，解绑
+                if (student.bound && student.boundBy) {
+                    await db.collection('user').updateOne(
+                        { _id: student.boundBy },
+                        { 
+                            $unset: { realName: '', studentId: '' }
+                        }
+                    );
+                }
+                
+                // 从用户组中移除学生
+                await userGroupsColl.updateOne(
+                    { _id: userGroup._id },
+                    { $pull: { students: { studentId: studentId } } }
+                );
+            }
+        }
+
+        console.log(`deleteSchoolGroupMember: 成员 ${studentId} 删除完成`);
     }
 };
 
@@ -766,6 +965,36 @@ class SchoolGroupManageHandler extends Handler {
         
         this.response.template = 'school_group_manage.html';
         this.response.body = { schools, total, pageCount, page };
+    }
+
+    async post(domainId: string) {
+        this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
+        const { action, schoolId } = this.request.body;
+        
+        try {
+            if (action === 'delete_school') {
+                if (!schoolId) {
+                    throw new Error('学校组ID无效');
+                }
+                
+                await userBindModel.deleteSchoolGroup(schoolId);
+                this.response.body = { success: true, message: '学校组删除成功' };
+            } else {
+                throw new Error('未知操作');
+            }
+        } catch (error: any) {
+            const page = +(this.request.query.page || '1');
+            const { schools, total, pageCount } = await userBindModel.getSchoolGroups(page);
+            
+            this.response.template = 'school_group_manage.html';
+            this.response.body = { 
+                schools, 
+                total, 
+                pageCount, 
+                page,
+                error: error.message 
+            };
+        }
     }
 }
 
@@ -795,7 +1024,7 @@ class SchoolGroupDetailHandler extends Handler {
     async post(domainId: string) {
         this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
         const { schoolId } = this.request.params;
-        const { action, membersData, selectedMembers } = this.request.body;
+        const { action, membersData, selectedMembers, studentId, newStudentId, newRealName } = this.request.body;
         
         if (!schoolId) {
             throw new NotFoundError('学校组ID无效');
@@ -824,13 +1053,29 @@ class SchoolGroupDetailHandler extends Handler {
                 await userBindModel.addSchoolGroupMembers(schoolId, members);
                 
             } else if (action === 'remove_members') {
-                // 移除成员
+                // 移除成员（旧版本，只能删除未绑定的）
                 if (!selectedMembers || selectedMembers.length === 0) {
                     throw new Error('请选择要删除的成员');
                 }
                 
                 const studentIds = Array.isArray(selectedMembers) ? selectedMembers : [selectedMembers];
                 await userBindModel.removeSchoolGroupMembers(schoolId, studentIds);
+                
+            } else if (action === 'edit_member') {
+                // 编辑成员信息
+                if (!studentId || !newStudentId || !newRealName) {
+                    throw new Error('请提供完整的编辑信息');
+                }
+                
+                await userBindModel.editSchoolGroupMember(schoolId, studentId, newStudentId, newRealName);
+                
+            } else if (action === 'delete_member') {
+                // 删除成员（支持已绑定的成员）
+                if (!studentId) {
+                    throw new Error('请提供要删除的成员学号');
+                }
+                
+                await userBindModel.deleteSchoolGroupMember(schoolId, studentId);
             }
 
             this.response.redirect = `/school-group/detail/${schoolId}`;

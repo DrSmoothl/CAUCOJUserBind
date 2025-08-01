@@ -89,6 +89,29 @@
   border-radius: 6px;
 }
 
+.button--danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  padding: 6px 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.button--danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
 /* 美化表格 */
 .data-table {
   border-radius: 8px;
@@ -181,6 +204,14 @@
   </div>
   
   <div class="section__body">
+    {% if error %}
+    <div class="alert alert--error">{{ error }}</div>
+    {% endif %}
+    
+    {% if success %}
+    <div class="alert alert--success">{{ message }}</div>
+    {% endif %}
+    
     {% if schools|length > 0 %}
     <table class="data-table">
       <thead>
@@ -201,6 +232,14 @@
           <td>{{ school.members|length if school.members else 0 }} 人</td>
           <td>
             <a href="/school-group/detail/{{ school._id }}" class="button button--small">管理成员</a>
+            <form method="post" style="display: inline; margin-left: 8px;">
+              <input type="hidden" name="action" value="delete_school">
+              <input type="hidden" name="schoolId" value="{{ school._id }}">
+              <button type="submit" class="button--danger" 
+                      onclick="return confirm('确定要删除学校组「{{ school.name }}」吗？\n\n删除操作将：\n1. 解绑所有已绑定成员\n2. 删除学校下的所有用户组\n3. 永久删除学校组\n\n此操作不可撤销！')">
+                🗑️ 删除
+              </button>
+            </form>
           </td>
         </tr>
         {% endfor %}
