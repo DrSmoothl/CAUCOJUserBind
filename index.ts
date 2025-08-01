@@ -978,17 +978,23 @@ const userBindModel = {
 
     // 检查用户是否有参加比赛的权限
     async checkContestPermission(userId: number, contestId: any): Promise<{ allowed: boolean; reason?: string }> {
+        console.log('====== 开始比赛权限检查 ======');
+        console.log('checkContestPermission: 用户ID:', userId, '类型:', typeof userId);
+        console.log('checkContestPermission: 比赛ID:', contestId, '类型:', typeof contestId);
+        
         try {
             const documentColl = db.collection('document');
             let contest: any = null;
             
             // 尝试多种查询方式
             try {
+                console.log('checkContestPermission: 尝试直接查询比赛...');
                 // 方式1: 直接查询
                 contest = await documentColl.findOne({ 
                     _id: contestId,
                     docType: 30 // 比赛文档类型
                 });
+                console.log('checkContestPermission: 直接查询结果:', contest ? `找到比赛: ${contest.title}` : '未找到');
             } catch (error) {
                 console.log('checkContestPermission: 直接查询失败:', error);
             }
@@ -996,6 +1002,7 @@ const userBindModel = {
             // 方式2: 如果直接查询失败，尝试字符串匹配
             if (!contest) {
                 try {
+                    console.log('checkContestPermission: 直接查询失败，尝试字符串匹配...');
                     const allContests = await documentColl.find({ docType: 30 }).toArray();
                     console.log('checkContestPermission: 总共有', allContests.length, '个比赛文档');
                     
@@ -1020,26 +1027,42 @@ const userBindModel = {
             }
             
             if (!contest) {
+                console.log('checkContestPermission: 比赛不存在，返回拒绝访问');
                 return { allowed: false, reason: '比赛不存在' };
             }
 
+            console.log('checkContestPermission: 找到比赛:', contest.title);
+            console.log('checkContestPermission: 比赛权限配置:', JSON.stringify(contest.userBindPermission, null, 2));
+            
             const permission = contest.userBindPermission;
             
             // 如果未启用权限控制，允许所有用户参加
             if (!permission || !permission.enabled) {
+                console.log('checkContestPermission: 权限控制未启用，允许所有用户参加');
                 return { allowed: true };
             }
+
+            console.log('checkContestPermission: 权限控制已启用，模式:', permission.mode);
+            console.log('checkContestPermission: 允许的组列表:', permission.allowedGroups);
 
             const userColl = db.collection('user');
             const dbUser = await userColl.findOne({ _id: userId });
             
             if (!dbUser) {
+                console.log('checkContestPermission: 用户不存在');
                 return { allowed: false, reason: '用户不存在' };
             }
 
+            console.log('checkContestPermission: 用户信息:');
+            console.log('  - 用户名:', dbUser.uname);
+            console.log('  - 学校组ID:', dbUser.parentSchoolId);
+            console.log('  - 用户组ID:', dbUser.parentUserGroupId);
+
             if (permission.mode === 'school') {
+                console.log('checkContestPermission: 进入学校组权限检查模式');
                 // 学校组模式
                 if (!dbUser.parentSchoolId || dbUser.parentSchoolId.length === 0) {
+                    console.log('checkContestPermission: 用户不属于任何学校组');
                     return { allowed: false, reason: '您不属于任何学校组' };
                 }
 
@@ -1047,17 +1070,25 @@ const userBindModel = {
                 const userSchoolIds = dbUser.parentSchoolId.map((id: any) => id.toString());
                 const allowedSchoolIds = permission.allowedGroups.map((id: string) => id.toString());
                 
+                console.log('checkContestPermission: 用户的学校组ID (字符串):', userSchoolIds);
+                console.log('checkContestPermission: 允许的学校组ID (字符串):', allowedSchoolIds);
+                
                 const hasPermission = userSchoolIds.some((schoolId: string) => 
                     allowedSchoolIds.includes(schoolId)
                 );
 
+                console.log('checkContestPermission: 学校组权限检查结果:', hasPermission);
+
                 if (!hasPermission) {
+                    console.log('checkContestPermission: 用户所在学校组无权参加此比赛');
                     return { allowed: false, reason: '您所在的学校组无权参加此比赛' };
                 }
                 
             } else if (permission.mode === 'user_group') {
+                console.log('checkContestPermission: 进入用户组权限检查模式');
                 // 用户组模式
                 if (!dbUser.parentUserGroupId || dbUser.parentUserGroupId.length === 0) {
+                    console.log('checkContestPermission: 用户不属于任何用户组');
                     return { allowed: false, reason: '您不属于任何用户组' };
                 }
 
@@ -1065,19 +1096,28 @@ const userBindModel = {
                 const userGroupIds = dbUser.parentUserGroupId.map((id: any) => id.toString());
                 const allowedGroupIds = permission.allowedGroups.map((id: string) => id.toString());
                 
+                console.log('checkContestPermission: 用户的用户组ID (字符串):', userGroupIds);
+                console.log('checkContestPermission: 允许的用户组ID (字符串):', allowedGroupIds);
+                
                 const hasPermission = userGroupIds.some((groupId: string) => 
                     allowedGroupIds.includes(groupId)
                 );
 
+                console.log('checkContestPermission: 用户组权限检查结果:', hasPermission);
+
                 if (!hasPermission) {
+                    console.log('checkContestPermission: 用户所在用户组无权参加此比赛');
                     return { allowed: false, reason: '您所在的用户组无权参加此比赛' };
                 }
             }
 
+            console.log('checkContestPermission: 权限检查通过，允许访问');
             return { allowed: true };
         } catch (error) {
-            console.error('检查比赛权限失败:', error);
+            console.error('checkContestPermission: 检查比赛权限失败:', error);
             return { allowed: false, reason: '权限检查失败' };
+        } finally {
+            console.log('====== 比赛权限检查结束 ======');
         }
     }
 };
@@ -2131,65 +2171,102 @@ export async function apply(ctx: Context) {
 
     // 比赛参赛权限检查
     ctx.on('handler/before/ContestDetail#get', async (h) => {
+        console.log('===== 比赛页面访问权限检查 =====');
+        console.log('ContestDetail#get hook: 用户:', h.user?._id, '路径:', h.request.path);
+        
         if (!h.user || !h.user._id) {
+            console.log('ContestDetail#get hook: 用户未登录，跳过检查');
             return;
         }
 
         try {
             const contestId = h.request.params.tid || h.request.params.contestId;
+            console.log('ContestDetail#get hook: 比赛ID:', contestId);
+            
             if (!contestId) {
+                console.log('ContestDetail#get hook: 没有比赛ID，跳过检查');
                 return;
             }
 
             // 超级管理员跳过权限检查
             if (h.user._id === 2 || h.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)) {
+                console.log('ContestDetail#get hook: 超级管理员，跳过权限检查');
                 return;
             }
 
+            console.log('ContestDetail#get hook: 开始权限检查...');
             const permissionCheck = await userBindModel.checkContestPermission(h.user._id, contestId);
+            console.log('ContestDetail#get hook: 权限检查结果:', permissionCheck);
             
             if (!permissionCheck.allowed) {
-                h.response.body = h.response.body || {};
-                h.response.body.contestPermissionError = permissionCheck.reason;
-                h.response.body.showPermissionError = true;
+                console.log('ContestDetail#get hook: 权限不足，抛出ForbiddenError');
+                throw new ForbiddenError(permissionCheck.reason || '您无权访问此比赛');
             }
+            
+            console.log('ContestDetail#get hook: 权限检查通过');
         } catch (error) {
-            console.error('比赛权限检查失败:', error);
+            if (error instanceof ForbiddenError) {
+                console.log('ContestDetail#get hook: 抛出权限错误:', error.message);
+                throw error;
+            }
+            console.error('ContestDetail#get hook: 权限检查失败:', error);
+        } finally {
+            console.log('===== 比赛页面访问权限检查结束 =====');
         }
     });
 
     // 比赛报名权限检查
     ctx.on('handler/before/ContestDetail#post', async (h) => {
+        console.log('===== 比赛报名/操作权限检查 =====');
+        console.log('ContestDetail#post hook: 用户:', h.user?._id, '路径:', h.request.path);
+        
         if (!h.user || !h.user._id) {
+            console.log('ContestDetail#post hook: 用户未登录，跳过检查');
             return;
         }
 
         try {
             const contestId = h.request.params.tid || h.request.params.contestId;
+            console.log('ContestDetail#post hook: 比赛ID:', contestId);
+            
             if (!contestId) {
+                console.log('ContestDetail#post hook: 没有比赛ID，跳过检查');
                 return;
             }
 
             // 超级管理员跳过权限检查
             if (h.user._id === 2 || h.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)) {
+                console.log('ContestDetail#post hook: 超级管理员，跳过权限检查');
                 return;
             }
 
             const action = h.request.body.operation || h.request.body.action;
+            console.log('ContestDetail#post hook: 操作类型:', action);
+            console.log('ContestDetail#post hook: 请求体:', JSON.stringify(h.request.body, null, 2));
             
             // 只对报名操作进行权限检查
             if (action === 'attend' || action === 'register') {
+                console.log('ContestDetail#post hook: 检查', action, '操作权限...');
                 const permissionCheck = await userBindModel.checkContestPermission(h.user._id, contestId);
+                console.log('ContestDetail#post hook: 权限检查结果:', permissionCheck);
                 
                 if (!permissionCheck.allowed) {
+                    console.log('ContestDetail#post hook: 权限不足，抛出ForbiddenError');
                     throw new ForbiddenError(permissionCheck.reason || '您无权参加此比赛');
                 }
+                
+                console.log('ContestDetail#post hook: 权限检查通过');
+            } else {
+                console.log('ContestDetail#post hook: 非报名操作，跳过权限检查');
             }
         } catch (error) {
             if (error instanceof ForbiddenError) {
+                console.log('ContestDetail#post hook: 抛出权限错误:', error.message);
                 throw error;
             }
-            console.error('比赛报名权限检查失败:', error);
+            console.error('ContestDetail#post hook: 权限检查失败:', error);
+        } finally {
+            console.log('===== 比赛报名/操作权限检查结束 =====');
         }
     });
 
