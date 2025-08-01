@@ -37,6 +37,7 @@ interface SchoolGroup {
         boundBy?: number;
         boundAt?: Date;
     }>;
+    extraInfo: Array<any>;
 }
 
 interface BindToken {
