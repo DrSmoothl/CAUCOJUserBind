@@ -542,20 +542,12 @@ const userBindModel = {
         // 方式2: 尝试作为ObjectId查询
         if (!result && typeof schoolGroupId === 'string' && schoolGroupId.match(/^[0-9a-fA-F]{24}$/)) {
             try {
-                // 使用数据库驱动内部的ObjectId
-                const collection = schoolGroupsColl as any;
-                const ObjectId = collection.s?.db?.s?.client?.topology?.s?.options?.srvHost ? 
-                    require('mongodb').ObjectId : 
-                    collection.s?.db?.s?.pkFactory || 
-                    (() => { throw new Error('ObjectId not found'); });
-                
-                if (typeof ObjectId === 'function') {
-                    const objId = new ObjectId(schoolGroupId);
-                    result = await schoolGroupsColl.findOne({ _id: objId });
-                    console.log('getSchoolGroupById: ObjectId查询结果:', result);
-                }
+                // 使用字符串匹配的方式，因为MongoDB驱动会自动处理ObjectId转换
+                const allResults = await schoolGroupsColl.find().toArray();
+                result = allResults.find(school => school._id.toString() === schoolGroupId) || null;
+                console.log('getSchoolGroupById: 字符串匹配查询结果:', result);
             } catch (error) {
-                console.log('getSchoolGroupById: ObjectId查询失败:', error);
+                console.log('getSchoolGroupById: 字符串匹配查询失败:', error);
             }
         }
         
