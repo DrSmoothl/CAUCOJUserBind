@@ -1,76 +1,300 @@
 {% extends "layout/basic.html" %}
 {% block title %}学校组管理{% endblock %}
 
+{% block head %}
+<style>
+.bind-management {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  padding: 2rem 0;
+}
+
+.management-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.page-header {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.page-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0 0 0.5rem 0;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.page-subtitle {
+  font-size: 1.1rem;
+  color: #718096;
+  margin: 0;
+}
+
+.action-button {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+}
+
+.action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(79, 172, 254, 0.6);
+  text-decoration: none;
+  color: white;
+}
+
+.schools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.school-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.school-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.school-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+.school-name {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.school-name::before {
+  content: '🏫';
+  font-size: 1.2rem;
+}
+
+.school-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.info-item {
+  padding: 0.8rem;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 10px;
+  border-left: 3px solid #667eea;
+}
+
+.info-label {
+  font-size: 0.85rem;
+  color: #718096;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+}
+
+.info-value {
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 0.9rem;
+}
+
+.school-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-detail {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-detail:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  text-decoration: none;
+  color: white;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.empty-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+}
+
+.empty-subtitle {
+  color: #718096;
+  margin-bottom: 2rem;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+}
+
+.pagination a, .pagination span {
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #667eea;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  transition: all 0.3s ease;
+}
+
+.pagination a:hover {
+  background: #667eea;
+  color: white;
+  text-decoration: none;
+}
+
+.pagination .current {
+  background: #667eea;
+  color: white;
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="section">
-  <div class="section__header">
-    <h1 class="section__title">学校组管理</h1>
-    <div class="section__tools">
-      <a href="/school-group/create" class="button button--primary">
-        <span class="icon icon-add"></span> 创建学校组
-      </a>
+<div class="bind-management">
+  <div class="management-container">
+    <div class="page-header">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h1 class="page-title">学校组管理</h1>
+          <p class="page-subtitle">管理所有学校组，创建绑定链接，查看成员详情</p>
+        </div>
+        <a href="/school-group/create" class="action-button">
+          <span style="font-size: 1.2rem;">+</span> 创建学校组
+        </a>
+      </div>
     </div>
-  </div>
-  
-  <div class="section__body">
+    
     {% if schools|length > 0 %}
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>学校名称</th>
-          <th>创建时间</th>
-          <th>创建者</th>
-          <th>操作</th>
-        </tr>
-      </thead>
-      <tbody>
+      <div class="schools-grid">
         {% for school in schools %}
-        <tr>
-          <td>{{ school.name }}</td>
-          <td>{{ school.createdAt }}</td>
-          <td>{{ school.createdBy }}</td>
-          <td>
-            <a href="/school-group/detail/{{ school._id }}" class="button button--small">详情管理</a>
-            <a href="#" class="button button--small button--text" 
-               onclick="showBindToken('{{ school._id }}')">
-              查看绑定链接
+        <div class="school-card">
+          <h3 class="school-name">{{ school.name }}</h3>
+          
+          <div class="school-info">
+            <div class="info-item">
+              <div class="info-label">创建时间</div>
+              <div class="info-value">{{ school.createdAt.strftime('%Y-%m-%d %H:%M') if school.createdAt else '未知' }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">成员数量</div>
+              <div class="info-value">{{ school.members|length if school.members else 0 }} 人</div>
+            </div>
+          </div>
+          
+          <div class="school-actions">
+            <a href="/school-group/detail/{{ school._id }}" class="btn-detail">
+              管理成员
             </a>
-          </td>
-        </tr>
+          </div>
+        </div>
         {% endfor %}
-      </tbody>
-    </table>
-    
-    {% if pageCount > 1 %}
-    <div class="pagination">
-      {% for i in range(1, pageCount + 1) %}
-        {% if i == page %}
-          <span class="pagination__item pagination__item--current">{{ i }}</span>
-        {% else %}
-          <a href="?page={{ i }}" class="pagination__item">{{ i }}</a>
+      </div>
+      
+      {% if pageCount > 1 %}
+      <div class="pagination">
+        {% if page > 1 %}
+          <a href="?page={{ page - 1 }}">&laquo; 上一页</a>
         {% endif %}
-      {% endfor %}
-    </div>
-    {% endif %}
-    
+        
+        {% for p in range(1, pageCount + 1) %}
+          {% if p == page %}
+            <span class="current">{{ p }}</span>
+          {% else %}
+            <a href="?page={{ p }}">{{ p }}</a>
+          {% endif %}
+        {% endfor %}
+        
+        {% if page < pageCount %}
+          <a href="?page={{ page + 1 }}">下一页 &raquo;</a>
+        {% endif %}
+      </div>
+      {% endif %}
     {% else %}
-    <div class="empty">
-      <div class="empty__icon">
-        <span class="icon icon-school"></span>
+      <div class="empty-state">
+        <div class="empty-icon">🏫</div>
+        <h2 class="empty-title">还没有学校组</h2>
+        <p class="empty-subtitle">创建第一个学校组来开始管理学生绑定</p>
+        <a href="/school-group/create" class="action-button">
+          <span style="font-size: 1.2rem;">+</span> 创建学校组
+        </a>
       </div>
-      <div class="empty__text">
-        <p>暂无学校组</p>
-        <p><a href="/school-group/create">点击创建第一个学校组</a></p>
-      </div>
-    </div>
     {% endif %}
   </div>
 </div>
-
-<script>
-function showBindToken(schoolId) {
-  // TODO: 实现显示绑定令牌的功能
-  alert('显示学校组绑定链接功能待实现');
-}
-</script>
 {% endblock %}

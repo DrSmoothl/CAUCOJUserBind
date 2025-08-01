@@ -91,7 +91,8 @@ const userBindModel = {
             name,
             createdAt: new Date(),
             createdBy,
-            members: membersData
+            members: membersData,
+            extraInfo: []
         });
         
         return result.insertedId;
