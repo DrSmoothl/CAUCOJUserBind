@@ -373,9 +373,18 @@ const userBindModel = {
         );
 
         console.log('bindUserToSchoolGroup: 开始更新学校组成员状态');
-        // 更新学校组中的成员状态
-        await schoolGroupsColl.updateOne(
-            { _id: schoolGroup._id, 'members.studentId': studentId, 'members.realName': realName },
+        // 更新学校组中的成员状态 - 使用更精确的查询条件
+        const updateResult = await schoolGroupsColl.updateOne(
+            { 
+                _id: schoolGroup._id, 
+                'members': {
+                    $elemMatch: {
+                        'studentId': studentId,
+                        'realName': realName,
+                        'bound': false
+                    }
+                }
+            },
             {
                 $set: {
                     'members.$.bound': true,
@@ -384,6 +393,12 @@ const userBindModel = {
                 }
             }
         );
+        
+        console.log('bindUserToSchoolGroup: 学校组更新结果:', updateResult);
+        
+        if (updateResult.matchedCount === 0) {
+            console.log('bindUserToSchoolGroup: 警告 - 学校组成员状态更新失败，可能已经被绑定');
+        }
         
         console.log('bindUserToSchoolGroup: 绑定完成');
     },
@@ -776,7 +791,8 @@ const userBindModel = {
                             { 
                                 $unset: { 
                                     realName: '',
-                                    studentId: ''
+                                    studentId: '',
+                                    parentSchoolId: ''
                                 }
                             }
                         );
@@ -806,7 +822,8 @@ const userBindModel = {
                                 { 
                                     $unset: { 
                                         realName: '',
-                                        studentId: ''
+                                        studentId: '',
+                                        parentUserGroupId: ''
                                     }
                                 }
                             );
@@ -914,7 +931,8 @@ const userBindModel = {
                 { 
                     $unset: { 
                         realName: '',
-                        studentId: ''
+                        studentId: '',
+                        parentSchoolId: ''
                     }
                 }
             );
@@ -937,7 +955,11 @@ const userBindModel = {
                     await db.collection('user').updateOne(
                         { _id: student.boundBy },
                         { 
-                            $unset: { realName: '', studentId: '' }
+                            $unset: { 
+                                realName: '', 
+                                studentId: '',
+                                parentUserGroupId: ''
+                            }
                         }
                     );
                 }
