@@ -128,7 +128,7 @@
   background: white;
 }
 
-.input-group .button {
+.input-group .custom-btn {
   border-radius: 0;
   border: none;
   padding: 12px 20px;
@@ -136,8 +136,8 @@
   flex-shrink: 0; /* 防止按钮收缩 */
 }
 
-/* 按钮样式 */
-.button {
+/* 自定义按钮样式 - 避免与框架冲突 */
+.custom-btn {
   padding: 12px 24px;
   border-radius: 8px;
   font-size: 14px;
@@ -153,32 +153,32 @@
 }
 
 /* 操作按钮区域中的按钮不需要右边距 */
-.action-buttons .button {
+.action-buttons .custom-btn {
   margin-right: 12px;
 }
 
-.action-buttons .button:last-child {
+.action-buttons .custom-btn:last-child {
   margin-right: 0;
 }
 
-.button--primary {
+.custom-btn--primary {
   background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   color: white;
 }
 
-.button--primary:hover {
+.custom-btn--primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
   color: white;
   text-decoration: none;
 }
 
-.button--secondary {
+.custom-btn--secondary {
   background: linear-gradient(135deg, #6b7280, #4b5563);
   color: white;
 }
 
-.button--secondary:hover {
+.custom-btn--secondary:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(107, 114, 128, 0.4);
   color: white;
@@ -304,7 +304,7 @@
                      value="{{ bindToken }}" 
                      readonly>
               <button type="button" 
-                      class="button button--secondary" 
+                      class="custom-btn custom-btn--secondary" 
                       onclick="copyToClipboard('bindToken', this)">
                 📋 复制
               </button>
@@ -320,7 +320,7 @@
                      value="{{ request.host }}{{ bindUrl }}" 
                      readonly>
               <button type="button" 
-                      class="button button--secondary" 
+                      class="custom-btn custom-btn--secondary" 
                       onclick="copyToClipboard('bindUrl', this)">
                 📋 复制
               </button>
@@ -339,10 +339,10 @@
         </div>
         
         <div class="action-buttons">
-          <a href="/user-group/manage" class="button button--primary">
+          <a href="/user-group/manage" class="custom-btn custom-btn--primary">
             <span>📊</span> 返回用户组管理
           </a>
-          <a href="/user-group/create" class="button button--secondary">
+          <a href="/user-group/create" class="custom-btn custom-btn--secondary">
             <span>➕</span> 继续创建用户组
           </a>
         </div>
