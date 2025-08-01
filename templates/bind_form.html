@@ -58,16 +58,22 @@
                required>
       </div>
       
-      {% if bindInfo and bindInfo.type == 'user_group' %}
       <div class="alert alert--warning">
         <p><strong>注意：</strong></p>
         <ul>
+          {% if bindInfo and bindInfo.type == 'school_group' %}
+          <li>请确保输入的学号和姓名与学校管理员导入的信息完全一致</li>
+          <li>只有已导入的学校成员才能成功绑定</li>
+          <li>每个学生信息只能绑定一次</li>
+          <li>绑定成功后将获得学校组权限</li>
+          {% else %}
           <li>请确保输入的学号和姓名与老师导入的信息完全一致</li>
+          <li>只有已导入的班级学生才能成功绑定</li>
           <li>每个学生信息只能绑定一次</li>
           <li>绑定成功后将获得相应的学习权限</li>
+          {% endif %}
         </ul>
       </div>
-      {% endif %}
       
       <div class="form__group">
         <button type="submit" class="button button--primary">

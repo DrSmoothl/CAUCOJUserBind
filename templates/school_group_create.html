@@ -30,6 +30,25 @@
       </div>
       
       <div class="form__group">
+        <label for="membersData" class="form__label">学校成员信息</label>
+        <textarea id="membersData" 
+                  name="membersData" 
+                  class="form__input" 
+                  rows="10" 
+                  placeholder="每行一个成员，格式：学号 姓名&#10;例如：&#10;2021001 张三&#10;2021002 李四&#10;2021003 王五"
+                  required>{{ membersData or '' }}</textarea>
+        <div class="form__help">
+          <p><strong>成员信息格式说明：</strong></p>
+          <ul>
+            <li>每行一个成员，格式：学号 姓名</li>
+            <li>学号和姓名之间用空格分隔</li>
+            <li>姓名可以包含空格，如：张 三</li>
+            <li>只有导入的成员才能通过绑定链接加入学校组</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="form__group">
         <button type="submit" class="button button--primary">
           <span class="icon icon-check"></span> 创建学校组
         </button>
@@ -40,4 +59,14 @@
     </form>
   </div>
 </div>
+
+<style>
+.form__help ul {
+  margin: 8px 0 0 20px;
+}
+
+.form__help li {
+  margin: 4px 0;
+}
+</style>
 {% endblock %}

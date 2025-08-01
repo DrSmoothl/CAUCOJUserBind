@@ -30,7 +30,13 @@ interface SchoolGroup {
     name: string;
     createdAt: Date;
     createdBy: number;
-    extraInfo: any[];
+    members: Array<{
+        studentId: string;
+        realName: string;
+        bound: boolean;
+        boundBy?: number;
+        boundAt?: Date;
+    }>;
 }
 
 interface BindToken {
@@ -67,18 +73,24 @@ const userBindModel = {
     },
 
     // 创建学校组
-    async createSchoolGroup(name: string, createdBy: number): Promise<any> {
+    async createSchoolGroup(name: string, createdBy: number, members: Array<{studentId: string, realName: string}>): Promise<any> {
         // 检查是否已存在同名学校
         const existing = await schoolGroupsColl.findOne({ name });
         if (existing) {
             throw new Error(`学校组已存在: ${name}`);
         }
         
+        const membersData = members.map(m => ({
+            studentId: m.studentId,
+            realName: m.realName,
+            bound: false
+        }));
+        
         const result = await schoolGroupsColl.insertOne({
             name,
             createdAt: new Date(),
             createdBy,
-            extraInfo: []
+            members: membersData
         });
         
         return result.insertedId;
@@ -251,6 +263,17 @@ const userBindModel = {
         }
 
         const schoolGroup = bindInfo.target as SchoolGroup;
+        
+        // 检查学生是否在学校组中
+        const member = schoolGroup.members.find(m => m.studentId === studentId && m.realName === realName);
+        if (!member) {
+            throw new Error('学号或姓名不匹配，请检查输入信息或联系管理员');
+        }
+
+        if (member.bound) {
+            throw new Error('该学生信息已被绑定');
+        }
+
         const userColl = db.collection('user');
 
         // 检查用户是否已有学校组
@@ -269,6 +292,18 @@ const userBindModel = {
                 },
                 $addToSet: {
                     parentSchoolId: schoolGroup._id
+                }
+            }
+        );
+
+        // 更新学校组中的成员状态
+        await schoolGroupsColl.updateOne(
+            { _id: schoolGroup._id, 'members.studentId': studentId, 'members.realName': realName },
+            {
+                $set: {
+                    'members.$.bound': true,
+                    'members.$.boundBy': userId,
+                    'members.$.boundAt': new Date()
                 }
             }
         );
@@ -384,27 +419,52 @@ class SchoolGroupCreateHandler extends Handler {
 
     async post(domainId: string) {
         this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
-        const { name } = this.request.body;
+        const { name, membersData } = this.request.body;
         
         if (!name) {
             this.response.template = 'school_group_create.html';
-            this.response.body = { error: '请输入学校名称' };
+            this.response.body = { error: '请输入学校名称', name, membersData };
+            return;
+        }
+
+        // 解析成员数据
+        const members: Array<{studentId: string, realName: string}> = [];
+        if (membersData) {
+            const lines = membersData.trim().split('\n');
+            for (const line of lines) {
+                const parts = line.trim().split(/\s+/);
+                if (parts.length >= 2) {
+                    const studentId = parts[0];
+                    const realName = parts.slice(1).join(' ');
+                    members.push({ studentId, realName });
+                }
+            }
+        }
+
+        if (members.length === 0) {
+            this.response.template = 'school_group_create.html';
+            this.response.body = { 
+                error: '请添加学校成员信息', 
+                name, 
+                membersData 
+            };
             return;
         }
 
         try {
-            const schoolId = await userBindModel.createSchoolGroup(name, this.user._id);
+            const schoolId = await userBindModel.createSchoolGroup(name, this.user._id, members);
             const bindToken = await userBindModel.createSchoolGroupBindToken(schoolId, this.user._id);
             
             this.response.template = 'school_group_created.html';
             this.response.body = {
                 school: { _id: schoolId, name },
                 bindToken,
-                bindUrl: `/bind/${bindToken}`
+                bindUrl: `/bind/${bindToken}`,
+                membersCount: members.length
             };
         } catch (error: any) {
             this.response.template = 'school_group_create.html';
-            this.response.body = { error: error.message, name };
+            this.response.body = { error: error.message, name, membersData };
         }
     }
 }
@@ -494,7 +554,7 @@ class BindHandler extends Handler {
         console.log('BindHandler.get: request.path:', this.request.path);
         console.log('BindHandler.get: 用户ID:', this.user._id);
         
-        const token = this.request.params.token;
+        const { token } = this.request.params;
         console.log('BindHandler.get: 从params获取的token:', token);
         
         if (!token) {
