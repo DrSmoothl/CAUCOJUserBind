@@ -2,7 +2,6 @@ import {
     db, Context, UserModel, Handler, NotFoundError, ForbiddenError, 
     PRIV, Types, SettingModel, moment, PERM
 } from 'hydrooj';
-import { ObjectId } from 'mongodb';
 import * as crypto from 'crypto';
 
 // 集合定义
@@ -428,9 +427,38 @@ const userBindModel = {
 
     // 向学校组添加成员
     async addSchoolGroupMembers(schoolGroupId: any, members: Array<{studentId: string, realName: string}>): Promise<void> {
-        const objId = typeof schoolGroupId === 'string' ? new ObjectId(schoolGroupId) : schoolGroupId;
-        const school = await schoolGroupsColl.findOne({ _id: objId });
+        console.log('addSchoolGroupMembers: 传入的schoolGroupId:', schoolGroupId, '类型:', typeof schoolGroupId);
+        
+        // 使用灵活的查询方式
+        let school: SchoolGroup | null = null;
+        
+        // 方式1: 直接使用传入的ID查询
+        try {
+            school = await schoolGroupsColl.findOne({ _id: schoolGroupId });
+            console.log('addSchoolGroupMembers: 直接查询结果:', school);
+        } catch (error) {
+            console.log('addSchoolGroupMembers: 直接查询失败:', error);
+        }
+        
+        // 方式2: 如果直接查询失败，尝试字符串匹配
         if (!school) {
+            try {
+                const allSchools = await schoolGroupsColl.find().toArray();
+                school = allSchools.find(s => s._id.toString() === schoolGroupId.toString()) || null;
+                console.log('addSchoolGroupMembers: 字符串匹配查询结果:', school);
+            } catch (error) {
+                console.log('addSchoolGroupMembers: 字符串匹配查询失败:', error);
+            }
+        }
+        
+        if (!school) {
+            console.log('addSchoolGroupMembers: 学校组不存在，schoolGroupId:', schoolGroupId);
+            // 列出所有学校组用于调试
+            const allSchools = await schoolGroupsColl.find().limit(5).toArray();
+            console.log('addSchoolGroupMembers: 现有学校组:');
+            allSchools.forEach((s, i) => {
+                console.log(`  ${i}: _id=${s._id} (${typeof s._id}) name=${s.name}`);
+            });
             throw new Error('学校组不存在');
         }
 
@@ -441,44 +469,88 @@ const userBindModel = {
         }));
 
         // 检查是否有重复的学号
-        const existingIds = school.members.map(m => m.studentId);
+        const existingIds = school.members?.map(m => m.studentId) || [];
         const duplicateIds = newMembers.filter(m => existingIds.includes(m.studentId));
         if (duplicateIds.length > 0) {
             throw new Error(`以下学号已存在: ${duplicateIds.map(m => m.studentId).join(', ')}`);
         }
 
+        // 使用查找到的实际学校ID进行更新
+        console.log('addSchoolGroupMembers: 准备更新学校组，使用ID:', school._id);
         await schoolGroupsColl.updateOne(
-            { _id: objId },
+            { _id: school._id },
             { $push: { members: { $each: newMembers } } }
         );
+        console.log('addSchoolGroupMembers: 更新完成');
     },
 
     // 从学校组移除成员
     async removeSchoolGroupMembers(schoolGroupId: any, studentIds: string[]): Promise<void> {
-        const objId = typeof schoolGroupId === 'string' ? new ObjectId(schoolGroupId) : schoolGroupId;
-        const school = await schoolGroupsColl.findOne({ _id: objId });
+        console.log('removeSchoolGroupMembers: 传入的schoolGroupId:', schoolGroupId);
+        
+        // 使用灵活的查询方式
+        let school: SchoolGroup | null = null;
+        
+        // 方式1: 直接使用传入的ID查询
+        try {
+            school = await schoolGroupsColl.findOne({ _id: schoolGroupId });
+        } catch (error) {
+            console.log('removeSchoolGroupMembers: 直接查询失败:', error);
+        }
+        
+        // 方式2: 如果直接查询失败，尝试字符串匹配
+        if (!school) {
+            try {
+                const allSchools = await schoolGroupsColl.find().toArray();
+                school = allSchools.find(s => s._id.toString() === schoolGroupId.toString()) || null;
+            } catch (error) {
+                console.log('removeSchoolGroupMembers: 字符串匹配查询失败:', error);
+            }
+        }
+        
         if (!school) {
             throw new Error('学校组不存在');
         }
 
         // 检查要删除的成员是否已绑定
-        const boundMembers = school.members.filter(m => 
+        const boundMembers = school.members?.filter(m => 
             studentIds.includes(m.studentId) && m.bound
-        );
+        ) || [];
+        
         if (boundMembers.length > 0) {
             throw new Error(`以下成员已绑定，无法删除: ${boundMembers.map(m => `${m.studentId}(${m.realName})`).join(', ')}`);
         }
 
         await schoolGroupsColl.updateOne(
-            { _id: objId },
+            { _id: school._id },
             { $pull: { members: { studentId: { $in: studentIds } } } }
         );
     },
 
     // 向用户组添加学生
     async addUserGroupStudents(userGroupId: any, students: Array<{studentId: string, realName: string}>): Promise<void> {
-        const objId = typeof userGroupId === 'string' ? new ObjectId(userGroupId) : userGroupId;
-        const userGroup = await userGroupsColl.findOne({ _id: objId });
+        console.log('addUserGroupStudents: 传入的userGroupId:', userGroupId);
+        
+        // 使用灵活的查询方式
+        let userGroup: UserGroup | null = null;
+        
+        // 方式1: 直接使用传入的ID查询
+        try {
+            userGroup = await userGroupsColl.findOne({ _id: userGroupId });
+        } catch (error) {
+            console.log('addUserGroupStudents: 直接查询失败:', error);
+        }
+        
+        // 方式2: 如果直接查询失败，尝试字符串匹配
+        if (!userGroup) {
+            try {
+                const allGroups = await userGroupsColl.find().toArray();
+                userGroup = allGroups.find(g => g._id.toString() === userGroupId.toString()) || null;
+            } catch (error) {
+                console.log('addUserGroupStudents: 字符串匹配查询失败:', error);
+            }
+        }
+        
         if (!userGroup) {
             throw new Error('用户组不存在');
         }
@@ -490,36 +562,57 @@ const userBindModel = {
         }));
 
         // 检查是否有重复的学号
-        const existingIds = userGroup.students.map(s => s.studentId);
+        const existingIds = userGroup.students?.map(s => s.studentId) || [];
         const duplicateIds = newStudents.filter(s => existingIds.includes(s.studentId));
         if (duplicateIds.length > 0) {
             throw new Error(`以下学号已存在: ${duplicateIds.map(s => s.studentId).join(', ')}`);
         }
 
         await userGroupsColl.updateOne(
-            { _id: objId },
+            { _id: userGroup._id },
             { $push: { students: { $each: newStudents } } }
         );
     },
 
     // 从用户组移除学生
     async removeUserGroupStudents(userGroupId: any, studentIds: string[]): Promise<void> {
-        const objId = typeof userGroupId === 'string' ? new ObjectId(userGroupId) : userGroupId;
-        const userGroup = await userGroupsColl.findOne({ _id: objId });
+        console.log('removeUserGroupStudents: 传入的userGroupId:', userGroupId);
+        
+        // 使用灵活的查询方式
+        let userGroup: UserGroup | null = null;
+        
+        // 方式1: 直接使用传入的ID查询
+        try {
+            userGroup = await userGroupsColl.findOne({ _id: userGroupId });
+        } catch (error) {
+            console.log('removeUserGroupStudents: 直接查询失败:', error);
+        }
+        
+        // 方式2: 如果直接查询失败，尝试字符串匹配
+        if (!userGroup) {
+            try {
+                const allGroups = await userGroupsColl.find().toArray();
+                userGroup = allGroups.find(g => g._id.toString() === userGroupId.toString()) || null;
+            } catch (error) {
+                console.log('removeUserGroupStudents: 字符串匹配查询失败:', error);
+            }
+        }
+        
         if (!userGroup) {
             throw new Error('用户组不存在');
         }
 
         // 检查要删除的学生是否已绑定
-        const boundStudents = userGroup.students.filter(s => 
+        const boundStudents = userGroup.students?.filter(s => 
             studentIds.includes(s.studentId) && s.bound
-        );
+        ) || [];
+        
         if (boundStudents.length > 0) {
             throw new Error(`以下学生已绑定，无法删除: ${boundStudents.map(s => `${s.studentId}(${s.realName})`).join(', ')}`);
         }
 
         await userGroupsColl.updateOne(
-            { _id: objId },
+            { _id: userGroup._id },
             { $pull: { students: { studentId: { $in: studentIds } } } }
         );
     },
@@ -528,61 +621,89 @@ const userBindModel = {
     async getSchoolGroupById(schoolGroupId: any): Promise<SchoolGroup | null> {
         console.log('getSchoolGroupById: 传入的ID:', schoolGroupId, '类型:', typeof schoolGroupId);
         
-        if (!schoolGroupId) return null;
+        // 尝试多种查询方式
+        let result: SchoolGroup | null = null;
         
+        // 方式1: 直接查询
         try {
-            let objId;
-            if (typeof schoolGroupId === 'string') {
-                // 检查是否是有效的ObjectId字符串
-                if (schoolGroupId.match(/^[0-9a-fA-F]{24}$/)) {
-                    objId = new ObjectId(schoolGroupId);
-                } else {
-                    console.log('getSchoolGroupById: 无效的ObjectId字符串格式');
-                    return null;
-                }
-            } else if (schoolGroupId._id || schoolGroupId.toHexString) {
-                // 已经是ObjectId对象
-                objId = schoolGroupId;
-            } else {
-                console.log('getSchoolGroupById: 未知的ID类型');
-                return null;
-            }
-            
-            const result = await schoolGroupsColl.findOne({ _id: objId });
-            console.log('getSchoolGroupById: 查询结果:', result ? '找到' : '未找到');
-            return result;
+            result = await schoolGroupsColl.findOne({ _id: schoolGroupId });
+            console.log('getSchoolGroupById: 直接查询结果:', result ? '找到' : '未找到');
         } catch (error) {
-            console.log('getSchoolGroupById: 查询出错:', error);
-            return null;
+            console.log('getSchoolGroupById: 直接查询失败:', error);
         }
+        
+        // 方式2: 如果直接查询失败，尝试字符串匹配
+        if (!result) {
+            try {
+                const allSchools = await schoolGroupsColl.find().toArray();
+                console.log('getSchoolGroupById: 总共有', allSchools.length, '个学校组');
+                
+                // 尝试字符串匹配
+                result = allSchools.find(school => {
+                    const match = school._id.toString() === schoolGroupId.toString();
+                    if (match) {
+                        console.log('getSchoolGroupById: 字符串匹配成功，找到学校组:', school.name);
+                    }
+                    return match;
+                }) || null;
+                
+                if (!result) {
+                    console.log('getSchoolGroupById: 字符串匹配未找到，列出前5个学校组:');
+                    allSchools.slice(0, 5).forEach((school, index) => {
+                        console.log(`  ${index}: _id=${school._id} (${typeof school._id}) name=${school.name}`);
+                    });
+                }
+            } catch (error) {
+                console.log('getSchoolGroupById: 字符串匹配查询失败:', error);
+            }
+        }
+        
+        return result;
     },
 
     // 获取用户组详情
     async getUserGroupById(userGroupId: any): Promise<UserGroup | null> {
+        console.log('getUserGroupById: 传入的ID:', userGroupId, '类型:', typeof userGroupId);
+        
+        // 尝试多种查询方式
+        let result: UserGroup | null = null;
+        
+        // 方式1: 直接查询
         try {
-            console.log('getUserGroupById: 传入的ID:', userGroupId, '类型:', typeof userGroupId);
-            
-            let queryId: any = userGroupId;
-            
-            // 如果是字符串且符合ObjectId格式，转换为ObjectId
-            if (typeof userGroupId === 'string' && userGroupId.match(/^[0-9a-fA-F]{24}$/)) {
-                try {
-                    queryId = new ObjectId(userGroupId);
-                    console.log('getUserGroupById: 转换为ObjectId:', queryId);
-                } catch (error) {
-                    console.log('getUserGroupById: ObjectId转换失败，使用原始字符串:', error);
-                    queryId = userGroupId;
-                }
-            }
-            
-            const result = await userGroupsColl.findOne({ _id: queryId });
-            console.log('getUserGroupById: 查询结果:', result ? '找到' : '未找到');
-            return result;
+            result = await userGroupsColl.findOne({ _id: userGroupId });
+            console.log('getUserGroupById: 直接查询结果:', result ? '找到' : '未找到');
         } catch (error) {
-            console.log('getUserGroupById: 查询出错:', error);
-            return null;
+            console.log('getUserGroupById: 直接查询失败:', error);
         }
-    },
+        
+        // 方式2: 如果直接查询失败，尝试字符串匹配
+        if (!result) {
+            try {
+                const allGroups = await userGroupsColl.find().toArray();
+                console.log('getUserGroupById: 总共有', allGroups.length, '个用户组');
+                
+                // 尝试字符串匹配
+                result = allGroups.find(group => {
+                    const match = group._id.toString() === userGroupId.toString();
+                    if (match) {
+                        console.log('getUserGroupById: 字符串匹配成功，找到用户组:', group.name);
+                    }
+                    return match;
+                }) || null;
+                
+                if (!result) {
+                    console.log('getUserGroupById: 字符串匹配未找到，列出前5个用户组:');
+                    allGroups.slice(0, 5).forEach((group, index) => {
+                        console.log(`  ${index}: _id=${group._id} (${typeof group._id}) name=${group.name}`);
+                    });
+                }
+            } catch (error) {
+                console.log('getUserGroupById: 字符串匹配查询失败:', error);
+            }
+        }
+        
+        return result;
+    }
 };
 
 global.Hydro.model.userBind = userBindModel;
