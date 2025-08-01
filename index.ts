@@ -980,10 +980,32 @@ const userBindModel = {
     async checkContestPermission(userId: number, contestId: any): Promise<{ allowed: boolean; reason?: string }> {
         try {
             const documentColl = db.collection('document');
-            const contest = await documentColl.findOne({ 
-                _id: contestId,
-                docType: 30 // 比赛文档类型
-            });
+            let contest: any = null;
+            
+            // 尝试多种查询方式
+            try {
+                // 方式1: 直接查询
+                contest = await documentColl.findOne({ 
+                    _id: contestId,
+                    docType: 30 // 比赛文档类型
+                });
+            } catch (error) {
+                console.log('checkContestPermission: 直接查询失败:', error);
+            }
+            
+            // 方式2: 如果直接查询失败，尝试ObjectId转换
+            if (!contest) {
+                try {
+                    const { ObjectId } = require('mongodb');
+                    const objectId = new ObjectId(contestId);
+                    contest = await documentColl.findOne({ 
+                        _id: objectId,
+                        docType: 30 
+                    });
+                } catch (error) {
+                    console.log('checkContestPermission: ObjectId查询失败:', error);
+                }
+            }
             
             if (!contest) {
                 return { allowed: false, reason: '比赛不存在' };
@@ -1060,16 +1082,57 @@ class ContestPermissionHandler extends Handler {
             throw new NotFoundError('比赛ID无效');
         }
 
+        console.log('ContestPermissionHandler: 收到比赛ID:', contestId, '类型:', typeof contestId);
+
         // 获取比赛信息（从document集合中获取docType为30的文档）
         const documentColl = db.collection('document');
-        const contest = await documentColl.findOne({ 
-            _id: contestId,
-            docType: 30 // 比赛文档类型
-        });
+        
+        let contest: any = null;
+        
+        try {
+            // 方式1: 直接查询
+            contest = await documentColl.findOne({ 
+                _id: contestId,
+                docType: 30 // 比赛文档类型
+            });
+            console.log('ContestPermissionHandler: 直接查询结果:', contest ? '找到' : '未找到');
+        } catch (error) {
+            console.log('ContestPermissionHandler: 直接查询失败:', error);
+        }
+        
+        // 方式2: 如果直接查询失败，尝试ObjectId转换
+        if (!contest) {
+            try {
+                const { ObjectId } = require('mongodb');
+                const objectId = new ObjectId(contestId);
+                contest = await documentColl.findOne({ 
+                    _id: objectId,
+                    docType: 30 
+                });
+                console.log('ContestPermissionHandler: ObjectId查询结果:', contest ? '找到' : '未找到');
+            } catch (error) {
+                console.log('ContestPermissionHandler: ObjectId查询失败:', error);
+            }
+        }
+        
+        // 方式3: 如果还是找不到，列出所有比赛文档进行调试
+        if (!contest) {
+            try {
+                const allContests = await documentColl.find({ docType: 30 }).limit(5).toArray();
+                console.log('ContestPermissionHandler: 现有比赛文档:');
+                allContests.forEach((c, i) => {
+                    console.log(`  ${i}: _id=${c._id} (${typeof c._id}) title=${c.title}`);
+                });
+            } catch (error) {
+                console.log('ContestPermissionHandler: 获取比赛列表失败:', error);
+            }
+        }
         
         if (!contest) {
             throw new NotFoundError('比赛不存在');
         }
+
+        console.log('ContestPermissionHandler: 找到比赛:', contest.title);
 
         // 获取所有学校组和用户组
         const { schools } = await userBindModel.getSchoolGroups(1, 1000);
@@ -1745,6 +1808,58 @@ export async function apply(ctx: Context) {
                     schoolGroupsCount: allSchools.length,
                     userGroupsCount: allUserGroups.length
                 }
+            };
+            this.response.type = 'application/json';
+        }
+    }, PRIV.PRIV_EDIT_SYSTEM);
+
+    // 调试路由 - 检查比赛查询
+    ctx.Route('debug_contest', '/debug/contest/:contestId', class extends Handler {
+        async get() {
+            this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
+            const { contestId } = this.request.params;
+            
+            const documentColl = db.collection('document');
+            
+            // 尝试多种查询方式
+            let directQuery, stringQuery, allContests;
+            
+            try {
+                // 直接查询
+                directQuery = await documentColl.findOne({ 
+                    _id: contestId,
+                    docType: 30 
+                });
+            } catch (error) {
+                directQuery = { error: error.message };
+            }
+            
+            try {
+                // 字符串转ObjectId查询
+                const { ObjectId } = require('mongodb');
+                const objectId = new ObjectId(contestId);
+                stringQuery = await documentColl.findOne({ 
+                    _id: objectId,
+                    docType: 30 
+                });
+            } catch (error) {
+                stringQuery = { error: error.message };
+            }
+            
+            try {
+                // 获取所有比赛文档
+                allContests = await documentColl.find({ docType: 30 }).limit(10).toArray();
+            } catch (error) {
+                allContests = { error: error.message };
+            }
+            
+            this.response.body = {
+                contestId: contestId,
+                contestIdType: typeof contestId,
+                directQuery: directQuery,
+                stringQuery: stringQuery,
+                allContests: allContests,
+                timestamp: new Date().toISOString()
             };
             this.response.type = 'application/json';
         }
