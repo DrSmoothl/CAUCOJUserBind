@@ -993,17 +993,29 @@ const userBindModel = {
                 console.log('checkContestPermission: 直接查询失败:', error);
             }
             
-            // 方式2: 如果直接查询失败，尝试ObjectId转换
+            // 方式2: 如果直接查询失败，尝试字符串匹配
             if (!contest) {
                 try {
-                    const { ObjectId } = require('mongodb');
-                    const objectId = new ObjectId(contestId);
-                    contest = await documentColl.findOne({ 
-                        _id: objectId,
-                        docType: 30 
-                    });
+                    const allContests = await documentColl.find({ docType: 30 }).toArray();
+                    console.log('checkContestPermission: 总共有', allContests.length, '个比赛文档');
+                    
+                    // 尝试字符串匹配
+                    contest = allContests.find(c => {
+                        const match = c._id.toString() === contestId.toString();
+                        if (match) {
+                            console.log('checkContestPermission: 字符串匹配成功，找到比赛:', c.title);
+                        }
+                        return match;
+                    }) || null;
+                    
+                    if (!contest) {
+                        console.log('checkContestPermission: 字符串匹配未找到，列出前5个比赛:');
+                        allContests.slice(0, 5).forEach((c, index) => {
+                            console.log(`  ${index}: _id=${c._id} (${typeof c._id}) title=${c.title}`);
+                        });
+                    }
                 } catch (error) {
-                    console.log('checkContestPermission: ObjectId查询失败:', error);
+                    console.log('checkContestPermission: 字符串匹配查询失败:', error);
                 }
             }
             
@@ -1100,31 +1112,29 @@ class ContestPermissionHandler extends Handler {
             console.log('ContestPermissionHandler: 直接查询失败:', error);
         }
         
-        // 方式2: 如果直接查询失败，尝试ObjectId转换
+        // 方式2: 如果直接查询失败，尝试字符串匹配
         if (!contest) {
             try {
-                const { ObjectId } = require('mongodb');
-                const objectId = new ObjectId(contestId);
-                contest = await documentColl.findOne({ 
-                    _id: objectId,
-                    docType: 30 
-                });
-                console.log('ContestPermissionHandler: ObjectId查询结果:', contest ? '找到' : '未找到');
+                const allContests = await documentColl.find({ docType: 30 }).toArray();
+                console.log('ContestPermissionHandler: 总共有', allContests.length, '个比赛文档');
+                
+                // 尝试字符串匹配
+                contest = allContests.find(c => {
+                    const match = c._id.toString() === contestId.toString();
+                    if (match) {
+                        console.log('ContestPermissionHandler: 字符串匹配成功，找到比赛:', c.title);
+                    }
+                    return match;
+                }) || null;
+                
+                if (!contest) {
+                    console.log('ContestPermissionHandler: 字符串匹配未找到，列出前5个比赛:');
+                    allContests.slice(0, 5).forEach((c, index) => {
+                        console.log(`  ${index}: _id=${c._id} (${typeof c._id}) title=${c.title}`);
+                    });
+                }
             } catch (error) {
-                console.log('ContestPermissionHandler: ObjectId查询失败:', error);
-            }
-        }
-        
-        // 方式3: 如果还是找不到，列出所有比赛文档进行调试
-        if (!contest) {
-            try {
-                const allContests = await documentColl.find({ docType: 30 }).limit(5).toArray();
-                console.log('ContestPermissionHandler: 现有比赛文档:');
-                allContests.forEach((c, i) => {
-                    console.log(`  ${i}: _id=${c._id} (${typeof c._id}) title=${c.title}`);
-                });
-            } catch (error) {
-                console.log('ContestPermissionHandler: 获取比赛列表失败:', error);
+                console.log('ContestPermissionHandler: 字符串匹配查询失败:', error);
             }
         }
         
@@ -1170,10 +1180,29 @@ class ContestPermissionHandler extends Handler {
 
         try {
             const documentColl = db.collection('document');
-            const contest = await documentColl.findOne({ 
-                _id: contestId,
-                docType: 30 // 比赛文档类型
-            });
+            let contest: any = null;
+            
+            // 尝试多种查询方式
+            try {
+                // 方式1: 直接查询
+                contest = await documentColl.findOne({ 
+                    _id: contestId,
+                    docType: 30 // 比赛文档类型
+                });
+            } catch (error) {
+                console.log('ContestPermissionHandler.post: 直接查询失败:', error);
+            }
+            
+            // 方式2: 如果直接查询失败，尝试字符串匹配
+            if (!contest) {
+                try {
+                    const allContests = await documentColl.find({ docType: 30 }).toArray();
+                    contest = allContests.find(c => c._id.toString() === contestId.toString()) || null;
+                    console.log('ContestPermissionHandler.post: 字符串匹配结果:', contest ? '找到' : '未找到');
+                } catch (error) {
+                    console.log('ContestPermissionHandler.post: 字符串匹配查询失败:', error);
+                }
+            }
             
             if (!contest) {
                 throw new Error('比赛不存在');
@@ -1186,9 +1215,9 @@ class ContestPermissionHandler extends Handler {
                 allowedGroups: Array.isArray(allowedGroups) ? allowedGroups : (allowedGroups ? [allowedGroups] : [])
             };
 
-            // 更新比赛权限配置
+            // 更新比赛权限配置 - 使用找到的实际比赛ID
             await documentColl.updateOne(
-                { _id: contestId, docType: 30 },
+                { _id: contest._id, docType: 30 },
                 { $set: { userBindPermission: permissionConfig } }
             );
 
