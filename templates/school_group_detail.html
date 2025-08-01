@@ -1,0 +1,145 @@
+{% extends "layout/basic.html" %}
+{% block title %}学校组详情 - {{ school.name }}{% endblock %}
+
+{% block content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">学校组详情 - {{ school.name }}</h1>
+    <div class="section__tools">
+      <a href="/school-group/manage" class="button">返回管理</a>
+    </div>
+  </div>
+  
+  {% if error %}
+  <div class="section__body">
+    <div class="alert alert--error">{{ error }}</div>
+  </div>
+  {% endif %}
+  
+  <div class="section__body">
+    <div class="row">
+      <div class="col-md-6">
+        <h3>基本信息</h3>
+        <table class="data-table">
+          <tbody>
+            <tr>
+              <th>学校名称</th>
+              <td>{{ school.name }}</td>
+            </tr>
+            <tr>
+              <th>创建时间</th>
+              <td>{{ school.createdAt }}</td>
+            </tr>
+            <tr>
+              <th>创建者</th>
+              <td>{{ school.createdBy }}</td>
+            </tr>
+            <tr>
+              <th>成员总数</th>
+              <td>{{ school.members|length }}人</td>
+            </tr>
+            <tr>
+              <th>已绑定成员</th>
+              <td>
+                {% set boundCount = school.members|selectattr('bound')|list|length %}
+                {{ boundCount }}人 ({{ ((boundCount / school.members|length) * 100)|round(1) }}%)
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="col-md-6">
+        <h3>添加成员</h3>
+        <form method="post" action="/school-group/detail/{{ school._id }}">
+          <input type="hidden" name="action" value="add_members">
+          <div class="form-group">
+            <label for="membersData">成员信息</label>
+            <textarea id="membersData" name="membersData" class="form-control" rows="8" 
+                      placeholder="请输入成员信息，每行一个成员，格式：学号 姓名" 
+                      required>{{ membersData }}</textarea>
+            <small class="form-text">每行格式：学号 姓名，例如：20210001 张三</small>
+          </div>
+          <button type="submit" class="button button--primary">添加成员</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <div class="section__body">
+    <h3>成员列表</h3>
+    {% if school.members|length > 0 %}
+    <form method="post" action="/school-group/detail/{{ school._id }}">
+      <input type="hidden" name="action" value="remove_members">
+      <div class="section__tools">
+        <button type="submit" class="button button--danger" 
+                onclick="return confirm('确定要删除选中的成员吗？')">
+          删除选中成员
+        </button>
+      </div>
+      
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>
+              <input type="checkbox" id="selectAll" onchange="toggleAll(this)">
+            </th>
+            <th>学号</th>
+            <th>姓名</th>
+            <th>绑定状态</th>
+            <th>绑定用户</th>
+            <th>绑定时间</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for member in school.members %}
+          <tr>
+            <td>
+              {% if not member.bound %}
+              <input type="checkbox" name="selectedMembers" value="{{ member.studentId }}">
+              {% endif %}
+            </td>
+            <td>{{ member.studentId }}</td>
+            <td>{{ member.realName }}</td>
+            <td>
+              {% if member.bound %}
+                <span class="badge badge--success">已绑定</span>
+              {% else %}
+                <span class="badge badge--warning">未绑定</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if member.bound %}
+                {{ member.boundBy }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>
+              {% if member.bound %}
+                {{ member.boundAt }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </form>
+    {% else %}
+    <div class="empty">
+      <p>暂无成员</p>
+      <p>请在右侧表单中添加成员信息</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function toggleAll(checkbox) {
+  const checkboxes = document.querySelectorAll('input[name="selectedMembers"]');
+  checkboxes.forEach(cb => cb.checked = checkbox.checked);
+}
+</script>
+{% endblock %}

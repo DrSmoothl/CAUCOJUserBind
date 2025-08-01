@@ -30,6 +30,7 @@
           <td>{{ school.createdAt }}</td>
           <td>{{ school.createdBy }}</td>
           <td>
+            <a href="/school-group/detail/{{ school._id }}" class="button button--small">详情管理</a>
             <a href="#" class="button button--small button--text" 
                onclick="showBindToken('{{ school._id }}')">
               查看绑定链接

@@ -37,10 +37,7 @@
           </td>
           <td>{{ group.createdAt }}</td>
           <td>
-            <a href="#" class="button button--small button--text" 
-               onclick="showGroupDetails('{{ group._id }}')">
-              查看详情
-            </a>
+            <a href="/user-group/detail/{{ group._id }}" class="button button--small">详情管理</a>
             <a href="#" class="button button--small button--text" 
                onclick="showBindToken('{{ group._id }}')">
               绑定链接

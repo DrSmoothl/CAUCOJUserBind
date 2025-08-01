@@ -421,6 +421,110 @@ const userBindModel = {
         const userColl = db.collection('user');
         const dbUser = await userColl.findOne({ _id: userId });
         return !!(dbUser?.parentSchoolId && dbUser.parentSchoolId.length > 0);
+    },
+
+    // 向学校组添加成员
+    async addSchoolGroupMembers(schoolGroupId: any, members: Array<{studentId: string, realName: string}>): Promise<void> {
+        const school = await schoolGroupsColl.findOne({ _id: schoolGroupId });
+        if (!school) {
+            throw new Error('学校组不存在');
+        }
+
+        const newMembers = members.map(m => ({
+            studentId: m.studentId,
+            realName: m.realName,
+            bound: false
+        }));
+
+        // 检查是否有重复的学号
+        const existingIds = school.members.map(m => m.studentId);
+        const duplicateIds = newMembers.filter(m => existingIds.includes(m.studentId));
+        if (duplicateIds.length > 0) {
+            throw new Error(`以下学号已存在: ${duplicateIds.map(m => m.studentId).join(', ')}`);
+        }
+
+        await schoolGroupsColl.updateOne(
+            { _id: schoolGroupId },
+            { $push: { members: { $each: newMembers } } }
+        );
+    },
+
+    // 从学校组移除成员
+    async removeSchoolGroupMembers(schoolGroupId: any, studentIds: string[]): Promise<void> {
+        const school = await schoolGroupsColl.findOne({ _id: schoolGroupId });
+        if (!school) {
+            throw new Error('学校组不存在');
+        }
+
+        // 检查要删除的成员是否已绑定
+        const boundMembers = school.members.filter(m => 
+            studentIds.includes(m.studentId) && m.bound
+        );
+        if (boundMembers.length > 0) {
+            throw new Error(`以下成员已绑定，无法删除: ${boundMembers.map(m => `${m.studentId}(${m.realName})`).join(', ')}`);
+        }
+
+        await schoolGroupsColl.updateOne(
+            { _id: schoolGroupId },
+            { $pull: { members: { studentId: { $in: studentIds } } } }
+        );
+    },
+
+    // 向用户组添加学生
+    async addUserGroupStudents(userGroupId: any, students: Array<{studentId: string, realName: string}>): Promise<void> {
+        const userGroup = await userGroupsColl.findOne({ _id: userGroupId });
+        if (!userGroup) {
+            throw new Error('用户组不存在');
+        }
+
+        const newStudents = students.map(s => ({
+            studentId: s.studentId,
+            realName: s.realName,
+            bound: false
+        }));
+
+        // 检查是否有重复的学号
+        const existingIds = userGroup.students.map(s => s.studentId);
+        const duplicateIds = newStudents.filter(s => existingIds.includes(s.studentId));
+        if (duplicateIds.length > 0) {
+            throw new Error(`以下学号已存在: ${duplicateIds.map(s => s.studentId).join(', ')}`);
+        }
+
+        await userGroupsColl.updateOne(
+            { _id: userGroupId },
+            { $push: { students: { $each: newStudents } } }
+        );
+    },
+
+    // 从用户组移除学生
+    async removeUserGroupStudents(userGroupId: any, studentIds: string[]): Promise<void> {
+        const userGroup = await userGroupsColl.findOne({ _id: userGroupId });
+        if (!userGroup) {
+            throw new Error('用户组不存在');
+        }
+
+        // 检查要删除的学生是否已绑定
+        const boundStudents = userGroup.students.filter(s => 
+            studentIds.includes(s.studentId) && s.bound
+        );
+        if (boundStudents.length > 0) {
+            throw new Error(`以下学生已绑定，无法删除: ${boundStudents.map(s => `${s.studentId}(${s.realName})`).join(', ')}`);
+        }
+
+        await userGroupsColl.updateOne(
+            { _id: userGroupId },
+            { $pull: { students: { studentId: { $in: studentIds } } } }
+        );
+    },
+
+    // 获取学校组详情
+    async getSchoolGroupById(schoolGroupId: any): Promise<SchoolGroup | null> {
+        return await schoolGroupsColl.findOne({ _id: schoolGroupId });
+    },
+
+    // 获取用户组详情
+    async getUserGroupById(userGroupId: any): Promise<UserGroup | null> {
+        return await userGroupsColl.findOne({ _id: userGroupId });
     }
 };
 
@@ -435,6 +539,79 @@ class SchoolGroupManageHandler extends Handler {
         
         this.response.template = 'school_group_manage.html';
         this.response.body = { schools, total, pageCount, page };
+    }
+}
+
+// 学校组详情和成员管理界面
+class SchoolGroupDetailHandler extends Handler {
+    async get(domainId: string) {
+        this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
+        const { schoolId } = this.request.params;
+        
+        if (!schoolId) {
+            throw new NotFoundError('学校组ID无效');
+        }
+        
+        const school = await userBindModel.getSchoolGroupById(schoolId);
+        if (!school) {
+            throw new NotFoundError('学校组不存在');
+        }
+        
+        this.response.template = 'school_group_detail.html';
+        this.response.body = { school };
+    }
+
+    async post(domainId: string) {
+        this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
+        const { schoolId } = this.request.params;
+        const { action, membersData, selectedMembers } = this.request.body;
+        
+        if (!schoolId) {
+            throw new NotFoundError('学校组ID无效');
+        }
+
+        try {
+            if (action === 'add_members') {
+                // 添加成员
+                const members: Array<{studentId: string, realName: string}> = [];
+                if (membersData) {
+                    const lines = membersData.trim().split('\n');
+                    for (const line of lines) {
+                        const parts = line.trim().split(/\s+/);
+                        if (parts.length >= 2) {
+                            const studentId = parts[0];
+                            const realName = parts.slice(1).join(' ');
+                            members.push({ studentId, realName });
+                        }
+                    }
+                }
+
+                if (members.length === 0) {
+                    throw new Error('请添加成员信息');
+                }
+
+                await userBindModel.addSchoolGroupMembers(schoolId, members);
+                
+            } else if (action === 'remove_members') {
+                // 移除成员
+                if (!selectedMembers || selectedMembers.length === 0) {
+                    throw new Error('请选择要删除的成员');
+                }
+                
+                const studentIds = Array.isArray(selectedMembers) ? selectedMembers : [selectedMembers];
+                await userBindModel.removeSchoolGroupMembers(schoolId, studentIds);
+            }
+
+            this.response.redirect = `/school-group/detail/${schoolId}`;
+        } catch (error: any) {
+            const school = await userBindModel.getSchoolGroupById(schoolId);
+            this.response.template = 'school_group_detail.html';
+            this.response.body = { 
+                school,
+                error: error.message,
+                membersData: this.request.body.membersData
+            };
+        }
     }
 }
 
@@ -506,6 +683,84 @@ class UserGroupManageHandler extends Handler {
         
         this.response.template = 'user_group_manage.html';
         this.response.body = { userGroups, total, pageCount, page };
+    }
+}
+
+// 用户组详情和成员管理界面
+class UserGroupDetailHandler extends Handler {
+    async get(domainId: string) {
+        this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
+        const { groupId } = this.request.params;
+        
+        if (!groupId) {
+            throw new NotFoundError('用户组ID无效');
+        }
+        
+        const userGroup = await userBindModel.getUserGroupById(groupId);
+        if (!userGroup) {
+            throw new NotFoundError('用户组不存在');
+        }
+
+        // 获取所属学校信息
+        const school = await userBindModel.getSchoolGroupById(userGroup.parentSchoolId);
+        
+        this.response.template = 'user_group_detail.html';
+        this.response.body = { userGroup, school };
+    }
+
+    async post(domainId: string) {
+        this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
+        const { groupId } = this.request.params;
+        const { action, studentsData, selectedStudents } = this.request.body;
+        
+        if (!groupId) {
+            throw new NotFoundError('用户组ID无效');
+        }
+
+        try {
+            if (action === 'add_students') {
+                // 添加学生
+                const students: Array<{studentId: string, realName: string}> = [];
+                if (studentsData) {
+                    const lines = studentsData.trim().split('\n');
+                    for (const line of lines) {
+                        const parts = line.trim().split(/\s+/);
+                        if (parts.length >= 2) {
+                            const studentId = parts[0];
+                            const realName = parts.slice(1).join(' ');
+                            students.push({ studentId, realName });
+                        }
+                    }
+                }
+
+                if (students.length === 0) {
+                    throw new Error('请添加学生信息');
+                }
+
+                await userBindModel.addUserGroupStudents(groupId, students);
+                
+            } else if (action === 'remove_students') {
+                // 移除学生
+                if (!selectedStudents || selectedStudents.length === 0) {
+                    throw new Error('请选择要删除的学生');
+                }
+                
+                const studentIds = Array.isArray(selectedStudents) ? selectedStudents : [selectedStudents];
+                await userBindModel.removeUserGroupStudents(groupId, studentIds);
+            }
+
+            this.response.redirect = `/user-group/detail/${groupId}`;
+        } catch (error: any) {
+            const userGroup = await userBindModel.getUserGroupById(groupId);
+            const school = await userBindModel.getSchoolGroupById(userGroup?.parentSchoolId);
+            this.response.template = 'user_group_detail.html';
+            this.response.body = { 
+                userGroup,
+                school,
+                error: error.message,
+                studentsData: this.request.body.studentsData
+            };
+        }
     }
 }
 
@@ -746,8 +1001,10 @@ export async function apply(ctx: Context) {
 
     // 注册路由
     ctx.Route('school_group_manage', '/school-group/manage', SchoolGroupManageHandler, PRIV.PRIV_EDIT_SYSTEM);
+    ctx.Route('school_group_detail', '/school-group/detail/:schoolId', SchoolGroupDetailHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('school_group_create', '/school-group/create', SchoolGroupCreateHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('user_group_manage', '/user-group/manage', UserGroupManageHandler, PRIV.PRIV_EDIT_SYSTEM);
+    ctx.Route('user_group_detail', '/user-group/detail/:groupId', UserGroupDetailHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('user_group_create', '/user-group/create', UserGroupCreateHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('bind', '/bind/:token', BindHandler);
     

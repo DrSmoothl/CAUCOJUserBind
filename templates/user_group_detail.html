@@ -1,0 +1,149 @@
+{% extends "layout/basic.html" %}
+{% block title %}用户组详情 - {{ userGroup.name }}{% endblock %}
+
+{% block content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">用户组详情 - {{ userGroup.name }}</h1>
+    <div class="section__tools">
+      <a href="/user-group/manage" class="button">返回管理</a>
+    </div>
+  </div>
+  
+  {% if error %}
+  <div class="section__body">
+    <div class="alert alert--error">{{ error }}</div>
+  </div>
+  {% endif %}
+  
+  <div class="section__body">
+    <div class="row">
+      <div class="col-md-6">
+        <h3>基本信息</h3>
+        <table class="data-table">
+          <tbody>
+            <tr>
+              <th>用户组名称</th>
+              <td>{{ userGroup.name }}</td>
+            </tr>
+            <tr>
+              <th>所属学校</th>
+              <td>{{ school.name if school else '未知' }}</td>
+            </tr>
+            <tr>
+              <th>创建时间</th>
+              <td>{{ userGroup.createdAt }}</td>
+            </tr>
+            <tr>
+              <th>创建者</th>
+              <td>{{ userGroup.createdBy }}</td>
+            </tr>
+            <tr>
+              <th>学生总数</th>
+              <td>{{ userGroup.students|length }}人</td>
+            </tr>
+            <tr>
+              <th>已绑定学生</th>
+              <td>
+                {% set boundCount = userGroup.students|selectattr('bound')|list|length %}
+                {{ boundCount }}人 ({{ ((boundCount / userGroup.students|length) * 100)|round(1) if userGroup.students|length > 0 else 0 }}%)
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="col-md-6">
+        <h3>添加学生</h3>
+        <form method="post" action="/user-group/detail/{{ userGroup._id }}">
+          <input type="hidden" name="action" value="add_students">
+          <div class="form-group">
+            <label for="studentsData">学生信息</label>
+            <textarea id="studentsData" name="studentsData" class="form-control" rows="8" 
+                      placeholder="请输入学生信息，每行一个学生，格式：学号 姓名" 
+                      required>{{ studentsData }}</textarea>
+            <small class="form-text">每行格式：学号 姓名，例如：20210001 张三</small>
+          </div>
+          <button type="submit" class="button button--primary">添加学生</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <div class="section__body">
+    <h3>学生列表</h3>
+    {% if userGroup.students|length > 0 %}
+    <form method="post" action="/user-group/detail/{{ userGroup._id }}">
+      <input type="hidden" name="action" value="remove_students">
+      <div class="section__tools">
+        <button type="submit" class="button button--danger" 
+                onclick="return confirm('确定要删除选中的学生吗？')">
+          删除选中学生
+        </button>
+      </div>
+      
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>
+              <input type="checkbox" id="selectAll" onchange="toggleAll(this)">
+            </th>
+            <th>学号</th>
+            <th>姓名</th>
+            <th>绑定状态</th>
+            <th>绑定用户</th>
+            <th>绑定时间</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in userGroup.students %}
+          <tr>
+            <td>
+              {% if not student.bound %}
+              <input type="checkbox" name="selectedStudents" value="{{ student.studentId }}">
+              {% endif %}
+            </td>
+            <td>{{ student.studentId }}</td>
+            <td>{{ student.realName }}</td>
+            <td>
+              {% if student.bound %}
+                <span class="badge badge--success">已绑定</span>
+              {% else %}
+                <span class="badge badge--warning">未绑定</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if student.bound %}
+                {{ student.boundBy }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>
+              {% if student.bound %}
+                {{ student.boundAt }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </form>
+    {% else %}
+    <div class="empty">
+      <p>暂无学生</p>
+      <p>请在右侧表单中添加学生信息</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function toggleAll(checkbox) {
+  const checkboxes = document.querySelectorAll('input[name="selectedStudents"]');
+  checkboxes.forEach(cb => cb.checked = checkbox.checked);
+}
+</script>
+{% endblock %}
