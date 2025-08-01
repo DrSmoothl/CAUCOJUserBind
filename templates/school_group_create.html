@@ -1,0 +1,43 @@
+{% extends "layout/base.html" %}
+{% block title %}创建学校组{% endblock %}
+
+{% block content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">创建学校组</h1>
+  </div>
+  
+  <div class="section__body">
+    <form method="post" class="form">
+      {% if error %}
+      <div class="alert alert--error">
+        {{ error }}
+      </div>
+      {% endif %}
+      
+      <div class="form__group">
+        <label for="name" class="form__label">学校名称</label>
+        <input type="text" 
+               id="name" 
+               name="name" 
+               class="form__input" 
+               value="{{ name or '' }}"
+               placeholder="请输入学校名称，如：清华大学" 
+               required>
+        <div class="form__help">
+          每个学校只能创建一个学校组，请确保名称准确无误
+        </div>
+      </div>
+      
+      <div class="form__group">
+        <button type="submit" class="button button--primary">
+          <span class="icon icon-check"></span> 创建学校组
+        </button>
+        <a href="/school-group/manage" class="button button--text">
+          取消
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "layout/base.html" %}
+{% block title %}用户组管理{% endblock %}
+
+{% block content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">用户组管理</h1>
+    <div class="section__tools">
+      <a href="/user-group/create" class="button button--primary">
+        <span class="icon icon-add"></span> 创建用户组
+      </a>
+    </div>
+  </div>
+  
+  <div class="section__body">
+    {% if userGroups|length > 0 %}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>用户组名称</th>
+          <th>所属学校</th>
+          <th>学生数量</th>
+          <th>已绑定数量</th>
+          <th>创建时间</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for group in userGroups %}
+        <tr>
+          <td>{{ group.name }}</td>
+          <td>{{ group.schoolName or '未知' }}</td>
+          <td>{{ group.students|length }}</td>
+          <td>
+            {% set boundCount = group.students|selectattr('bound', 'equalto', true)|list|length %}
+            {{ boundCount }}
+          </td>
+          <td>{{ group.createdAt|date('Y-m-d H:i:s') }}</td>
+          <td>
+            <a href="#" class="button button--small button--text" 
+               onclick="showGroupDetails('{{ group._id }}')">
+              查看详情
+            </a>
+            <a href="#" class="button button--small button--text" 
+               onclick="showBindToken('{{ group._id }}')">
+              绑定链接
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    
+    {% if pageCount > 1 %}
+    <div class="pagination">
+      {% for i in range(1, pageCount + 1) %}
+        {% if i == page %}
+          <span class="pagination__item pagination__item--current">{{ i }}</span>
+        {% else %}
+          <a href="?page={{ i }}" class="pagination__item">{{ i }}</a>
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="empty">
+      <div class="empty__icon">
+        <span class="icon icon-group"></span>
+      </div>
+      <div class="empty__text">
+        <p>暂无用户组</p>
+        <p><a href="/user-group/create">点击创建第一个用户组</a></p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function showGroupDetails(groupId) {
+  // TODO: 实现显示用户组详情的功能
+  alert('显示用户组详情功能待实现');
+}
+
+function showBindToken(groupId) {
+  // TODO: 实现显示绑定令牌的功能
+  alert('显示用户组绑定链接功能待实现');
+}
+</script>
+{% endblock %}

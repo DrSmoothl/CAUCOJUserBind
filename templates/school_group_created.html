@@ -1,0 +1,88 @@
+{% extends "layout/base.html" %}
+{% block title %}学校组创建成功{% endblock %}
+
+{% block content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">学校组创建成功</h1>
+  </div>
+  
+  <div class="section__body">
+    <div class="alert alert--success">
+      <h3>学校组 "{{ school.name }}" 创建成功！</h3>
+    </div>
+    
+    <div class="card">
+      <div class="card__header">
+        <h4>绑定信息</h4>
+      </div>
+      <div class="card__body">
+        <div class="form__group">
+          <label class="form__label">绑定令牌</label>
+          <div class="input-group">
+            <input type="text" 
+                   id="bindToken" 
+                   class="form__input" 
+                   value="{{ bindToken }}" 
+                   readonly>
+            <button type="button" 
+                    class="button button--secondary" 
+                    onclick="copyToClipboard('bindToken')">
+              复制
+            </button>
+          </div>
+        </div>
+        
+        <div class="form__group">
+          <label class="form__label">绑定链接</label>
+          <div class="input-group">
+            <input type="text" 
+                   id="bindUrl" 
+                   class="form__input" 
+                   value="{{ request.host }}{{ bindUrl }}" 
+                   readonly>
+            <button type="button" 
+                    class="button button--secondary" 
+                    onclick="copyToClipboard('bindUrl')">
+              复制
+            </button>
+          </div>
+        </div>
+        
+        <div class="alert alert--info">
+          <p><strong>使用说明：</strong></p>
+          <ul>
+            <li>此绑定链接用于直接绑定到学校组</li>
+            <li>学生访问此链接后可以直接绑定到 "{{ school.name }}"</li>
+            <li>建议保存好此链接，用于后续学生绑定</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    
+    <div class="form__group">
+      <a href="/school-group/manage" class="button button--primary">
+        返回学校组管理
+      </a>
+      <a href="/user-group/create" class="button button--secondary">
+        创建用户组
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+function copyToClipboard(elementId) {
+  const element = document.getElementById(elementId);
+  element.select();
+  element.setSelectionRange(0, 99999);
+  
+  try {
+    document.execCommand('copy');
+    alert('已复制到剪贴板');
+  } catch (err) {
+    alert('复制失败，请手动复制');
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "layout/base.html" %}
+{% block title %}绑定成功{% endblock %}
+
+{% block content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">绑定成功</h1>
+  </div>
+  
+  <div class="section__body">
+    <div class="alert alert--success">
+      <h3>🎉 恭喜！身份绑定成功</h3>
+    </div>
+    
+    <div class="card">
+      <div class="card__header">
+        <h4>绑定信息</h4>
+      </div>
+      <div class="card__body">
+        {% if studentId and realName %}
+        <div class="info-item">
+          <span class="info-label">学号：</span>
+          <span class="info-value">{{ studentId }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">姓名：</span>
+          <span class="info-value">{{ realName }}</span>
+        </div>
+        {% endif %}
+        
+        {% if groupName %}
+        <div class="info-item">
+          <span class="info-label">{{ message or '绑定组织' }}：</span>
+          <span class="info-value">{{ groupName }}</span>
+        </div>
+        {% endif %}
+        
+        {% if message %}
+        <div class="alert alert--info">
+          {{ message }}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    
+    <div class="alert alert--success">
+      <p><strong>您现在可以：</strong></p>
+      <ul>
+        <li>访问训练题目和练习</li>
+        <li>参与作业和考试</li>
+        <li>查看排行榜和成绩</li>
+        <li>参加比赛活动</li>
+      </ul>
+    </div>
+    
+    <div class="form__group">
+      <a href="/" class="button button--primary">
+        <span class="icon icon-home"></span> 返回首页
+      </a>
+      <a href="/training" class="button button--secondary">
+        <span class="icon icon-code"></span> 开始训练
+      </a>
+    </div>
+  </div>
+</div>
+
+<style>
+.info-item {
+  display: flex;
+  margin-bottom: 0.5rem;
+}
+
+.info-label {
+  width: 80px;
+  font-weight: bold;
+  color: #666;
+}
+
+.info-value {
+  color: #333;
+}
+</style>
+{% endblock %}

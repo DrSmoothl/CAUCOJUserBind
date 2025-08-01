@@ -1,0 +1,87 @@
+{% extends "layout/base.html" %}
+{% block title %}创建用户组{% endblock %}
+
+{% block content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">创建用户组</h1>
+  </div>
+  
+  <div class="section__body">
+    <form method="post" class="form">
+      {% if error %}
+      <div class="alert alert--error">
+        {{ error }}
+      </div>
+      {% endif %}
+      
+      <div class="form__group">
+        <label for="name" class="form__label">用户组名称</label>
+        <input type="text" 
+               id="name" 
+               name="name" 
+               class="form__input" 
+               value="{{ name or '' }}"
+               placeholder="请输入用户组名称，如：2024级计算机1班" 
+               required>
+      </div>
+      
+      <div class="form__group">
+        <label for="parentSchoolId" class="form__label">所属学校</label>
+        <select id="parentSchoolId" name="parentSchoolId" class="form__select" required>
+          <option value="">请选择学校</option>
+          {% for school in schools %}
+          <option value="{{ school._id }}" 
+                  {% if parentSchoolId == school._id %}selected{% endif %}>
+            {{ school.name }}
+          </option>
+          {% endfor %}
+        </select>
+        {% if schools|length == 0 %}
+        <div class="form__help">
+          <span class="text-warning">暂无可用学校，请先 <a href="/school-group/create">创建学校组</a></span>
+        </div>
+        {% endif %}
+      </div>
+      
+      <div class="form__group">
+        <label for="studentsData" class="form__label">学生信息</label>
+        <textarea id="studentsData" 
+                  name="studentsData" 
+                  class="form__textarea" 
+                  rows="10"
+                  placeholder="请输入学生信息，每行一个学生，格式：学号 姓名&#10;例如：&#10;2024001 张三&#10;2024002 李四&#10;2024003 王五">{{ studentsData or '' }}</textarea>
+        <div class="form__help">
+          每行一个学生，格式：学号 姓名（用空格分隔）
+        </div>
+      </div>
+      
+      <div class="form__group">
+        <button type="submit" class="button button--primary">
+          <span class="icon icon-check"></span> 创建用户组
+        </button>
+        <a href="/user-group/manage" class="button button--text">
+          取消
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// 示例数据填充
+document.addEventListener('DOMContentLoaded', function() {
+  const textarea = document.getElementById('studentsData');
+  if (!textarea.value) {
+    const exampleBtn = document.createElement('button');
+    exampleBtn.type = 'button';
+    exampleBtn.className = 'button button--small button--text';
+    exampleBtn.textContent = '填充示例数据';
+    exampleBtn.onclick = function() {
+      textarea.value = '2024001 张三\n2024002 李四\n2024003 王五\n2024004 赵六';
+    };
+    textarea.parentNode.appendChild(exampleBtn);
+  }
+});
+</script>
+{% endblock %}

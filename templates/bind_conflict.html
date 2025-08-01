@@ -1,0 +1,85 @@
+{% extends "layout/base.html" %}
+{% block title %}绑定冲突{% endblock %}
+
+{% block content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">绑定冲突</h1>
+  </div>
+  
+  <div class="section__body">
+    <div class="alert alert--warning">
+      <h3>⚠️ 学校组冲突</h3>
+      <p>{{ message }}</p>
+    </div>
+    
+    {% if currentSchools and currentSchools|length > 0 %}
+    <div class="card">
+      <div class="card__header">
+        <h4>您当前所属的学校组</h4>
+      </div>
+      <div class="card__body">
+        <ul>
+          {% for school in currentSchools %}
+          <li>{{ school.name }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if targetGroup %}
+    <div class="card">
+      <div class="card__header">
+        <h4>目标用户组信息</h4>
+      </div>
+      <div class="card__body">
+        <div class="info-item">
+          <span class="info-label">用户组名称：</span>
+          <span class="info-value">{{ targetGroup.name }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">所属学校：</span>
+          <span class="info-value">{{ targetGroup.schoolName or '未知' }}</span>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    
+    <div class="alert alert--info">
+      <p><strong>解决方案：</strong></p>
+      <ul>
+        <li>请联系系统管理员处理学校组冲突</li>
+        <li>或者使用正确的绑定链接</li>
+        <li>每个用户只能属于一个学校组</li>
+      </ul>
+    </div>
+    
+    <div class="form__group">
+      <a href="/" class="button button--primary">
+        <span class="icon icon-home"></span> 返回首页
+      </a>
+      <a href="javascript:history.back()" class="button button--text">
+        返回上一页
+      </a>
+    </div>
+  </div>
+</div>
+
+<style>
+.info-item {
+  display: flex;
+  margin-bottom: 0.5rem;
+}
+
+.info-label {
+  width: 120px;
+  font-weight: bold;
+  color: #666;
+}
+
+.info-value {
+  color: #333;
+}
+</style>
+{% endblock %}

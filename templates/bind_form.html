@@ -1,0 +1,80 @@
+{% extends "layout/base.html" %}
+{% block title %}身份绑定{% endblock %}
+
+{% block content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">身份绑定</h1>
+  </div>
+  
+  <div class="section__body">
+    {% if bindInfo %}
+    <div class="card">
+      <div class="card__header">
+        <h4>绑定目标</h4>
+      </div>
+      <div class="card__body">
+        {% if bindInfo.type == 'school_group' %}
+        <div class="alert alert--info">
+          <p><strong>学校组绑定</strong></p>
+          <p>您将绑定到学校：<strong>{{ bindInfo.target.name }}</strong></p>
+        </div>
+        {% else %}
+        <div class="alert alert--info">
+          <p><strong>用户组绑定</strong></p>
+          <p>您将绑定到用户组：<strong>{{ bindInfo.target.name }}</strong></p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+    
+    <form method="post" class="form">
+      {% if error %}
+      <div class="alert alert--error">
+        {{ error }}
+      </div>
+      {% endif %}
+      
+      <div class="form__group">
+        <label for="studentId" class="form__label">学号</label>
+        <input type="text" 
+               id="studentId" 
+               name="studentId" 
+               class="form__input" 
+               value="{{ studentId or '' }}"
+               placeholder="请输入您的学号" 
+               required>
+      </div>
+      
+      <div class="form__group">
+        <label for="realName" class="form__label">真实姓名</label>
+        <input type="text" 
+               id="realName" 
+               name="realName" 
+               class="form__input" 
+               value="{{ realName or '' }}"
+               placeholder="请输入您的真实姓名" 
+               required>
+      </div>
+      
+      {% if bindInfo and bindInfo.type == 'user_group' %}
+      <div class="alert alert--warning">
+        <p><strong>注意：</strong></p>
+        <ul>
+          <li>请确保输入的学号和姓名与老师导入的信息完全一致</li>
+          <li>每个学生信息只能绑定一次</li>
+          <li>绑定成功后将获得相应的学习权限</li>
+        </ul>
+      </div>
+      {% endif %}
+      
+      <div class="form__group">
+        <button type="submit" class="button button--primary">
+          <span class="icon icon-link"></span> 确认绑定
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
