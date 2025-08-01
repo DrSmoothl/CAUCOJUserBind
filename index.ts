@@ -1129,11 +1129,17 @@ class BindHandler extends Handler {
                 return;
             } else {
                 // 学校组不一致，需要重新绑定学校
+                // 获取目标用户组所属的学校信息
+                const targetSchool = await userBindModel.getSchoolGroupById(targetGroup.parentSchoolId);
+                
                 this.response.template = 'bind_conflict.html';
                 this.response.body = {
                     message: '您当前所属的学校组与目标用户组不匹配',
                     currentSchools: userSchools,
-                    targetGroup: targetGroup
+                    targetGroup: {
+                        ...targetGroup,
+                        schoolName: targetSchool ? targetSchool.name : '未知学校'
+                    }
                 };
                 return;
             }
