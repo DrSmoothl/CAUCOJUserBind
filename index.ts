@@ -2,6 +2,7 @@ import {
     db, Context, UserModel, Handler, NotFoundError, ForbiddenError, 
     PRIV, Types, SettingModel, moment, PERM
 } from 'hydrooj';
+import { ObjectId } from 'mongodb';
 import * as crypto from 'crypto';
 
 // 集合定义
@@ -427,7 +428,8 @@ const userBindModel = {
 
     // 向学校组添加成员
     async addSchoolGroupMembers(schoolGroupId: any, members: Array<{studentId: string, realName: string}>): Promise<void> {
-        const school = await schoolGroupsColl.findOne({ _id: schoolGroupId });
+        const objId = typeof schoolGroupId === 'string' ? new ObjectId(schoolGroupId) : schoolGroupId;
+        const school = await schoolGroupsColl.findOne({ _id: objId });
         if (!school) {
             throw new Error('学校组不存在');
         }
@@ -446,14 +448,15 @@ const userBindModel = {
         }
 
         await schoolGroupsColl.updateOne(
-            { _id: schoolGroupId },
+            { _id: objId },
             { $push: { members: { $each: newMembers } } }
         );
     },
 
     // 从学校组移除成员
     async removeSchoolGroupMembers(schoolGroupId: any, studentIds: string[]): Promise<void> {
-        const school = await schoolGroupsColl.findOne({ _id: schoolGroupId });
+        const objId = typeof schoolGroupId === 'string' ? new ObjectId(schoolGroupId) : schoolGroupId;
+        const school = await schoolGroupsColl.findOne({ _id: objId });
         if (!school) {
             throw new Error('学校组不存在');
         }
@@ -467,14 +470,15 @@ const userBindModel = {
         }
 
         await schoolGroupsColl.updateOne(
-            { _id: schoolGroupId },
+            { _id: objId },
             { $pull: { members: { studentId: { $in: studentIds } } } }
         );
     },
 
     // 向用户组添加学生
     async addUserGroupStudents(userGroupId: any, students: Array<{studentId: string, realName: string}>): Promise<void> {
-        const userGroup = await userGroupsColl.findOne({ _id: userGroupId });
+        const objId = typeof userGroupId === 'string' ? new ObjectId(userGroupId) : userGroupId;
+        const userGroup = await userGroupsColl.findOne({ _id: objId });
         if (!userGroup) {
             throw new Error('用户组不存在');
         }
@@ -493,14 +497,15 @@ const userBindModel = {
         }
 
         await userGroupsColl.updateOne(
-            { _id: userGroupId },
+            { _id: objId },
             { $push: { students: { $each: newStudents } } }
         );
     },
 
     // 从用户组移除学生
     async removeUserGroupStudents(userGroupId: any, studentIds: string[]): Promise<void> {
-        const userGroup = await userGroupsColl.findOne({ _id: userGroupId });
+        const objId = typeof userGroupId === 'string' ? new ObjectId(userGroupId) : userGroupId;
+        const userGroup = await userGroupsColl.findOne({ _id: objId });
         if (!userGroup) {
             throw new Error('用户组不存在');
         }
@@ -514,7 +519,7 @@ const userBindModel = {
         }
 
         await userGroupsColl.updateOne(
-            { _id: userGroupId },
+            { _id: objId },
             { $pull: { students: { studentId: { $in: studentIds } } } }
         );
     },
@@ -523,75 +528,61 @@ const userBindModel = {
     async getSchoolGroupById(schoolGroupId: any): Promise<SchoolGroup | null> {
         console.log('getSchoolGroupById: 传入的ID:', schoolGroupId, '类型:', typeof schoolGroupId);
         
-        // 先列出所有学校组，用于调试
-        const allSchools = await schoolGroupsColl.find().limit(5).toArray();
-        console.log('getSchoolGroupById: 数据库中的学校组样例:');
-        allSchools.forEach((school, index) => {
-            console.log(`  ${index}: _id=${school._id} (类型: ${typeof school._id}) name=${school.name}`);
-        });
+        if (!schoolGroupId) return null;
         
-        // 尝试多种查询方式
-        let result: SchoolGroup | null = null;
-        
-        // 方式1: 直接字符串查询
         try {
-            result = await schoolGroupsColl.findOne({ _id: schoolGroupId });
-            console.log('getSchoolGroupById: 字符串查询结果:', result);
-        } catch (error) {
-            console.log('getSchoolGroupById: 字符串查询失败:', error);
-        }
-        
-        // 方式2: 尝试作为ObjectId查询
-        if (!result && typeof schoolGroupId === 'string' && schoolGroupId.match(/^[0-9a-fA-F]{24}$/)) {
-            try {
-                // 使用字符串匹配的方式，因为MongoDB驱动会自动处理ObjectId转换
-                const allResults = await schoolGroupsColl.find().toArray();
-                result = allResults.find(school => school._id.toString() === schoolGroupId) || null;
-                console.log('getSchoolGroupById: 字符串匹配查询结果:', result);
-            } catch (error) {
-                console.log('getSchoolGroupById: 字符串匹配查询失败:', error);
+            let objId;
+            if (typeof schoolGroupId === 'string') {
+                // 检查是否是有效的ObjectId字符串
+                if (schoolGroupId.match(/^[0-9a-fA-F]{24}$/)) {
+                    objId = new ObjectId(schoolGroupId);
+                } else {
+                    console.log('getSchoolGroupById: 无效的ObjectId字符串格式');
+                    return null;
+                }
+            } else if (schoolGroupId._id || schoolGroupId.toHexString) {
+                // 已经是ObjectId对象
+                objId = schoolGroupId;
+            } else {
+                console.log('getSchoolGroupById: 未知的ID类型');
+                return null;
             }
+            
+            const result = await schoolGroupsColl.findOne({ _id: objId });
+            console.log('getSchoolGroupById: 查询结果:', result ? '找到' : '未找到');
+            return result;
+        } catch (error) {
+            console.log('getSchoolGroupById: 查询出错:', error);
+            return null;
         }
-        
-        return result;
     },
 
     // 获取用户组详情
     async getUserGroupById(userGroupId: any): Promise<UserGroup | null> {
-        console.log('getUserGroupById: 传入的ID:', userGroupId, '类型:', typeof userGroupId);
-        
-        // 尝试多种查询方式
-        let result: UserGroup | null = null;
-        
-        // 方式1: 直接字符串查询
         try {
-            result = await userGroupsColl.findOne({ _id: userGroupId });
-            console.log('getUserGroupById: 字符串查询结果:', result);
-        } catch (error) {
-            console.log('getUserGroupById: 字符串查询失败:', error);
-        }
-        
-        // 方式2: 尝试作为ObjectId查询
-        if (!result && typeof userGroupId === 'string' && userGroupId.match(/^[0-9a-fA-F]{24}$/)) {
-            try {
-                const collection = userGroupsColl as any;
-                const ObjectId = collection.s?.db?.s?.client?.topology?.s?.options?.srvHost ? 
-                    require('mongodb').ObjectId : 
-                    collection.s?.db?.s?.pkFactory || 
-                    (() => { throw new Error('ObjectId not found'); });
-                
-                if (typeof ObjectId === 'function') {
-                    const objId = new ObjectId(userGroupId);
-                    result = await userGroupsColl.findOne({ _id: objId });
-                    console.log('getUserGroupById: ObjectId查询结果:', result);
+            console.log('getUserGroupById: 传入的ID:', userGroupId, '类型:', typeof userGroupId);
+            
+            let queryId: any = userGroupId;
+            
+            // 如果是字符串且符合ObjectId格式，转换为ObjectId
+            if (typeof userGroupId === 'string' && userGroupId.match(/^[0-9a-fA-F]{24}$/)) {
+                try {
+                    queryId = new ObjectId(userGroupId);
+                    console.log('getUserGroupById: 转换为ObjectId:', queryId);
+                } catch (error) {
+                    console.log('getUserGroupById: ObjectId转换失败，使用原始字符串:', error);
+                    queryId = userGroupId;
                 }
-            } catch (error) {
-                console.log('getUserGroupById: ObjectId查询失败:', error);
             }
+            
+            const result = await userGroupsColl.findOne({ _id: queryId });
+            console.log('getUserGroupById: 查询结果:', result ? '找到' : '未找到');
+            return result;
+        } catch (error) {
+            console.log('getUserGroupById: 查询出错:', error);
+            return null;
         }
-        
-        return result;
-    }
+    },
 };
 
 global.Hydro.model.userBind = userBindModel;
