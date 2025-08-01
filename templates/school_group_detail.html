@@ -199,13 +199,13 @@
 }
 
 /* 布局 */
-.row {
+.school-group-row {
   display: flex;
   gap: 24px;
   margin: -12px;
 }
 
-.col-md-6 {
+.school-group-col {
   flex: 1;
   padding: 12px;
 }
@@ -297,8 +297,8 @@
       </div>
     </div>
     
-    <div class="row">
-      <div class="col-md-6">
+    <div class="school-group-row">
+      <div class="school-group-col">
         <div class="info-card">
           <h3>基本信息</h3>
           <table class="data-table">
@@ -320,7 +320,7 @@
         </div>
       </div>
       
-      <div class="col-md-6">
+      <div class="school-group-col">
         <div class="info-card">
           <h3>添加成员</h3>
           <form method="post" action="/school-group/detail/{{ school._id }}">
