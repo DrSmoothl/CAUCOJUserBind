@@ -3,12 +3,6 @@
 
 {% block content %}
 <style>
-/* 页面容器样式 - 确保与导航栏有足够间距 */
-.page-container {
-  margin-top: 20px;
-  padding-top: 10px;
-}
-
 /* 美化提示框样式 */
 .alert {
   border-radius: 8px;
@@ -192,13 +186,6 @@
 
 .section__tools {
   margin-bottom: 16px;
-  position: relative;
-  z-index: 10;
-  background: white;
-  padding: 16px 0;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  margin-top: 8px;
 }
 
 /* 美化空状态 */
@@ -263,41 +250,8 @@
   font-size: 14px;
   opacity: 0.9;
 }
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .page-container {
-    margin-top: 10px;
-    padding: 0 10px;
-  }
-  
-  .section__tools {
-    padding: 12px 8px;
-    margin-top: 4px;
-  }
-  
-  .stats-grid {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 12px;
-  }
-  
-  .row {
-    flex-direction: column;
-    gap: 16px;
-  }
-  
-  .data-table {
-    font-size: 14px;
-  }
-  
-  .data-table th,
-  .data-table td {
-    padding: 8px 12px;
-  }
-}
 </style>
 
-<div class="page-container">
 <div class="section">
   <div class="section__header">
     <h1 class="section__title">学校组详情 - {{ school.name }}</h1>
@@ -463,7 +417,6 @@
     </div>
     {% endif %}
   </div>
-</div>
 </div>
 
 <script>
