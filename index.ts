@@ -127,14 +127,23 @@ const userBindModel = {
     // 为学校组创建绑定令牌
     async createSchoolGroupBindToken(schoolGroupId: any, createdBy: number): Promise<string> {
         const token = this.generateBindToken();
+        console.log('createSchoolGroupBindToken: 生成的令牌:', token);
+        console.log('createSchoolGroupBindToken: 学校组ID:', schoolGroupId);
+        console.log('createSchoolGroupBindToken: 创建者ID:', createdBy);
         
-        await bindTokensColl.insertOne({
+        const insertResult = await bindTokensColl.insertOne({
             _id: token,
             type: 'school_group',
             targetId: schoolGroupId,
             createdAt: new Date(),
             createdBy
         });
+        
+        console.log('createSchoolGroupBindToken: 插入结果:', insertResult);
+        
+        // 验证插入是否成功
+        const verification = await bindTokensColl.findOne({ _id: token });
+        console.log('createSchoolGroupBindToken: 验证插入的记录:', verification);
         
         return token;
     },
@@ -145,22 +154,31 @@ const userBindModel = {
         target: UserGroup | SchoolGroup;
         bindToken: BindToken;
     } | null> {
+        console.log('getBindInfo: 查询令牌:', token);
+        
         const bindToken = await bindTokensColl.findOne({ _id: token });
+        console.log('getBindInfo: 找到的绑定令牌:', bindToken);
+        
         if (!bindToken) {
+            console.log('getBindInfo: 绑定令牌不存在');
             return null;
         }
 
         let target;
         if (bindToken.type === 'user_group') {
             target = await userGroupsColl.findOne({ _id: bindToken.targetId });
+            console.log('getBindInfo: 用户组目标:', target);
         } else {
             target = await schoolGroupsColl.findOne({ _id: bindToken.targetId });
+            console.log('getBindInfo: 学校组目标:', target);
         }
 
         if (!target) {
+            console.log('getBindInfo: 目标对象不存在');
             return null;
         }
 
+        console.log('getBindInfo: 成功返回绑定信息');
         return { type: bindToken.type, target, bindToken };
     },
 
@@ -471,13 +489,22 @@ class UserGroupCreateHandler extends Handler {
 // 绑定界面 - 处理令牌绑定
 class BindHandler extends Handler {
     async get(domainId: string, token: string) {
+        console.log('BindHandler.get: 收到请求');
+        console.log('BindHandler.get: domainId:', domainId);
+        console.log('BindHandler.get: token:', token);
+        console.log('BindHandler.get: 用户ID:', this.user._id);
+        
         if (!this.user._id) {
+            console.log('BindHandler.get: 用户未登录，重定向到登录页');
             this.response.redirect = `/login?redirect=${encodeURIComponent(this.request.path)}`;
             return;
         }
 
         const bindInfo = await userBindModel.getBindInfo(token);
+        console.log('BindHandler.get: 获取的绑定信息:', bindInfo);
+        
         if (!bindInfo) {
+            console.log('BindHandler.get: 绑定信息不存在，抛出NotFoundError');
             throw new NotFoundError('绑定链接无效或已过期');
         }
 
@@ -616,6 +643,29 @@ export async function apply(ctx: Context) {
     ctx.Route('user_group_manage', '/user-group/manage', UserGroupManageHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('user_group_create', '/user-group/create', UserGroupCreateHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('bind', '/bind/:token', BindHandler);
+    
+    // 调试路由 - 检查绑定令牌
+    ctx.Route('debug_tokens', '/debug/tokens', class extends Handler {
+        async get() {
+            this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
+            
+            const allTokens = await bindTokensColl.find().toArray();
+            const allSchools = await schoolGroupsColl.find().toArray();
+            const allUserGroups = await userGroupsColl.find().toArray();
+            
+            this.response.body = {
+                bindTokens: allTokens,
+                schoolGroups: allSchools,
+                userGroups: allUserGroups,
+                collectionsInfo: {
+                    bindTokensCount: allTokens.length,
+                    schoolGroupsCount: allSchools.length,
+                    userGroupsCount: allUserGroups.length
+                }
+            };
+            this.response.type = 'application/json';
+        }
+    }, PRIV.PRIV_EDIT_SYSTEM);
     
     // 使用 hook 在所有路由处理前检查用户绑定状态和访问权限
     ctx.on('handler/before-prepare', async (h) => {
