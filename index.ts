@@ -100,11 +100,42 @@ const userBindModel = {
 
     // 创建用户组
     async createUserGroup(name: string, parentSchoolId: any, createdBy: number, students: Array<{studentId: string, realName: string}>): Promise<any> {
-        // 验证学校组是否存在
-        const school = await schoolGroupsColl.findOne({ _id: parentSchoolId });
+        console.log('createUserGroup: 传入的parentSchoolId:', parentSchoolId, '类型:', typeof parentSchoolId);
+        
+        // 使用灵活的查询方式验证学校组是否存在
+        let school: SchoolGroup | null = null;
+        
+        // 方式1: 直接使用传入的ID查询
+        try {
+            school = await schoolGroupsColl.findOne({ _id: parentSchoolId });
+            console.log('createUserGroup: 直接查询结果:', school ? '找到' : '未找到');
+        } catch (error) {
+            console.log('createUserGroup: 直接查询失败:', error);
+        }
+        
+        // 方式2: 如果直接查询失败，尝试字符串匹配
         if (!school) {
+            try {
+                const allSchools = await schoolGroupsColl.find().toArray();
+                school = allSchools.find(s => s._id.toString() === parentSchoolId.toString()) || null;
+                console.log('createUserGroup: 字符串匹配查询结果:', school ? '找到' : '未找到');
+            } catch (error) {
+                console.log('createUserGroup: 字符串匹配查询失败:', error);
+            }
+        }
+        
+        if (!school) {
+            console.log('createUserGroup: 学校组不存在，parentSchoolId:', parentSchoolId);
+            // 列出所有学校组用于调试
+            const allSchools = await schoolGroupsColl.find().limit(5).toArray();
+            console.log('createUserGroup: 现有学校组:');
+            allSchools.forEach((s, i) => {
+                console.log(`  ${i}: _id=${s._id} (${typeof s._id}) name=${s.name}`);
+            });
             throw new Error('指定的学校组不存在');
         }
+
+        console.log('createUserGroup: 找到学校组:', school.name);
 
         const studentsData = students.map(s => ({
             studentId: s.studentId,
@@ -116,10 +147,11 @@ const userBindModel = {
             name,
             createdAt: new Date(),
             createdBy,
-            parentSchoolId,
+            parentSchoolId: school._id, // 使用查找到的实际学校ID
             students: studentsData
         });
         
+        console.log('createUserGroup: 用户组创建成功，ID:', result.insertedId);
         return result.insertedId;
     },
 
@@ -223,7 +255,24 @@ const userBindModel = {
         if (dbUser?.parentSchoolId && dbUser.parentSchoolId.length > 0) {
             // 用户已有学校组，检查是否一致
             const userSchoolId = dbUser.parentSchoolId[0];
-            if (!userSchoolId.equals(userGroup.parentSchoolId)) {
+            
+            // 使用灵活的ID比较方式
+            let schoolMatches = false;
+            try {
+                // 尝试直接比较
+                schoolMatches = userSchoolId.equals && userSchoolId.equals(userGroup.parentSchoolId);
+            } catch (error) {
+                // 如果直接比较失败，尝试字符串比较
+                schoolMatches = userSchoolId.toString() === userGroup.parentSchoolId.toString();
+            }
+            
+            console.log('bindUserToGroup: 学校组匹配检查:', {
+                userSchoolId: userSchoolId.toString(),
+                groupSchoolId: userGroup.parentSchoolId.toString(),
+                matches: schoolMatches
+            });
+            
+            if (!schoolMatches) {
                 throw new Error('您已属于其他学校，无法绑定到此用户组');
             }
         }
@@ -1047,9 +1096,22 @@ class BindHandler extends Handler {
             const userSchools = await userBindModel.getUserSchoolGroups(this.user._id);
             const targetGroup = bindInfo.target as UserGroup;
             
-            const hasMatchingSchool = userSchools.some(school => 
-                school._id.toString() === targetGroup.parentSchoolId.toString()
-            );
+            const hasMatchingSchool = userSchools.some(school => {
+                // 使用灵活的ID比较方式
+                try {
+                    // 尝试ObjectId比较
+                    return school._id.equals && school._id.equals(targetGroup.parentSchoolId);
+                } catch (error) {
+                    // 如果ObjectId比较失败，使用字符串比较
+                    return school._id.toString() === targetGroup.parentSchoolId.toString();
+                }
+            });
+
+            console.log('BindHandler.get: 学校组匹配检查:', {
+                userSchools: userSchools.map(s => ({ id: s._id.toString(), name: s.name })),
+                targetGroupSchoolId: targetGroup.parentSchoolId.toString(),
+                hasMatchingSchool
+            });
 
             if (hasMatchingSchool) {
                 // 学校组一致，直接加入用户组

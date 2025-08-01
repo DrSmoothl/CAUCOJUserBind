@@ -2,129 +2,498 @@
 {% block title %}绑定结果{% endblock %}
 
 {% block content %}
-<div class="section">
-  <div class="section__header">
-    <h1 class="section__title">绑定结果</h1>
-  </div>
+<style>
+/* 结果页面样式 */
+.result-container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.result-hero {
+  text-align: center;
+  padding: 40px 20px;
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 32px;
+  color: white;
+}
+
+.result-hero--success {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.result-hero--error {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.result-hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 30px,
+    rgba(255,255,255,0.1) 30px,
+    rgba(255,255,255,0.1) 60px
+  );
+  animation: resultAnimation 10s linear infinite;
+}
+
+@keyframes resultAnimation {
+  0% { transform: translateX(-100px) translateY(-100px) rotate(0deg); }
+  100% { transform: translateX(100px) translateY(100px) rotate(360deg); }
+}
+
+.result-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  display: block;
+  position: relative;
+  z-index: 1;
+  animation: resultBounce 2s ease-in-out infinite;
+}
+
+@keyframes resultBounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-15px); }
+  60% { transform: translateY(-7px); }
+}
+
+.result-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.result-subtitle {
+  font-size: 1rem;
+  opacity: 0.9;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* 信息卡片 */
+.info-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.info-header {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  padding: 16px 20px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-body {
+  padding: 24px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  background: #f8fafc;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border-left: 4px solid #3b82f6;
+}
+
+.info-item:last-child {
+  margin-bottom: 0;
+}
+
+.info-label {
+  font-weight: 600;
+  color: #4b5563;
+  min-width: 100px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-value {
+  color: #1f2937;
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+/* 提示卡片 */
+.tips-card {
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border-radius: 12px;
+  padding: 20px;
+  border: 2px solid #0ea5e9;
+  margin-bottom: 24px;
+}
+
+.tips-title {
+  color: #0369a1;
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tips-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tips-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 0;
+  color: #0369a1;
+  font-weight: 500;
+}
+
+.tips-list li::before {
+  content: '✅';
+  font-size: 1rem;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+/* 错误提示卡片 */
+.error-card {
+  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+  border-radius: 12px;
+  padding: 20px;
+  border: 2px solid #f87171;
+  margin-bottom: 24px;
+}
+
+.error-title {
+  color: #dc2626;
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.error-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.error-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 0;
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.error-list li::before {
+  content: '❌';
+  font-size: 1rem;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+/* 警告卡片 */
+.warning-card {
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  border-radius: 12px;
+  padding: 20px;
+  border: 2px solid #fbbf24;
+  margin-bottom: 24px;
+}
+
+.warning-title {
+  color: #d97706;
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.warning-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.warning-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 0;
+  color: #d97706;
+  font-weight: 500;
+}
+
+.warning-list li::before {
+  content: '⚠️';
+  font-size: 1rem;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+/* 按钮样式 */
+.action-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.button {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.button--primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+}
+
+.button--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+.button--secondary {
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+  color: white;
+}
+
+.button--secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(107, 114, 128, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+.button--retry {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+}
+
+.button--retry:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+/* section重置 */
+.section {
+  background: transparent;
+  box-shadow: none;
+}
+
+.section__header {
+  display: none;
+}
+
+.section__body {
+  padding: 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .result-container {
+    margin: 20px auto;
+    padding: 0 16px;
+  }
   
+  .result-hero {
+    padding: 32px 16px;
+  }
+  
+  .result-title {
+    font-size: 1.5rem;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .button {
+    width: 100%;
+  }
+  
+  .info-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .info-label {
+    min-width: auto;
+    margin-bottom: 4px;
+  }
+}
+</style>
+
+<div class="section">
   <div class="section__body">
-    {% if success %}
-      <div class="alert alert--success">
-        <h3>绑定成功！</h3>
-        <p>欢迎，{{ studentName }}（学号：{{ studentId }}）</p>
-        <p>您已成功绑定到用户组：{{ userGroupName }}</p>
-      </div>
-      
-      <div class="card">
-        <div class="card__header">
-          <h4>绑定信息</h4>
+    <div class="result-container">
+      {% if success %}
+        <div class="result-hero result-hero--success">
+          <span class="result-icon">🎉</span>
+          <h1 class="result-title">绑定成功！</h1>
+          <p class="result-subtitle">欢迎加入，{{ studentName }}！</p>
         </div>
-        <div class="card__body">
-          <div class="form__group">
-            <label class="form__label">学生姓名</label>
-            <p class="form__text">{{ studentName }}</p>
+        
+        <div class="info-card">
+          <div class="info-header">
+            <span>👤</span> 绑定信息
           </div>
-          
-          <div class="form__group">
-            <label class="form__label">学号</label>
-            <p class="form__text">{{ studentId }}</p>
-          </div>
-          
-          <div class="form__group">
-            <label class="form__label">所属用户组</label>
-            <p class="form__text">{{ userGroupName }}</p>
-          </div>
-          
-          {% if schoolGroupName %}
-          <div class="form__group">
-            <label class="form__label">所属学校组</label>
-            <p class="form__text">{{ schoolGroupName }}</p>
-          </div>
-          {% endif %}
-          
-          <div class="form__group">
-            <label class="form__label">绑定时间</label>
-            <p class="form__text">{{ bindTime }}</p>
+          <div class="info-body">
+            <div class="info-item">
+              <span class="info-label">
+                <span>📝</span> 学生姓名：
+              </span>
+              <span class="info-value">{{ studentName }}</span>
+            </div>
+            
+            <div class="info-item">
+              <span class="info-label">
+                <span>🆔</span> 学号：
+              </span>
+              <span class="info-value">{{ studentId }}</span>
+            </div>
+            
+            <div class="info-item">
+              <span class="info-label">
+                <span>👥</span> 所属用户组：
+              </span>
+              <span class="info-value">{{ userGroupName }}</span>
+            </div>
+            
+            {% if schoolGroupName %}
+            <div class="info-item">
+              <span class="info-label">
+                <span>🏫</span> 所属学校组：
+              </span>
+              <span class="info-value">{{ schoolGroupName }}</span>
+            </div>
+            {% endif %}
+            
+            <div class="info-item">
+              <span class="info-label">
+                <span>⏰</span> 绑定时间：
+              </span>
+              <span class="info-value">{{ bindTime }}</span>
+            </div>
           </div>
         </div>
-      </div>
-      
-      <div class="alert alert--info">
-        <p><strong>接下来您可以：</strong></p>
-        <ul>
-          <li>开始使用平台进行练习和比赛</li>
-          <li>查看您的个人资料和统计信息</li>
-          <li>参与您所在用户组的活动</li>
-        </ul>
-      </div>
-      
-    {% else %}
-      <div class="alert alert--error">
-        <h3>绑定失败</h3>
-        <p>{{ errorMessage | default('未知错误，请联系管理员') }}</p>
-      </div>
-      
-      <div class="card">
-        <div class="card__header">
-          <h4>可能的原因</h4>
+        
+        <div class="tips-card">
+          <h3 class="tips-title">
+            <span>🚀</span> 接下来您可以
+          </h3>
+          <ul class="tips-list">
+            <li>开始使用平台进行练习和比赛</li>
+            <li>查看您的个人资料和统计信息</li>
+            <li>参与您所在用户组的活动</li>
+          </ul>
         </div>
-        <div class="card__body">
-          <ul>
+        
+      {% else %}
+        <div class="result-hero result-hero--error">
+          <span class="result-icon">❌</span>
+          <h1 class="result-title">绑定失败</h1>
+          <p class="result-subtitle">{{ errorMessage | default('未知错误，请联系管理员') }}</p>
+        </div>
+        
+        <div class="error-card">
+          <h3 class="error-title">
+            <span>🔍</span> 可能的原因
+          </h3>
+          <ul class="error-list">
             <li>学号或姓名不正确</li>
             <li>您不在此用户组的学生名单中</li>
             <li>绑定令牌已过期或无效</li>
             <li>您已经绑定过其他用户组</li>
           </ul>
         </div>
-      </div>
-      
-      <div class="alert alert--warning">
-        <p><strong>如需帮助：</strong></p>
-        <ul>
-          <li>请检查您的学号和姓名是否正确</li>
-          <li>确认您在相应班级的学生名单中</li>
-          <li>联系您的老师或管理员获取帮助</li>
-        </ul>
-      </div>
-    {% endif %}
-    
-    <div class="form__group">
-      {% if success %}
-        <a href="/" class="button button--primary">
-          返回首页
-        </a>
-        <a href="/user/{{ userId }}" class="button button--secondary">
-          查看个人资料
-        </a>
-      {% else %}
-        <a href="{{ bindUrl }}" class="button button--primary">
-          重新绑定
-        </a>
-        <a href="/" class="button button--secondary">
-          返回首页
-        </a>
+        
+        <div class="warning-card">
+          <h3 class="warning-title">
+            <span>💡</span> 如需帮助
+          </h3>
+          <ul class="warning-list">
+            <li>请检查您的学号和姓名是否正确</li>
+            <li>确认您在相应班级的学生名单中</li>
+            <li>联系您的老师或管理员获取帮助</li>
+          </ul>
+        </div>
       {% endif %}
+      
+      <div class="action-buttons">
+        {% if success %}
+          <a href="/" class="button button--primary">
+            <span>🏠</span> 返回首页
+          </a>
+          <a href="/user/{{ userId }}" class="button button--secondary">
+            <span>👤</span> 查看个人资料
+          </a>
+        {% else %}
+          <a href="{{ bindUrl }}" class="button button--retry">
+            <span>🔄</span> 重新绑定
+          </a>
+          <a href="/" class="button button--secondary">
+            <span>🏠</span> 返回首页
+          </a>
+        {% endif %}
+      </div>
     </div>
   </div>
 </div>
 
-<style>
-.form__text {
-  padding: 8px 0;
-  color: #333;
-  font-weight: 500;
-}
-
-.alert ul {
-  margin: 8px 0 0 20px;
-}
-
-.alert li {
-  margin: 4px 0;
-}
-
-.card .form__group:last-child {
-  margin-bottom: 0;
-}
-</style>
+<script>
+// 页面加载动画
+document.addEventListener('DOMContentLoaded', function() {
+  const container = document.querySelector('.result-container');
+  container.style.opacity = '0';
+  container.style.transform = 'translateY(20px)';
+  container.style.transition = 'all 0.6s ease';
+  
+  setTimeout(() => {
+    container.style.opacity = '1';
+    container.style.transform = 'translateY(0)';
+  }, 100);
+});
+</script>
 {% endblock %}
