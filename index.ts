@@ -519,12 +519,84 @@ const userBindModel = {
 
     // 获取学校组详情
     async getSchoolGroupById(schoolGroupId: any): Promise<SchoolGroup | null> {
-        return await schoolGroupsColl.findOne({ _id: schoolGroupId });
+        console.log('getSchoolGroupById: 传入的ID:', schoolGroupId, '类型:', typeof schoolGroupId);
+        
+        // 先列出所有学校组，用于调试
+        const allSchools = await schoolGroupsColl.find().limit(5).toArray();
+        console.log('getSchoolGroupById: 数据库中的学校组样例:');
+        allSchools.forEach((school, index) => {
+            console.log(`  ${index}: _id=${school._id} (类型: ${typeof school._id}) name=${school.name}`);
+        });
+        
+        // 尝试多种查询方式
+        let result: SchoolGroup | null = null;
+        
+        // 方式1: 直接字符串查询
+        try {
+            result = await schoolGroupsColl.findOne({ _id: schoolGroupId });
+            console.log('getSchoolGroupById: 字符串查询结果:', result);
+        } catch (error) {
+            console.log('getSchoolGroupById: 字符串查询失败:', error);
+        }
+        
+        // 方式2: 尝试作为ObjectId查询
+        if (!result && typeof schoolGroupId === 'string' && schoolGroupId.match(/^[0-9a-fA-F]{24}$/)) {
+            try {
+                // 使用数据库驱动内部的ObjectId
+                const collection = schoolGroupsColl as any;
+                const ObjectId = collection.s?.db?.s?.client?.topology?.s?.options?.srvHost ? 
+                    require('mongodb').ObjectId : 
+                    collection.s?.db?.s?.pkFactory || 
+                    (() => { throw new Error('ObjectId not found'); });
+                
+                if (typeof ObjectId === 'function') {
+                    const objId = new ObjectId(schoolGroupId);
+                    result = await schoolGroupsColl.findOne({ _id: objId });
+                    console.log('getSchoolGroupById: ObjectId查询结果:', result);
+                }
+            } catch (error) {
+                console.log('getSchoolGroupById: ObjectId查询失败:', error);
+            }
+        }
+        
+        return result;
     },
 
     // 获取用户组详情
     async getUserGroupById(userGroupId: any): Promise<UserGroup | null> {
-        return await userGroupsColl.findOne({ _id: userGroupId });
+        console.log('getUserGroupById: 传入的ID:', userGroupId, '类型:', typeof userGroupId);
+        
+        // 尝试多种查询方式
+        let result: UserGroup | null = null;
+        
+        // 方式1: 直接字符串查询
+        try {
+            result = await userGroupsColl.findOne({ _id: userGroupId });
+            console.log('getUserGroupById: 字符串查询结果:', result);
+        } catch (error) {
+            console.log('getUserGroupById: 字符串查询失败:', error);
+        }
+        
+        // 方式2: 尝试作为ObjectId查询
+        if (!result && typeof userGroupId === 'string' && userGroupId.match(/^[0-9a-fA-F]{24}$/)) {
+            try {
+                const collection = userGroupsColl as any;
+                const ObjectId = collection.s?.db?.s?.client?.topology?.s?.options?.srvHost ? 
+                    require('mongodb').ObjectId : 
+                    collection.s?.db?.s?.pkFactory || 
+                    (() => { throw new Error('ObjectId not found'); });
+                
+                if (typeof ObjectId === 'function') {
+                    const objId = new ObjectId(userGroupId);
+                    result = await userGroupsColl.findOne({ _id: objId });
+                    console.log('getUserGroupById: ObjectId查询结果:', result);
+                }
+            } catch (error) {
+                console.log('getUserGroupById: ObjectId查询失败:', error);
+            }
+        }
+        
+        return result;
     }
 };
 
@@ -548,11 +620,15 @@ class SchoolGroupDetailHandler extends Handler {
         this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
         const { schoolId } = this.request.params;
         
+        console.log('SchoolGroupDetailHandler.get: schoolId参数:', schoolId);
+        
         if (!schoolId) {
             throw new NotFoundError('学校组ID无效');
         }
         
         const school = await userBindModel.getSchoolGroupById(schoolId);
+        console.log('SchoolGroupDetailHandler.get: 查找到的学校:', school);
+        
         if (!school) {
             throw new NotFoundError('学校组不存在');
         }
