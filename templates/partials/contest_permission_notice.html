@@ -1,0 +1,26 @@
+<!-- 比赛权限错误提示 -->
+{% if showPermissionError and contestPermissionError %}
+<div style="
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  color: #dc2626;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+">
+  <div style="font-size: 2rem;">🚫</div>
+  <div>
+    <h4 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600;">参赛权限受限</h4>
+    <p style="margin: 0; line-height: 1.4;">{{ contestPermissionError }}</p>
+    {% if user.hasPriv(PRIV.PRIV_EDIT_SYSTEM) %}
+      <p style="margin: 8px 0 0 0; font-size: 13px; opacity: 0.8;">
+        管理员可以前往 <a href="/contest/{{ tdoc._id }}/permission" style="color: #dc2626; text-decoration: underline;">权限管理页面</a> 进行配置
+      </p>
+    {% endif %}
+  </div>
+</div>
+{% endif %}

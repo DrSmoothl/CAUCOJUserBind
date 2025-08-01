@@ -1,0 +1,39 @@
+<!-- 比赛管理菜单 - 权限管理入口 -->
+{% if user.hasPriv(PRIV.PRIV_EDIT_SYSTEM) %}
+<div style="
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border: 1px solid #0ea5e9;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 15px 0;
+  font-size: 14px;
+">
+  <h4 style="margin: 0 0 10px 0; font-size: 16px; font-weight: 600; color: #0369a1; display: flex; align-items: center; gap: 8px;">
+    <span>⚙️</span>
+    管理员功能
+  </h4>
+  <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+    <a href="/contest/{{ tdoc._id }}/permission" style="
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.3)'"
+       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+      <span>🔐</span>
+      权限管理
+    </a>
+    <!-- 这里可以添加其他管理功能链接 -->
+  </div>
+  <p style="margin: 10px 0 0 0; color: #0369a1; font-size: 12px; opacity: 0.8;">
+    可以限制特定用户组或学校组参赛
+  </p>
+</div>
+{% endif %}

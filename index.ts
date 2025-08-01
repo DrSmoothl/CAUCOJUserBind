@@ -57,6 +57,7 @@ declare module 'hydrooj' {
         user_groups: UserGroup;
         school_groups: SchoolGroup;
         bind_tokens: BindToken;
+        document: any; // 添加document集合类型
     }
     interface UserDocument {
         realName?: string;
@@ -973,10 +974,181 @@ const userBindModel = {
         }
 
         console.log(`deleteSchoolGroupMember: 成员 ${studentId} 删除完成`);
+    },
+
+    // 检查用户是否有参加比赛的权限
+    async checkContestPermission(userId: number, contestId: any): Promise<{ allowed: boolean; reason?: string }> {
+        try {
+            const documentColl = db.collection('document');
+            const contest = await documentColl.findOne({ 
+                _id: contestId,
+                docType: 30 // 比赛文档类型
+            });
+            
+            if (!contest) {
+                return { allowed: false, reason: '比赛不存在' };
+            }
+
+            const permission = contest.userBindPermission;
+            
+            // 如果未启用权限控制，允许所有用户参加
+            if (!permission || !permission.enabled) {
+                return { allowed: true };
+            }
+
+            const userColl = db.collection('user');
+            const dbUser = await userColl.findOne({ _id: userId });
+            
+            if (!dbUser) {
+                return { allowed: false, reason: '用户不存在' };
+            }
+
+            if (permission.mode === 'school') {
+                // 学校组模式
+                if (!dbUser.parentSchoolId || dbUser.parentSchoolId.length === 0) {
+                    return { allowed: false, reason: '您不属于任何学校组' };
+                }
+
+                // 检查用户的学校组是否在允许列表中
+                const userSchoolIds = dbUser.parentSchoolId.map((id: any) => id.toString());
+                const allowedSchoolIds = permission.allowedGroups.map((id: string) => id.toString());
+                
+                const hasPermission = userSchoolIds.some((schoolId: string) => 
+                    allowedSchoolIds.includes(schoolId)
+                );
+
+                if (!hasPermission) {
+                    return { allowed: false, reason: '您所在的学校组无权参加此比赛' };
+                }
+                
+            } else if (permission.mode === 'user_group') {
+                // 用户组模式
+                if (!dbUser.parentUserGroupId || dbUser.parentUserGroupId.length === 0) {
+                    return { allowed: false, reason: '您不属于任何用户组' };
+                }
+
+                // 检查用户的用户组是否在允许列表中
+                const userGroupIds = dbUser.parentUserGroupId.map((id: any) => id.toString());
+                const allowedGroupIds = permission.allowedGroups.map((id: string) => id.toString());
+                
+                const hasPermission = userGroupIds.some((groupId: string) => 
+                    allowedGroupIds.includes(groupId)
+                );
+
+                if (!hasPermission) {
+                    return { allowed: false, reason: '您所在的用户组无权参加此比赛' };
+                }
+            }
+
+            return { allowed: true };
+        } catch (error) {
+            console.error('检查比赛权限失败:', error);
+            return { allowed: false, reason: '权限检查失败' };
+        }
     }
 };
 
 global.Hydro.model.userBind = userBindModel;
+
+// 比赛权限管理界面
+class ContestPermissionHandler extends Handler {
+    async get(domainId: string) {
+        this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
+        const { contestId } = this.request.params;
+        
+        if (!contestId) {
+            throw new NotFoundError('比赛ID无效');
+        }
+
+        // 获取比赛信息（从document集合中获取docType为30的文档）
+        const documentColl = db.collection('document');
+        const contest = await documentColl.findOne({ 
+            _id: contestId,
+            docType: 30 // 比赛文档类型
+        });
+        
+        if (!contest) {
+            throw new NotFoundError('比赛不存在');
+        }
+
+        // 获取所有学校组和用户组
+        const { schools } = await userBindModel.getSchoolGroups(1, 1000);
+        const { userGroups } = await userBindModel.getUserGroupsList(1, 1000);
+
+        // 获取比赛的权限设置
+        const contestPermission = contest.userBindPermission || {
+            enabled: false,
+            mode: 'school', // 'school' 或 'user_group'
+            allowedGroups: []
+        };
+
+        // 检查是否有成功消息
+        const { success, message } = this.request.query;
+
+        this.response.template = 'contest_permission.html';
+        this.response.body = {
+            contest,
+            schools,
+            userGroups,
+            contestPermission,
+            success: success === '1',
+            message: message ? decodeURIComponent(message as string) : null
+        };
+    }
+
+    async post(domainId: string) {
+        this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
+        const { contestId } = this.request.params;
+        const { enabled, mode, allowedGroups } = this.request.body;
+
+        if (!contestId) {
+            throw new NotFoundError('比赛ID无效');
+        }
+
+        try {
+            const documentColl = db.collection('document');
+            const contest = await documentColl.findOne({ 
+                _id: contestId,
+                docType: 30 // 比赛文档类型
+            });
+            
+            if (!contest) {
+                throw new Error('比赛不存在');
+            }
+
+            // 构建权限配置
+            const permissionConfig = {
+                enabled: enabled === 'true',
+                mode: mode || 'school',
+                allowedGroups: Array.isArray(allowedGroups) ? allowedGroups : (allowedGroups ? [allowedGroups] : [])
+            };
+
+            // 更新比赛权限配置
+            await documentColl.updateOne(
+                { _id: contestId, docType: 30 },
+                { $set: { userBindPermission: permissionConfig } }
+            );
+
+            this.response.redirect = `/contest/${contestId}/permission?success=1&message=${encodeURIComponent('权限配置更新成功')}`;
+        } catch (error: any) {
+            const { schools } = await userBindModel.getSchoolGroups(1, 1000);
+            const { userGroups } = await userBindModel.getUserGroupsList(1, 1000);
+            
+            this.response.template = 'contest_permission.html';
+            this.response.body = {
+                contest: { _id: contestId },
+                schools,
+                userGroups,
+                contestPermission: {
+                    enabled: enabled === 'true',
+                    mode: mode || 'school',
+                    allowedGroups: Array.isArray(allowedGroups) ? allowedGroups : (allowedGroups ? [allowedGroups] : [])
+                },
+                error: error.message
+            };
+        }
+    }
+}
 
 // 学校组管理界面
 class SchoolGroupManageHandler extends Handler {
@@ -1552,6 +1724,7 @@ export async function apply(ctx: Context) {
     ctx.Route('user_group_manage', '/user-group/manage', UserGroupManageHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('user_group_detail', '/user-group/detail/:groupId', UserGroupDetailHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('user_group_create', '/user-group/create', UserGroupCreateHandler, PRIV.PRIV_EDIT_SYSTEM);
+    ctx.Route('contest_permission', '/contest/:contestId/permission', ContestPermissionHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('bind', '/bind/:token', BindHandler);
     
     // 调试路由 - 检查绑定令牌
@@ -1809,6 +1982,70 @@ export async function apply(ctx: Context) {
                     }
                 }
             }
+        }
+    });
+
+    // 比赛参赛权限检查
+    ctx.on('handler/before/ContestDetail#get', async (h) => {
+        if (!h.user || !h.user._id) {
+            return;
+        }
+
+        try {
+            const contestId = h.request.params.tid || h.request.params.contestId;
+            if (!contestId) {
+                return;
+            }
+
+            // 超级管理员跳过权限检查
+            if (h.user._id === 2 || h.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)) {
+                return;
+            }
+
+            const permissionCheck = await userBindModel.checkContestPermission(h.user._id, contestId);
+            
+            if (!permissionCheck.allowed) {
+                h.response.body = h.response.body || {};
+                h.response.body.contestPermissionError = permissionCheck.reason;
+                h.response.body.showPermissionError = true;
+            }
+        } catch (error) {
+            console.error('比赛权限检查失败:', error);
+        }
+    });
+
+    // 比赛报名权限检查
+    ctx.on('handler/before/ContestDetail#post', async (h) => {
+        if (!h.user || !h.user._id) {
+            return;
+        }
+
+        try {
+            const contestId = h.request.params.tid || h.request.params.contestId;
+            if (!contestId) {
+                return;
+            }
+
+            // 超级管理员跳过权限检查
+            if (h.user._id === 2 || h.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)) {
+                return;
+            }
+
+            const action = h.request.body.operation || h.request.body.action;
+            
+            // 只对报名操作进行权限检查
+            if (action === 'attend' || action === 'register') {
+                const permissionCheck = await userBindModel.checkContestPermission(h.user._id, contestId);
+                
+                if (!permissionCheck.allowed) {
+                    throw new ForbiddenError(permissionCheck.reason || '您无权参加此比赛');
+                }
+            }
+        } catch (error) {
+            if (error instanceof ForbiddenError) {
+                throw error;
+            }
+            console.error('比赛报名权限检查失败:', error);
         }
     });
 

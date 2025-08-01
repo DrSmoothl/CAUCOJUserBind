@@ -1,0 +1,571 @@
+{% extends "layout/basic.html" %}
+{% block title %}比赛权限管理{% endblock %}
+
+{% block content %}
+<style>
+/* 现代化界面样式 */
+.permission-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.permission-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 30px;
+  border-radius: 12px 12px 0 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.permission-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(255,255,255,0.1) 10px,
+    rgba(255,255,255,0.1) 20px
+  );
+  animation: slide 15s linear infinite;
+}
+
+@keyframes slide {
+  0% { transform: translateX(-30px); }
+  100% { transform: translateX(30px); }
+}
+
+.permission-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.permission-subtitle {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.permission-card {
+  background: white;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.card-section {
+  padding: 30px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.card-section:last-child {
+  border-bottom: none;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-icon {
+  font-size: 1.5rem;
+}
+
+/* 开关控件样式 */
+.switch-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #667eea;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.switch-label {
+  font-weight: 500;
+  color: #4a5568;
+}
+
+/* 模式选择样式 */
+.mode-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.mode-option {
+  position: relative;
+}
+
+.mode-radio {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.mode-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 25px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #f8fafc;
+  text-align: center;
+}
+
+.mode-radio:checked + .mode-card {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #667eea15, #764ba215);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+}
+
+.mode-icon {
+  font-size: 3rem;
+  margin-bottom: 15px;
+  color: #667eea;
+}
+
+.mode-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 8px 0;
+}
+
+.mode-description {
+  font-size: 0.9rem;
+  color: #718096;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* 组选择样式 */
+.group-selector {
+  margin-top: 20px;
+}
+
+.group-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 15px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.group-item {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.group-item:hover {
+  border-color: #667eea;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+}
+
+.group-checkbox {
+  margin-right: 12px;
+  transform: scale(1.2);
+}
+
+.group-info {
+  flex: 1;
+}
+
+.group-name {
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 4px 0;
+}
+
+.group-meta {
+  font-size: 0.85rem;
+  color: #718096;
+  margin: 0;
+}
+
+/* 操作按钮区域 */
+.action-section {
+  background: #f8fafc;
+  padding: 25px 30px;
+  text-align: center;
+}
+
+.custom-btn {
+  padding: 12px 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 10px;
+}
+
+.custom-btn--primary {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+
+.custom-btn--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+  color: white;
+  text-decoration: none;
+}
+
+.custom-btn--secondary {
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+  color: white;
+}
+
+.custom-btn--secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(107, 114, 128, 0.3);
+  color: white;
+  text-decoration: none;
+}
+
+/* 成功和错误消息样式 */
+.alert {
+  padding: 15px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.alert--success {
+  background-color: #d1fae5;
+  border-color: #10b981;
+  color: #047857;
+}
+
+.alert--error {
+  background-color: #fee2e2;
+  border-color: #ef4444;
+  color: #dc2626;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .permission-container {
+    padding: 10px;
+  }
+  
+  .mode-selector {
+    grid-template-columns: 1fr;
+  }
+  
+  .group-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .permission-header {
+    padding: 20px;
+  }
+  
+  .permission-title {
+    font-size: 1.5rem;
+  }
+  
+  .card-section {
+    padding: 20px;
+  }
+}
+
+/* 隐藏/显示控制 */
+.hidden {
+  display: none !important;
+}
+
+.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+</style>
+
+<div class="permission-container">
+  <!-- 成功/错误消息 -->
+  {% if success and message %}
+    <div class="alert alert--success">
+      <span>✅</span>
+      <span>{{ message }}</span>
+    </div>
+  {% endif %}
+  
+  {% if error %}
+    <div class="alert alert--error">
+      <span>❌</span>
+      <span>{{ error }}</span>
+    </div>
+  {% endif %}
+
+  <!-- 页面头部 -->
+  <div class="permission-header">
+    <h1 class="permission-title">🏆 比赛权限管理</h1>
+    <p class="permission-subtitle">{{ contest.title || "未知比赛" }}</p>
+  </div>
+
+  <!-- 权限配置卡片 -->
+  <div class="permission-card">
+    <form method="post">
+      <!-- 权限开关 -->
+      <div class="card-section">
+        <h3 class="section-title">
+          <span class="section-icon">🔐</span>
+          权限控制
+        </h3>
+        
+        <div class="switch-container">
+          <label class="switch">
+            <input type="checkbox" name="enabled" value="true" 
+                   {% if contestPermission.enabled %}checked{% endif %}
+                   onchange="togglePermissionSettings(this.checked)">
+            <span class="slider"></span>
+          </label>
+          <span class="switch-label">启用参赛权限限制</span>
+        </div>
+        
+        <p style="color: #718096; margin: 0; font-size: 14px;">
+          启用后，只有指定的用户组或学校组成员才能参加此比赛
+        </p>
+      </div>
+
+      <!-- 权限模式选择 -->
+      <div class="card-section" id="permissionSettings" 
+           {% if not contestPermission.enabled %}style="display: none;"{% endif %}>
+        <h3 class="section-title">
+          <span class="section-icon">⚙️</span>
+          权限模式
+        </h3>
+        
+        <div class="mode-selector">
+          <div class="mode-option">
+            <input type="radio" name="mode" value="school" id="mode-school" class="mode-radio"
+                   {% if contestPermission.mode == 'school' or not contestPermission.mode %}checked{% endif %}
+                   onchange="toggleGroupSelector('school')">
+            <label for="mode-school" class="mode-card">
+              <div class="mode-icon">🏫</div>
+              <h4 class="mode-title">学校组模式</h4>
+              <p class="mode-description">限制指定学校的所有学生参赛</p>
+            </label>
+          </div>
+          
+          <div class="mode-option">
+            <input type="radio" name="mode" value="user_group" id="mode-usergroup" class="mode-radio"
+                   {% if contestPermission.mode == 'user_group' %}checked{% endif %}
+                   onchange="toggleGroupSelector('user_group')">
+            <label for="mode-usergroup" class="mode-card">
+              <div class="mode-icon">👥</div>
+              <h4 class="mode-title">用户组模式</h4>
+              <p class="mode-description">限制指定用户组的成员参赛</p>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 学校组选择 -->
+      <div class="card-section group-selector" id="schoolSelector"
+           {% if contestPermission.mode != 'school' and contestPermission.mode %}style="display: none;"{% endif %}>
+        <h3 class="section-title">
+          <span class="section-icon">🏫</span>
+          选择允许参赛的学校组
+        </h3>
+        
+        {% if schools and schools|length > 0 %}
+          <div class="group-grid">
+            {% for school in schools %}
+              <div class="group-item">
+                <input type="checkbox" name="allowedGroups" value="{{ school._id }}" 
+                       class="group-checkbox"
+                       {% if school._id.toString() in contestPermission.allowedGroups %}checked{% endif %}>
+                <div class="group-info">
+                  <h4 class="group-name">{{ school.name }}</h4>
+                  <p class="group-meta">
+                    {{ school.members|length if school.members else 0 }} 名成员 • 
+                    创建于 {{ school.createdAt.toLocaleDateString() if school.createdAt else '未知' }}
+                  </p>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p style="text-align: center; color: #718096; padding: 40px;">
+            暂无可用的学校组，请先创建学校组
+          </p>
+        {% endif %}
+      </div>
+
+      <!-- 用户组选择 -->
+      <div class="card-section group-selector" id="userGroupSelector"
+           {% if contestPermission.mode != 'user_group' %}style="display: none;"{% endif %}>
+        <h3 class="section-title">
+          <span class="section-icon">👥</span>
+          选择允许参赛的用户组
+        </h3>
+        
+        {% if userGroups and userGroups|length > 0 %}
+          <div class="group-grid">
+            {% for group in userGroups %}
+              <div class="group-item">
+                <input type="checkbox" name="allowedGroups" value="{{ group._id }}" 
+                       class="group-checkbox"
+                       {% if group._id.toString() in contestPermission.allowedGroups %}checked{% endif %}>
+                <div class="group-info">
+                  <h4 class="group-name">{{ group.name }}</h4>
+                  <p class="group-meta">
+                    {{ group.students|length if group.students else 0 }} 名学生 • 
+                    创建于 {{ group.createdAt.toLocaleDateString() if group.createdAt else '未知' }}
+                  </p>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p style="text-align: center; color: #718096; padding: 40px;">
+            暂无可用的用户组，请先创建用户组
+          </p>
+        {% endif %}
+      </div>
+
+      <!-- 操作按钮 -->
+      <div class="action-section">
+        <button type="submit" class="custom-btn custom-btn--primary">
+          <span>💾</span> 保存权限配置
+        </button>
+        <a href="/contest/{{ contest._id }}" class="custom-btn custom-btn--secondary">
+          <span>↩️</span> 返回比赛
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function togglePermissionSettings(enabled) {
+  const settingsDiv = document.getElementById('permissionSettings');
+  const schoolSelector = document.getElementById('schoolSelector');
+  const userGroupSelector = document.getElementById('userGroupSelector');
+  
+  if (enabled) {
+    settingsDiv.style.display = 'block';
+    // 根据当前选中的模式显示对应的选择器
+    const checkedMode = document.querySelector('input[name="mode"]:checked').value;
+    toggleGroupSelector(checkedMode);
+  } else {
+    settingsDiv.style.display = 'none';
+    schoolSelector.style.display = 'none';
+    userGroupSelector.style.display = 'none';
+  }
+}
+
+function toggleGroupSelector(mode) {
+  const schoolSelector = document.getElementById('schoolSelector');
+  const userGroupSelector = document.getElementById('userGroupSelector');
+  
+  if (mode === 'school') {
+    schoolSelector.style.display = 'block';
+    userGroupSelector.style.display = 'none';
+  } else if (mode === 'user_group') {
+    schoolSelector.style.display = 'none';
+    userGroupSelector.style.display = 'block';
+  }
+}
+
+// 页面加载动画
+document.addEventListener('DOMContentLoaded', function() {
+  const container = document.querySelector('.permission-container');
+  container.style.opacity = '0';
+  container.style.transform = 'translateY(20px)';
+  container.style.transition = 'all 0.6s ease';
+  
+  setTimeout(() => {
+    container.style.opacity = '1';
+    container.style.transform = 'translateY(0)';
+  }, 100);
+});
+</script>
+{% endblock %}
