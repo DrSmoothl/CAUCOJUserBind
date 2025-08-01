@@ -246,7 +246,7 @@
 }
 
 /* 两列布局 */
-.row {
+.user-group-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
@@ -254,14 +254,14 @@
   align-items: start;
 }
 
-.row > div {
+.user-group-row > div {
   height: 100%;
   display: flex;
   flex-direction: column;
 }
 
-.row .data-table,
-.row .form-container {
+.user-group-row .data-table,
+.user-group-row .form-container {
   flex: 1;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -342,7 +342,7 @@
 }
 
 @media (max-width: 768px) {
-  .row {
+  .user-group-row {
     grid-template-columns: 1fr;
   }
 }
@@ -414,7 +414,7 @@ input[type="checkbox"] {
     </div>
 
     <!-- 两列布局 -->
-    <div class="row">
+    <div class="user-group-row">
       <div class="info-column">
         <h3 class="table-title">基本信息</h3>
         <div class="info-table-wrapper">
