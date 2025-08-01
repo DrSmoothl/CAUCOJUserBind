@@ -251,6 +251,94 @@
   grid-template-columns: 1fr 1fr;
   gap: 24px;
   margin-bottom: 24px;
+  align-items: start;
+}
+
+.row > div {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.row .data-table,
+.row .form-container {
+  flex: 1;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 信息列专用样式 */
+.info-column {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.info-column .table-title {
+  background: #f8fafc;
+  margin: 0;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.info-table-wrapper {
+  padding: 0;
+}
+
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  margin: 0;
+}
+
+.info-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #374151;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  width: 30%;
+}
+
+.info-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #1f2937;
+}
+
+.info-table tr:last-child th,
+.info-table tr:last-child td {
+  border-bottom: none;
+}
+
+.info-table tr:hover {
+  background: #f9fafb;
+}
+
+/* 表单列专用样式 */
+.form-column {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.form-column .table-title {
+  background: #f8fafc;
+  margin: 0;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.form-column .form-container {
+  box-shadow: none;
+  border-radius: 0;
+  border: none;
+  background: white;
+  margin: 0;
 }
 
 @media (max-width: 768px) {
@@ -327,31 +415,33 @@ input[type="checkbox"] {
 
     <!-- 两列布局 -->
     <div class="row">
-      <div>
+      <div class="info-column">
         <h3 class="table-title">基本信息</h3>
-        <table class="data-table">
-          <tbody>
-            <tr>
-              <th>用户组名称</th>
-              <td><strong>{{ userGroup.name }}</strong></td>
-            </tr>
-            <tr>
-              <th>所属学校</th>
-              <td><span class="badge badge--info">{{ school.name if school else '未知' }}</span></td>
-            </tr>
-            <tr>
-              <th>创建时间</th>
-              <td><span class="badge badge--success">{{ userGroup.createdAt.toISOString().substring(0, 10) if userGroup.createdAt else '未知' }}</span></td>
-            </tr>
-            <tr>
-              <th>创建者</th>
-              <td>{{ userGroup.createdBy }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="info-table-wrapper">
+          <table class="info-table">
+            <tbody>
+              <tr>
+                <th>用户组名称</th>
+                <td><strong>{{ userGroup.name }}</strong></td>
+              </tr>
+              <tr>
+                <th>所属学校</th>
+                <td><span class="badge badge--info">{{ school.name if school else '未知' }}</span></td>
+              </tr>
+              <tr>
+                <th>创建时间</th>
+                <td><span class="badge badge--success">{{ userGroup.createdAt.toISOString().substring(0, 10) if userGroup.createdAt else '未知' }}</span></td>
+              </tr>
+              <tr>
+                <th>创建者</th>
+                <td>{{ userGroup.createdBy }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
       
-      <div>
+      <div class="form-column">
         <h3 class="table-title">添加学生</h3>
         <div class="form-container">
           <form method="post" action="/user-group/detail/{{ userGroup._id }}">
@@ -370,9 +460,11 @@ input[type="checkbox"] {
         </div>
       </div>
     </div>
-  </div>
-  
-  <div class="section__body">
+    
+    <!-- 学生列表分割线 -->
+    <hr style="margin: 32px 0; border: none; border-top: 1px solid #e5e7eb;">
+    
+    <!-- 学生列表标题 -->
     <div class="table-header">
       <h3 class="table-title">学生列表</h3>
     </div>
