@@ -257,20 +257,41 @@ const userBindModel = {
 
     // 用户绑定到学校组
     async bindUserToSchoolGroup(userId: number, token: string, studentId: string, realName: string): Promise<void> {
+        console.log('bindUserToSchoolGroup: 开始绑定');
+        console.log('bindUserToSchoolGroup: userId:', userId);
+        console.log('bindUserToSchoolGroup: token:', token);
+        console.log('bindUserToSchoolGroup: studentId:', studentId);
+        console.log('bindUserToSchoolGroup: realName:', realName);
+        
         const bindInfo = await this.getBindInfo(token);
         if (!bindInfo || bindInfo.type !== 'school_group') {
             throw new Error('无效的绑定令牌');
         }
 
         const schoolGroup = bindInfo.target as SchoolGroup;
+        console.log('bindUserToSchoolGroup: 学校组信息:', schoolGroup);
+        console.log('bindUserToSchoolGroup: 学校组成员:', schoolGroup.members);
+        
+        // 检查学校组是否有成员数据结构
+        if (!schoolGroup.members || !Array.isArray(schoolGroup.members)) {
+            console.log('bindUserToSchoolGroup: 学校组没有成员数据结构');
+            throw new Error('此学校组缺少成员信息，请联系管理员重新创建学校组');
+        }
         
         // 检查学生是否在学校组中
         const member = schoolGroup.members.find(m => m.studentId === studentId && m.realName === realName);
+        console.log('bindUserToSchoolGroup: 查找成员结果:', member);
+        
         if (!member) {
+            console.log('bindUserToSchoolGroup: 成员不存在，可用成员列表:');
+            schoolGroup.members.forEach((m, index) => {
+                console.log(`  ${index}: ${m.studentId} - ${m.realName}`);
+            });
             throw new Error('学号或姓名不匹配，请检查输入信息或联系管理员');
         }
 
         if (member.bound) {
+            console.log('bindUserToSchoolGroup: 成员已绑定');
             throw new Error('该学生信息已被绑定');
         }
 
@@ -278,10 +299,14 @@ const userBindModel = {
 
         // 检查用户是否已有学校组
         const dbUser = await userColl.findOne({ _id: userId });
+        console.log('bindUserToSchoolGroup: 用户信息:', dbUser);
+        
         if (dbUser?.parentSchoolId && dbUser.parentSchoolId.length > 0) {
+            console.log('bindUserToSchoolGroup: 用户已有学校组');
             throw new Error('您已属于其他学校组');
         }
 
+        console.log('bindUserToSchoolGroup: 开始更新用户信息');
         // 更新用户信息
         await userColl.updateOne(
             { _id: userId },
@@ -296,6 +321,7 @@ const userBindModel = {
             }
         );
 
+        console.log('bindUserToSchoolGroup: 开始更新学校组成员状态');
         // 更新学校组中的成员状态
         await schoolGroupsColl.updateOne(
             { _id: schoolGroup._id, 'members.studentId': studentId, 'members.realName': realName },
@@ -307,6 +333,8 @@ const userBindModel = {
                 }
             }
         );
+        
+        console.log('bindUserToSchoolGroup: 绑定完成');
     },
 
     // 获取用户的学校组信息
@@ -651,12 +679,15 @@ class BindHandler extends Handler {
                 throw new Error('绑定链接无效或已过期');
             }
 
+            console.log('BindHandler.post: 开始绑定，类型:', bindInfo.type);
+            
             if (bindInfo.type === 'user_group') {
                 await userBindModel.bindUserToGroup(this.user._id, token, studentId, realName);
             } else {
                 await userBindModel.bindUserToSchoolGroup(this.user._id, token, studentId, realName);
             }
 
+            console.log('BindHandler.post: 绑定成功');
             this.response.template = 'bind_success.html';
             this.response.body = { 
                 studentId,
@@ -664,6 +695,7 @@ class BindHandler extends Handler {
                 groupName: bindInfo.target.name
             };
         } catch (error: any) {
+            console.log('BindHandler.post: 绑定失败，错误:', error.message);
             const bindInfo = await userBindModel.getBindInfo(token);
             this.response.template = 'bind_form.html';
             this.response.body = { 

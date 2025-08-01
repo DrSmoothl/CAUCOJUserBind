@@ -27,7 +27,7 @@
         {% for school in schools %}
         <tr>
           <td>{{ school.name }}</td>
-          <td>{{ school.createdAt|date('Y-m-d H:i:s') }}</td>
+          <td>{{ school.createdAt }}</td>
           <td>{{ school.createdBy }}</td>
           <td>
             <a href="#" class="button button--small button--text" 

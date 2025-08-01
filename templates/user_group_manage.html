@@ -35,7 +35,7 @@
             {% set boundCount = group.students|selectattr('bound', 'equalto', true)|list|length %}
             {{ boundCount }}
           </td>
-          <td>{{ group.createdAt|date('Y-m-d H:i:s') }}</td>
+          <td>{{ group.createdAt }}</td>
           <td>
             <a href="#" class="button button--small button--text" 
                onclick="showGroupDetails('{{ group._id }}')">
