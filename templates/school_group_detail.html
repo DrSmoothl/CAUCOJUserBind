@@ -2,6 +2,256 @@
 {% block title %}学校组详情 - {{ school.name }}{% endblock %}
 
 {% block content %}
+<style>
+/* 美化提示框样式 */
+.alert {
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border: 1px solid;
+  font-size: 14px;
+}
+
+.alert--error {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.alert--success {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #16a34a;
+}
+
+/* 美化徽章 */
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.badge--success {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.badge--warning {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.badge--danger {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+/* 美化表格 */
+.data-table {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+}
+
+.data-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #374151;
+  padding: 12px 16px;
+}
+
+.data-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: middle;
+}
+
+.data-table tr:hover {
+  background: #f9fafb;
+}
+
+/* 美化表单 */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.form-control {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-text {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* 美化按钮 */
+.button {
+  padding: 8px 16px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.button:hover {
+  background: #f9fafb;
+  text-decoration: none;
+  color: #374151;
+}
+
+.button--primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border-color: #3b82f6;
+  color: white;
+}
+
+.button--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  color: white;
+}
+
+.button--danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border-color: #ef4444;
+  color: white;
+}
+
+.button--danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  color: white;
+}
+
+/* 美化section */
+.section {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.section__header {
+  background: #f8fafc;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.section__title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.section__body {
+  padding: 24px;
+}
+
+.section__tools {
+  margin-bottom: 16px;
+}
+
+/* 美化空状态 */
+.empty {
+  text-align: center;
+  padding: 48px 24px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 2px dashed #d1d5db;
+  color: #6b7280;
+}
+
+/* 布局 */
+.row {
+  display: flex;
+  gap: 24px;
+  margin: -12px;
+}
+
+.col-md-6 {
+  flex: 1;
+  padding: 12px;
+}
+
+.info-card {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.info-card h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* 统计卡片 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.stat-number {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 14px;
+  opacity: 0.9;
+}
+</style>
+
 <div class="section">
   <div class="section__header">
     <h1 class="section__title">学校组详情 - {{ school.name }}</h1>
@@ -17,77 +267,107 @@
   {% endif %}
   
   <div class="section__body">
+    <!-- 统计信息 -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number">{{ school.members|length }}</div>
+        <div class="stat-label">总成员数</div>
+      </div>
+      <div class="stat-card" style="background: linear-gradient(135deg, #10b981, #059669);">
+        <div class="stat-number">
+          {% set boundCount = school.members|selectattr('bound')|list|length %}
+          {{ boundCount }}
+        </div>
+        <div class="stat-label">已绑定成员</div>
+      </div>
+      <div class="stat-card" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+        <div class="stat-number">{{ school.members|length - (school.members|selectattr('bound')|list|length) }}</div>
+        <div class="stat-label">待绑定成员</div>
+      </div>
+      <div class="stat-card" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+        <div class="stat-number">
+          {% set boundCount = school.members|selectattr('bound')|list|length %}
+          {% if school.members|length > 0 %}
+            {{ ((boundCount / school.members|length) * 100)|round(1) }}%
+          {% else %}
+            0%
+          {% endif %}
+        </div>
+        <div class="stat-label">绑定率</div>
+      </div>
+    </div>
+    
     <div class="row">
       <div class="col-md-6">
-        <h3>基本信息</h3>
-        <table class="data-table">
-          <tbody>
-            <tr>
-              <th>学校名称</th>
-              <td>{{ school.name }}</td>
-            </tr>
-            <tr>
-              <th>创建时间</th>
-              <td>{{ school.createdAt }}</td>
-            </tr>
-            <tr>
-              <th>创建者</th>
-              <td>{{ school.createdBy }}</td>
-            </tr>
-            <tr>
-              <th>成员总数</th>
-              <td>{{ school.members|length }}人</td>
-            </tr>
-            <tr>
-              <th>已绑定成员</th>
-              <td>
-                {% set boundCount = school.members|selectattr('bound')|list|length %}
-                {{ boundCount }}人 ({{ ((boundCount / school.members|length) * 100)|round(1) }}%)
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="info-card">
+          <h3>基本信息</h3>
+          <table class="data-table">
+            <tbody>
+              <tr>
+                <th style="width: 120px;">学校名称</th>
+                <td>{{ school.name }}</td>
+              </tr>
+              <tr>
+                <th>创建时间</th>
+                <td>{{ school.createdAt.toISOString().substring(0, 10) if school.createdAt else '未知' }}</td>
+              </tr>
+              <tr>
+                <th>创建者ID</th>
+                <td>{{ school.createdBy }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
       
       <div class="col-md-6">
-        <h3>添加成员</h3>
-        <form method="post" action="/school-group/detail/{{ school._id }}">
-          <input type="hidden" name="action" value="add_members">
-          <div class="form-group">
-            <label for="membersData">成员信息</label>
-            <textarea id="membersData" name="membersData" class="form-control" rows="8" 
-                      placeholder="请输入成员信息，每行一个成员，格式：学号 姓名" 
-                      required>{{ membersData }}</textarea>
-            <small class="form-text">每行格式：学号 姓名，例如：20210001 张三</small>
-          </div>
-          <button type="submit" class="button button--primary">添加成员</button>
-        </form>
+        <div class="info-card">
+          <h3>添加成员</h3>
+          <form method="post" action="/school-group/detail/{{ school._id }}">
+            <input type="hidden" name="action" value="add_members">
+            <div class="form-group">
+              <label for="membersData">成员信息</label>
+              <textarea id="membersData" name="membersData" class="form-control" rows="6" 
+                        placeholder="请输入成员信息，每行一个成员&#10;格式：学号 姓名&#10;例如：&#10;20210001 张三&#10;20210002 李四" 
+                        style="font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;">{{ membersData or '' }}</textarea>
+              <small class="form-text">每行格式：学号 姓名，例如：20210001 张三</small>
+            </div>
+            <button type="submit" class="button button--primary">
+              <span style="font-size: 16px;">+</span> 添加成员
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   </div>
+</div>
+
+<div class="section">
+  <div class="section__header">
+    <h2 class="section__title">成员列表</h2>
+  </div>
   
   <div class="section__body">
-    <h3>成员列表</h3>
     {% if school.members|length > 0 %}
     <form method="post" action="/school-group/detail/{{ school._id }}">
       <input type="hidden" name="action" value="remove_members">
       <div class="section__tools">
         <button type="submit" class="button button--danger" 
-                onclick="return confirm('确定要删除选中的成员吗？')">
-          删除选中成员
+                onclick="return confirm('确定要删除选中的成员吗？未绑定的成员将被永久删除！')">
+          <span style="font-size: 16px;">🗑</span> 删除选中成员
         </button>
       </div>
       
       <table class="data-table">
         <thead>
           <tr>
-            <th>
+            <th style="width: 50px;">
               <input type="checkbox" id="selectAll" onchange="toggleAll(this)">
             </th>
             <th>学号</th>
             <th>姓名</th>
             <th>绑定状态</th>
-            <th>绑定用户</th>
+            <th>绑定用户ID</th>
             <th>绑定时间</th>
           </tr>
         </thead>
@@ -97,29 +377,31 @@
             <td>
               {% if not member.bound %}
               <input type="checkbox" name="selectedMembers" value="{{ member.studentId }}">
+              {% else %}
+              <span style="color: #9ca3af; font-size: 12px;">已绑定</span>
               {% endif %}
             </td>
-            <td>{{ member.studentId }}</td>
+            <td><strong>{{ member.studentId }}</strong></td>
             <td>{{ member.realName }}</td>
             <td>
               {% if member.bound %}
-                <span class="badge badge--success">已绑定</span>
+                <span class="badge badge--success">✓ 已绑定</span>
               {% else %}
-                <span class="badge badge--warning">未绑定</span>
+                <span class="badge badge--warning">⏳ 未绑定</span>
               {% endif %}
             </td>
             <td>
               {% if member.bound %}
                 {{ member.boundBy }}
               {% else %}
-                -
+                <span style="color: #9ca3af;">-</span>
               {% endif %}
             </td>
             <td>
               {% if member.bound %}
-                {{ member.boundAt }}
+                {{ member.boundAt.toISOString().substring(0, 10) if member.boundAt else '未知' }}
               {% else %}
-                -
+                <span style="color: #9ca3af;">-</span>
               {% endif %}
             </td>
           </tr>
@@ -129,8 +411,9 @@
     </form>
     {% else %}
     <div class="empty">
-      <p>暂无成员</p>
-      <p>请在右侧表单中添加成员信息</p>
+      <div style="font-size: 48px; margin-bottom: 16px;">👥</div>
+      <p><strong>暂无成员</strong></p>
+      <p>请在上方表单中添加成员信息</p>
     </div>
     {% endif %}
   </div>

@@ -2,84 +2,395 @@
 {% block title %}绑定冲突{% endblock %}
 
 {% block content %}
-<div class="section">
-  <div class="section__header">
-    <h1 class="section__title">绑定冲突</h1>
-  </div>
+<style>
+/* 冲突页面样式 */
+.conflict-container {
+  max-width: 700px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.conflict-header {
+  text-align: center;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  padding: 50px 40px;
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 32px;
+}
+
+.conflict-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 25px,
+    rgba(255,255,255,0.1) 25px,
+    rgba(255,255,255,0.1) 50px
+  );
+  animation: warning-slide 10s linear infinite;
+}
+
+@keyframes warning-slide {
+  0% { transform: translateX(-50px) translateY(-50px); }
+  100% { transform: translateX(50px) translateY(50px); }
+}
+
+.conflict-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  display: block;
+  position: relative;
+  z-index: 1;
+  animation: shake 2s ease-in-out infinite;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.conflict-title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.conflict-subtitle {
+  font-size: 1rem;
+  opacity: 0.9;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* 警告消息卡片 */
+.warning-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+  overflow: hidden;
+  border-left: 6px solid #f59e0b;
+}
+
+.warning-header {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 16px 20px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.warning-body {
+  padding: 20px;
+  color: #92400e;
+  font-weight: 500;
+}
+
+/* 信息卡片 */
+.info-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.info-header {
+  background: #f3f4f6;
+  color: #374151;
+  padding: 16px 20px;
+  font-weight: 600;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-body {
+  padding: 20px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  background: #f9fafb;
+  padding: 10px 16px;
+  border-radius: 6px;
+  border-left: 3px solid #6b7280;
+}
+
+.info-label {
+  font-weight: 600;
+  color: #4b5563;
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-value {
+  color: #1f2937;
+  font-weight: 500;
+}
+
+/* 学校列表 */
+.schools-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.schools-list li {
+  background: #eff6ff;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  border-left: 4px solid #3b82f6;
+  color: #1e40af;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.schools-list li::before {
+  content: '🏫';
+}
+
+/* 解决方案卡片 */
+.solution-card {
+  background: linear-gradient(135deg, #e0f2fe, #f0f9ff);
+  border-radius: 12px;
+  padding: 24px;
+  border: 2px solid #0ea5e9;
+  margin-bottom: 24px;
+}
+
+.solution-title {
+  color: #0369a1;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.solution-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.solution-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: #0369a1;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.solution-list li::before {
+  content: '💡';
+  font-size: 1.125rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* 按钮样式 */
+.action-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.button {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.button--primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+}
+
+.button--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+.button--text {
+  background: transparent;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
+
+.button--text:hover {
+  background: #f3f4f6;
+  color: #374151;
+  text-decoration: none;
+}
+
+/* section重置 */
+.section {
+  background: transparent;
+  box-shadow: none;
+}
+
+.section__header {
+  display: none;
+}
+
+.section__body {
+  padding: 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .conflict-container {
+    margin: 20px auto;
+    padding: 0 16px;
+  }
   
+  .conflict-header {
+    padding: 40px 20px;
+  }
+  
+  .conflict-title {
+    font-size: 1.875rem;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .button {
+    width: 100%;
+  }
+}
+</style>
+
+<div class="section">
   <div class="section__body">
-    <div class="alert alert--warning">
-      <h3>⚠️ 学校组冲突</h3>
-      <p>{{ message }}</p>
-    </div>
-    
-    {% if currentSchools and currentSchools|length > 0 %}
-    <div class="card">
-      <div class="card__header">
-        <h4>您当前所属的学校组</h4>
+    <div class="conflict-container">
+      <div class="conflict-header">
+        <span class="conflict-icon">⚠️</span>
+        <h1 class="conflict-title">绑定冲突</h1>
+        <p class="conflict-subtitle">检测到学校组冲突，需要处理</p>
       </div>
-      <div class="card__body">
-        <ul>
-          {% for school in currentSchools %}
-          <li>{{ school.name }}</li>
-          {% endfor %}
+      
+      <div class="warning-card">
+        <div class="warning-header">
+          <span>🚨</span> 学校组冲突详情
+        </div>
+        <div class="warning-body">
+          {{ message }}
+        </div>
+      </div>
+      
+      {% if currentSchools and currentSchools|length > 0 %}
+      <div class="info-card">
+        <div class="info-header">
+          <span>🏫</span> 您当前所属的学校组
+        </div>
+        <div class="info-body">
+          <ul class="schools-list">
+            {% for school in currentSchools %}
+            <li>{{ school.name }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% endif %}
+      
+      {% if targetGroup %}
+      <div class="info-card">
+        <div class="info-header">
+          <span>🎯</span> 目标用户组信息
+        </div>
+        <div class="info-body">
+          <div class="info-item">
+            <span class="info-label">
+              <span>📝</span> 用户组名称：
+            </span>
+            <span class="info-value">{{ targetGroup.name }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">
+              <span>🏛️</span> 所属学校：
+            </span>
+            <span class="info-value">{{ targetGroup.schoolName or '未知' }}</span>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      
+      <div class="solution-card">
+        <h3 class="solution-title">
+          <span>🔧</span> 解决方案
+        </h3>
+        <ul class="solution-list">
+          <li>请联系系统管理员处理学校组冲突</li>
+          <li>或者使用正确的绑定链接</li>
+          <li>每个用户只能属于一个学校组</li>
         </ul>
       </div>
-    </div>
-    {% endif %}
-    
-    {% if targetGroup %}
-    <div class="card">
-      <div class="card__header">
-        <h4>目标用户组信息</h4>
+      
+      <div class="action-buttons">
+        <a href="/" class="button button--primary">
+          <span>🏠</span> 返回首页
+        </a>
+        <a href="javascript:history.back()" class="button button--text">
+          <span>⬅️</span> 返回上一页
+        </a>
       </div>
-      <div class="card__body">
-        <div class="info-item">
-          <span class="info-label">用户组名称：</span>
-          <span class="info-value">{{ targetGroup.name }}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">所属学校：</span>
-          <span class="info-value">{{ targetGroup.schoolName or '未知' }}</span>
-        </div>
-      </div>
-    </div>
-    {% endif %}
-    
-    <div class="alert alert--info">
-      <p><strong>解决方案：</strong></p>
-      <ul>
-        <li>请联系系统管理员处理学校组冲突</li>
-        <li>或者使用正确的绑定链接</li>
-        <li>每个用户只能属于一个学校组</li>
-      </ul>
-    </div>
-    
-    <div class="form__group">
-      <a href="/" class="button button--primary">
-        <span class="icon icon-home"></span> 返回首页
-      </a>
-      <a href="javascript:history.back()" class="button button--text">
-        返回上一页
-      </a>
     </div>
   </div>
 </div>
 
-<style>
-.info-item {
-  display: flex;
-  margin-bottom: 0.5rem;
-}
-
-.info-label {
-  width: 120px;
-  font-weight: bold;
-  color: #666;
-}
-
-.info-value {
-  color: #333;
-}
-</style>
+<script>
+// 页面加载动画
+document.addEventListener('DOMContentLoaded', function() {
+  const container = document.querySelector('.conflict-container');
+  container.style.opacity = '0';
+  container.style.transform = 'translateY(20px)';
+  container.style.transition = 'all 0.6s ease';
+  
+  setTimeout(() => {
+    container.style.opacity = '1';
+    container.style.transform = 'translateY(0)';
+  }, 100);
+});
+</script>
 {% endblock %}

@@ -2,82 +2,346 @@
 {% block title %}绑定成功{% endblock %}
 
 {% block content %}
-<div class="section">
-  <div class="section__header">
-    <h1 class="section__title">绑定成功</h1>
-  </div>
+<style>
+/* 成功页面样式 */
+.success-container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.success-hero {
+  text-align: center;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 60px 40px;
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 32px;
+}
+
+.success-hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 30px,
+    rgba(255,255,255,0.1) 30px,
+    rgba(255,255,255,0.1) 60px
+  );
+  animation: celebration 8s linear infinite;
+}
+
+@keyframes celebration {
+  0% { transform: translateX(-100px) translateY(-100px) rotate(0deg); }
+  100% { transform: translateX(100px) translateY(100px) rotate(360deg); }
+}
+
+.success-icon {
+  font-size: 5rem;
+  margin-bottom: 20px;
+  display: block;
+  position: relative;
+  z-index: 1;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-20px); }
+  60% { transform: translateY(-10px); }
+}
+
+.success-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.success-subtitle {
+  font-size: 1.125rem;
+  opacity: 0.9;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* 信息卡片 */
+.info-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.info-header {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  padding: 20px 24px;
+  font-weight: 600;
+  font-size: 1.125rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-body {
+  padding: 24px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  background: #f8fafc;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border-left: 4px solid #3b82f6;
+}
+
+.info-label {
+  font-weight: 600;
+  color: #4b5563;
+  min-width: 80px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-value {
+  color: #1f2937;
+  font-weight: 500;
+  font-size: 1.125rem;
+}
+
+/* 权限卡片 */
+.permissions-card {
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border-radius: 12px;
+  padding: 24px;
+  border: 2px solid #0ea5e9;
+  margin-bottom: 24px;
+}
+
+.permissions-title {
+  color: #0369a1;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.permissions-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.permissions-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  color: #0369a1;
+  font-weight: 500;
+}
+
+.permissions-list li::before {
+  content: '✅';
+  font-size: 1.125rem;
+}
+
+/* 按钮样式 */
+.action-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.button {
+  padding: 14px 24px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 140px;
+  justify-content: center;
+}
+
+.button--primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+}
+
+.button--primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+.button--secondary {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.button--secondary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+/* section重置 */
+.section {
+  background: transparent;
+  box-shadow: none;
+}
+
+.section__header {
+  display: none;
+}
+
+.section__body {
+  padding: 0;
+}
+
+/* 提示信息样式 */
+.info-message {
+  background: linear-gradient(135deg, #fef3c7, #fed7aa);
+  border-radius: 8px;
+  padding: 16px;
+  color: #92400e;
+  border-left: 4px solid #f59e0b;
+  margin-top: 16px;
+  font-weight: 500;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .success-container {
+    margin: 20px auto;
+    padding: 0 16px;
+  }
   
+  .success-hero {
+    padding: 40px 20px;
+  }
+  
+  .success-title {
+    font-size: 2rem;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .button {
+    width: 100%;
+  }
+}
+</style>
+
+<div class="section">
   <div class="section__body">
-    <div class="alert alert--success">
-      <h3>🎉 恭喜！身份绑定成功</h3>
-    </div>
-    
-    <div class="card">
-      <div class="card__header">
-        <h4>绑定信息</h4>
+    <div class="success-container">
+      <div class="success-hero">
+        <span class="success-icon">🎉</span>
+        <h1 class="success-title">绑定成功！</h1>
+        <p class="success-subtitle">恭喜您成功完成身份绑定</p>
       </div>
-      <div class="card__body">
-        {% if studentId and realName %}
-        <div class="info-item">
-          <span class="info-label">学号：</span>
-          <span class="info-value">{{ studentId }}</span>
+      
+      <div class="info-card">
+        <div class="info-header">
+          <span>👤</span> 绑定信息
         </div>
-        <div class="info-item">
-          <span class="info-label">姓名：</span>
-          <span class="info-value">{{ realName }}</span>
+        <div class="info-body">
+          {% if studentId and realName %}
+          <div class="info-item">
+            <span class="info-label">
+              <span>🆔</span> 学号：
+            </span>
+            <span class="info-value">{{ studentId }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">
+              <span>📝</span> 姓名：
+            </span>
+            <span class="info-value">{{ realName }}</span>
+          </div>
+          {% endif %}
+          
+          {% if groupName %}
+          <div class="info-item">
+            <span class="info-label">
+              <span>🏫</span> {{ message or '绑定组织' }}：
+            </span>
+            <span class="info-value">{{ groupName }}</span>
+          </div>
+          {% endif %}
+          
+          {% if message %}
+          <div class="info-message">
+            {{ message }}
+          </div>
+          {% endif %}
         </div>
-        {% endif %}
-        
-        {% if groupName %}
-        <div class="info-item">
-          <span class="info-label">{{ message or '绑定组织' }}：</span>
-          <span class="info-value">{{ groupName }}</span>
-        </div>
-        {% endif %}
-        
-        {% if message %}
-        <div class="alert alert--info">
-          {{ message }}
-        </div>
-        {% endif %}
       </div>
-    </div>
-    
-    <div class="alert alert--success">
-      <p><strong>您现在可以：</strong></p>
-      <ul>
-        <li>访问训练题目和练习</li>
-        <li>参与作业和考试</li>
-        <li>查看排行榜和成绩</li>
-        <li>参加比赛活动</li>
-      </ul>
-    </div>
-    
-    <div class="form__group">
-      <a href="/" class="button button--primary">
-        <span class="icon icon-home"></span> 返回首页
-      </a>
-      <a href="/training" class="button button--secondary">
-        <span class="icon icon-code"></span> 开始训练
-      </a>
+      
+      <div class="permissions-card">
+        <h3 class="permissions-title">
+          <span>🚀</span> 您现在可以
+        </h3>
+        <ul class="permissions-list">
+          <li>访问训练题目和练习</li>
+          <li>参与作业和考试</li>
+          <li>查看排行榜和成绩</li>
+          <li>参加比赛活动</li>
+        </ul>
+      </div>
+      
+      <div class="action-buttons">
+        <a href="/" class="button button--primary">
+          <span>🏠</span> 返回首页
+        </a>
+        <a href="/training" class="button button--secondary">
+          <span>💻</span> 开始训练
+        </a>
+      </div>
     </div>
   </div>
 </div>
 
-<style>
-.info-item {
-  display: flex;
-  margin-bottom: 0.5rem;
-}
-
-.info-label {
-  width: 80px;
-  font-weight: bold;
-  color: #666;
-}
-
-.info-value {
-  color: #333;
-}
-</style>
+<script>
+// 页面加载动画
+document.addEventListener('DOMContentLoaded', function() {
+  const container = document.querySelector('.success-container');
+  container.style.opacity = '0';
+  container.style.transform = 'translateY(30px)';
+  container.style.transition = 'all 0.8s ease';
+  
+  setTimeout(() => {
+    container.style.opacity = '1';
+    container.style.transform = 'translateY(0)';
+  }, 100);
+});
+</script>
 {% endblock %}

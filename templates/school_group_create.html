@@ -2,6 +2,157 @@
 {% block title %}创建学校组{% endblock %}
 
 {% block content %}
+<style>
+/* 美化提示框样式 */
+.alert {
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border: 1px solid;
+  font-size: 14px;
+}
+
+.alert--error {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.alert--success {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #16a34a;
+}
+
+.alert--info {
+  background-color: #eff6ff;
+  border-color: #93c5fd;
+  color: #2563eb;
+}
+
+/* 美化表单 */
+.form {
+  max-width: 800px;
+}
+
+.form__group {
+  margin-bottom: 24px;
+}
+
+.form__label {
+  display: block;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.form__input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.form__input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form__help {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.form__help ul {
+  margin: 8px 0 0 20px;
+}
+
+.form__help li {
+  margin: 4px 0;
+}
+
+.form__help strong {
+  color: #374151;
+}
+
+/* 美化按钮 */
+.button--primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  padding: 12px 20px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.button--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+.button--text {
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  padding: 12px 20px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.button--text:hover {
+  color: #374151;
+  text-decoration: none;
+}
+
+/* 美化section */
+.section {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.section__header {
+  background: #f8fafc;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.section__title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.section__body {
+  padding: 24px;
+}
+
+/* 美化文本区域 */
+textarea.form__input {
+  min-height: 200px;
+  resize: vertical;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  line-height: 1.5;
+}
+</style>
+
 <div class="section">
   <div class="section__header">
     <h1 class="section__title">创建学校组</h1>
@@ -34,7 +185,6 @@
         <textarea id="membersData" 
                   name="membersData" 
                   class="form__input" 
-                  rows="10" 
                   placeholder="每行一个成员，格式：学号 姓名&#10;例如：&#10;2021001 张三&#10;2021002 李四&#10;2021003 王五"
                   required>{{ membersData or '' }}</textarea>
         <div class="form__help">
@@ -59,14 +209,4 @@
     </form>
   </div>
 </div>
-
-<style>
-.form__help ul {
-  margin: 8px 0 0 20px;
-}
-
-.form__help li {
-  margin: 4px 0;
-}
-</style>
 {% endblock %}

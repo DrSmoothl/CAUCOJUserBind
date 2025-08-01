@@ -2,13 +2,235 @@
 {% block title %}创建用户组{% endblock %}
 
 {% block content %}
+<style>
+/* 美化表单样式 */
+.form {
+  max-width: 600px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 8px;
+  padding: 0;
+}
+
+.form__group {
+  margin-bottom: 24px;
+}
+
+.form__label {
+  display: block;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.form__input,
+.form__select,
+.form__textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.form__input:focus,
+.form__select:focus,
+.form__textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form__textarea {
+  resize: vertical;
+  min-height: 120px;
+  font-family: 'Courier New', monospace;
+  line-height: 1.5;
+}
+
+.form__help {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.form__help a {
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.form__help a:hover {
+  text-decoration: underline;
+}
+
+/* 美化按钮 */
+.button {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 12px;
+}
+
+.button--primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+}
+
+.button--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+.button--text {
+  background: transparent;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
+
+.button--text:hover {
+  background: #f3f4f6;
+  color: #374151;
+  text-decoration: none;
+}
+
+.button--small {
+  padding: 8px 16px;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+/* 美化提示框 */
+.alert {
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  border: 1px solid;
+  font-size: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.alert--error {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.alert--error::before {
+  content: '⚠️';
+  flex-shrink: 0;
+}
+
+.alert--warning {
+  background-color: #fffbeb;
+  border-color: #fed7aa;
+  color: #92400e;
+}
+
+.alert--warning::before {
+  content: '📝';
+  flex-shrink: 0;
+}
+
+/* 美化section */
+.section {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.section__header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 24px;
+  text-align: center;
+}
+
+.section__title {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.section__body {
+  padding: 32px;
+}
+
+/* 示例数据按钮样式 */
+.example-btn-container {
+  margin-top: 8px;
+  text-align: right;
+}
+
+/* 输入验证样式 */
+.form__input.valid {
+  border-color: #10b981;
+}
+
+.form__input.invalid {
+  border-color: #ef4444;
+}
+
+/* 加载状态 */
+.loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .section__body {
+    padding: 24px 16px;
+  }
+  
+  .form {
+    margin: 0;
+  }
+}
+</style>
+
 <div class="section">
   <div class="section__header">
-    <h1 class="section__title">创建用户组</h1>
+    <h1 class="section__title">✨ 创建用户组</h1>
   </div>
   
   <div class="section__body">
-    <form method="post" class="form">
+    <form method="post" class="form" id="createForm">
       {% if error %}
       <div class="alert alert--error">
         {{ error }}
@@ -16,7 +238,7 @@
       {% endif %}
       
       <div class="form__group">
-        <label for="name" class="form__label">用户组名称</label>
+        <label for="name" class="form__label">📝 用户组名称</label>
         <input type="text" 
                id="name" 
                name="name" 
@@ -24,10 +246,13 @@
                value="{{ name or '' }}"
                placeholder="请输入用户组名称，如：2024级计算机1班" 
                required>
+        <div class="form__help">
+          建议使用有意义的名称，便于后续管理
+        </div>
       </div>
       
       <div class="form__group">
-        <label for="parentSchoolId" class="form__label">所属学校</label>
+        <label for="parentSchoolId" class="form__label">🏫 所属学校</label>
         <select id="parentSchoolId" name="parentSchoolId" class="form__select" required>
           <option value="">请选择学校</option>
           {% for school in schools %}
@@ -38,30 +263,43 @@
           {% endfor %}
         </select>
         {% if schools|length == 0 %}
+        <div class="alert alert--warning">
+          暂无可用学校，请先 <a href="/school-group/create">创建学校组</a>
+        </div>
+        {% else %}
         <div class="form__help">
-          <span class="text-warning">暂无可用学校，请先 <a href="/school-group/create">创建学校组</a></span>
+          选择该用户组所属的学校
         </div>
         {% endif %}
       </div>
       
       <div class="form__group">
-        <label for="studentsData" class="form__label">学生信息</label>
+        <label for="studentsData" class="form__label">👥 学生信息</label>
         <textarea id="studentsData" 
                   name="studentsData" 
                   class="form__textarea" 
-                  rows="10"
+                  rows="12"
                   placeholder="请输入学生信息，每行一个学生，格式：学号 姓名&#10;例如：&#10;2024001 张三&#10;2024002 李四&#10;2024003 王五">{{ studentsData or '' }}</textarea>
         <div class="form__help">
-          每行一个学生，格式：学号 姓名（用空格分隔）
+          每行一个学生，格式：<strong>学号 姓名</strong>（用空格分隔）
+          <br>💡 提示：可以从Excel复制粘贴，确保格式正确
+        </div>
+        <div class="example-btn-container">
+          <button type="button" class="button button--small button--text" id="fillExample">
+            📄 填充示例数据
+          </button>
+          <button type="button" class="button button--small button--text" id="validateData">
+            ✅ 验证数据格式
+          </button>
         </div>
       </div>
       
       <div class="form__group">
-        <button type="submit" class="button button--primary">
-          <span class="icon icon-check"></span> 创建用户组
+        <button type="submit" class="button button--primary" id="submitBtn">
+          <span>🚀</span> 创建用户组
         </button>
         <a href="/user-group/manage" class="button button--text">
-          取消
+          <span>↩️</span> 取消
         </a>
       </div>
     </form>
@@ -69,18 +307,96 @@
 </div>
 
 <script>
-// 示例数据填充
 document.addEventListener('DOMContentLoaded', function() {
   const textarea = document.getElementById('studentsData');
-  if (!textarea.value) {
-    const exampleBtn = document.createElement('button');
-    exampleBtn.type = 'button';
-    exampleBtn.className = 'button button--small button--text';
-    exampleBtn.textContent = '填充示例数据';
-    exampleBtn.onclick = function() {
-      textarea.value = '2024001 张三\n2024002 李四\n2024003 王五\n2024004 赵六';
-    };
-    textarea.parentNode.appendChild(exampleBtn);
+  const fillExampleBtn = document.getElementById('fillExample');
+  const validateBtn = document.getElementById('validateData');
+  const submitBtn = document.getElementById('submitBtn');
+  const form = document.getElementById('createForm');
+  
+  // 填充示例数据
+  fillExampleBtn.onclick = function() {
+    if (textarea.value && !confirm('这将覆盖现有数据，确定继续吗？')) {
+      return;
+    }
+    textarea.value = '2024001 张三\n2024002 李四\n2024003 王五\n2024004 赵六\n2024005 钱七\n2024006 孙八';
+    validateData();
+  };
+  
+  // 验证数据格式
+  function validateData() {
+    const lines = textarea.value.trim().split('\n').filter(line => line.trim());
+    const errors = [];
+    const duplicates = new Set();
+    const studentIds = new Set();
+    
+    lines.forEach((line, index) => {
+      const parts = line.trim().split(/\s+/);
+      if (parts.length !== 2) {
+        errors.push(`第${index + 1}行：格式错误，应为"学号 姓名"`);
+      } else {
+        const [id, name] = parts;
+        if (studentIds.has(id)) {
+          duplicates.add(id);
+        } else {
+          studentIds.add(id);
+        }
+        
+        if (!/^[a-zA-Z0-9]+$/.test(id)) {
+          errors.push(`第${index + 1}行：学号格式不正确`);
+        }
+        
+        if (name.length < 2) {
+          errors.push(`第${index + 1}行：姓名过短`);
+        }
+      }
+    });
+    
+    if (duplicates.size > 0) {
+      errors.push(`重复的学号：${Array.from(duplicates).join(', ')}`);
+    }
+    
+    // 显示验证结果
+    let existingAlert = textarea.parentNode.querySelector('.validation-result');
+    if (existingAlert) {
+      existingAlert.remove();
+    }
+    
+    const resultDiv = document.createElement('div');
+    resultDiv.className = 'validation-result';
+    resultDiv.style.marginTop = '8px';
+    
+    if (errors.length === 0 && lines.length > 0) {
+      resultDiv.innerHTML = `<div class="alert alert--success" style="margin: 0; padding: 8px 12px; font-size: 12px;">✅ 数据格式正确，共 ${lines.length} 名学生</div>`;
+      textarea.className = 'form__textarea valid';
+    } else if (lines.length === 0) {
+      resultDiv.innerHTML = `<div class="alert alert--warning" style="margin: 0; padding: 8px 12px; font-size: 12px;">⚠️ 请输入学生数据</div>`;
+      textarea.className = 'form__textarea';
+    } else {
+      resultDiv.innerHTML = `<div class="alert alert--error" style="margin: 0; padding: 8px 12px; font-size: 12px;">❌ 发现 ${errors.length} 个错误：<br>${errors.slice(0, 3).join('<br>')}${errors.length > 3 ? '<br>...' : ''}</div>`;
+      textarea.className = 'form__textarea invalid';
+    }
+    
+    textarea.parentNode.appendChild(resultDiv);
+  }
+  
+  validateBtn.onclick = validateData;
+  
+  // 实时验证
+  textarea.addEventListener('input', function() {
+    setTimeout(validateData, 500);
+  });
+  
+  // 表单提交时显示加载状态
+  form.addEventListener('submit', function(e) {
+    submitBtn.disabled = true;
+    submitBtn.className = 'button button--primary loading';
+    submitBtn.innerHTML = '<span>⏳</span> 创建中...';
+  });
+  
+  // 初始验证
+  if (textarea.value.trim()) {
+    setTimeout(validateData, 100);
   }
 });
 </script>

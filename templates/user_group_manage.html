@@ -2,6 +2,246 @@
 {% block title %}用户组管理{% endblock %}
 
 {% block content %}
+<style>
+/* 美化提示框样式 */
+.alert {
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border: 1px solid;
+  font-size: 14px;
+}
+
+.alert--error {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.alert--success {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #16a34a;
+}
+
+.alert--info {
+  background-color: #eff6ff;
+  border-color: #93c5fd;
+  color: #2563eb;
+}
+
+/* 美化空状态 */
+.empty {
+  text-align: center;
+  padding: 48px 24px;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 2px dashed #d1d5db;
+}
+
+.empty__icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.empty__text {
+  color: #6b7280;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.empty__text a {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.empty__text a:hover {
+  text-decoration: underline;
+}
+
+/* 美化按钮 */
+.button--primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  padding: 10px 16px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.button--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+.button--small {
+  padding: 6px 12px;
+  font-size: 14px;
+  border-radius: 6px;
+}
+
+/* 美化表格 */
+.data-table {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.data-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #374151;
+  padding: 12px 16px;
+}
+
+.data-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.data-table tr:hover {
+  background: #f9fafb;
+}
+
+/* 美化徽章 */
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.badge--success {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.badge--info {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.badge--warning {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+/* 美化分页 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.pagination__item {
+  padding: 8px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  color: #374151;
+  background: white;
+  border: 1px solid #d1d5db;
+  transition: all 0.2s ease;
+}
+
+.pagination__item:hover {
+  background: #f3f4f6;
+  text-decoration: none;
+}
+
+.pagination__item--current {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+/* 美化section */
+.section {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.section__header {
+  background: #f8fafc;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.section__title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.section__body {
+  padding: 24px;
+}
+
+/* 进度条 */
+.progress {
+  background: #f3f4f6;
+  border-radius: 10px;
+  height: 8px;
+  overflow: hidden;
+  margin-top: 4px;
+  width: 80px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(135deg, #10b981, #059669);
+  transition: width 0.3s ease;
+}
+
+/* 操作按钮组 */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.action-buttons .button {
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+/* 用户组统计卡片 */
+.stats-card {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 16px;
+}
+
+.stats-number {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.stats-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+</style>
+
 <div class="section">
   <div class="section__header">
     <h1 class="section__title">用户组管理</h1>
@@ -20,7 +260,7 @@
           <th>用户组名称</th>
           <th>所属学校</th>
           <th>学生数量</th>
-          <th>已绑定数量</th>
+          <th>绑定进度</th>
           <th>创建时间</th>
           <th>操作</th>
         </tr>
@@ -28,20 +268,41 @@
       <tbody>
         {% for group in userGroups %}
         <tr>
-          <td>{{ group.name }}</td>
-          <td>{{ group.schoolName or '未知' }}</td>
-          <td>{{ group.students|length }}</td>
+          <td>
+            <strong>{{ group.name }}</strong>
+          </td>
+          <td>
+            <span class="badge badge--info">{{ group.schoolName or '未知学校' }}</span>
+          </td>
+          <td>
+            <div class="stats-card">
+              <span class="stats-number">{{ group.students|length }}</span>
+              <span class="stats-label">人</span>
+            </div>
+          </td>
           <td>
             {% set boundCount = group.students|selectattr('bound', 'equalto', true)|list|length %}
-            {{ boundCount }}
+            {% set totalCount = group.students|length %}
+            {% set percentage = (boundCount / totalCount * 100) if totalCount > 0 else 0 %}
+            <div>
+              <span style="font-size: 14px; font-weight: 500;">{{ boundCount }}/{{ totalCount }}</span>
+              <span style="font-size: 12px; color: #6b7280;">({{ percentage|round(1) }}%)</span>
+            </div>
+            <div class="progress">
+              <div class="progress-bar" style="width: {{ percentage }}%"></div>
+            </div>
           </td>
-          <td>{{ group.createdAt }}</td>
           <td>
-            <a href="/user-group/detail/{{ group._id }}" class="button button--small">详情管理</a>
-            <a href="#" class="button button--small button--text" 
-               onclick="showBindToken('{{ group._id }}')">
-              绑定链接
-            </a>
+            <span class="badge badge--success">{{ group.createdAt.toISOString().substring(0, 10) if group.createdAt else '未知' }}</span>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <a href="/user-group/detail/{{ group._id }}" class="button button--small">详情管理</a>
+              <a href="#" class="button button--small button--text" 
+                 onclick="showBindToken('{{ group._id }}')">
+                绑定链接
+              </a>
+            </div>
           </td>
         </tr>
         {% endfor %}
@@ -63,7 +324,7 @@
     {% else %}
     <div class="empty">
       <div class="empty__icon">
-        <span class="icon icon-group"></span>
+        👥
       </div>
       <div class="empty__text">
         <p>暂无用户组</p>
@@ -82,7 +343,55 @@ function showGroupDetails(groupId) {
 
 function showBindToken(groupId) {
   // TODO: 实现显示绑定令牌的功能
-  alert('显示用户组绑定链接功能待实现');
+  const token = 'bind-token-' + groupId;
+  const url = window.location.origin + '/bind/' + token;
+  
+  // 创建一个简单的弹窗显示绑定链接
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  `;
+  
+  modal.innerHTML = `
+    <div style="background: white; padding: 24px; border-radius: 8px; max-width: 500px; width: 90%;">
+      <h3 style="margin: 0 0 16px 0;">用户组绑定链接</h3>
+      <div style="background: #f3f4f6; padding: 12px; border-radius: 4px; margin-bottom: 16px; word-break: break-all;">
+        ${url}
+      </div>
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button onclick="copyToClipboard('${url}')" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">复制链接</button>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="padding: 8px 16px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">关闭</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('链接已复制到剪贴板');
+    });
+  } else {
+    // 兼容旧版浏览器
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    alert('链接已复制到剪贴板');
+  }
 }
 </script>
 {% endblock %}

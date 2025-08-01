@@ -2,6 +2,293 @@
 {% block title %}用户组详情 - {{ userGroup.name }}{% endblock %}
 
 {% block content %}
+<style>
+/* 美化统计卡片 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stats-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card--success {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.stats-card--warning {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.stats-card--info {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  color: #374151;
+}
+
+.stats-number {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.stats-label {
+  font-size: 0.875rem;
+  opacity: 0.9;
+  margin: 0;
+}
+
+/* 美化表格和表单 */
+.form-container {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.form-control {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-text {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+/* 美化按钮 */
+.button {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.button--primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+}
+
+.button--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+.button--danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+}
+
+.button--danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+/* 美化表格 */
+.data-table {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: white;
+}
+
+.data-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #374151;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.data-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.data-table tr:hover {
+  background: #f9fafb;
+}
+
+/* 美化徽章 */
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.badge--success {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.badge--warning {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.badge--info {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+/* 美化提示框 */
+.alert {
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border: 1px solid;
+  font-size: 14px;
+}
+
+.alert--error {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.alert--success {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #16a34a;
+}
+
+/* 美化空状态 */
+.empty {
+  text-align: center;
+  padding: 48px 24px;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 2px dashed #d1d5db;
+}
+
+.empty__icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.empty__text {
+  color: #6b7280;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* 美化section */
+.section {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.section__header {
+  background: #f8fafc;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.section__title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.section__body {
+  padding: 24px;
+}
+
+/* 两列布局 */
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 工具栏 */
+.section__tools {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 复选框样式 */
+input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #3b82f6;
+}
+
+/* 表格标题 */
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.table-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+</style>
+
 <div class="section">
   <div class="section__header">
     <h1 class="section__title">用户组详情 - {{ userGroup.name }}</h1>
@@ -17,68 +304,86 @@
   {% endif %}
   
   <div class="section__body">
+    <!-- 统计卡片 -->
+    <div class="stats-grid">
+      <div class="stats-card">
+        <div class="stats-number">{{ userGroup.students|length }}</div>
+        <p class="stats-label">学生总数</p>
+      </div>
+      <div class="stats-card stats-card--success">
+        {% set boundCount = userGroup.students|selectattr('bound')|list|length %}
+        <div class="stats-number">{{ boundCount }}</div>
+        <p class="stats-label">已绑定学生</p>
+      </div>
+      <div class="stats-card stats-card--warning">
+        <div class="stats-number">{{ userGroup.students|length - boundCount }}</div>
+        <p class="stats-label">未绑定学生</p>
+      </div>
+      <div class="stats-card stats-card--info">
+        <div class="stats-number">{{ ((boundCount / userGroup.students|length) * 100)|round(1) if userGroup.students|length > 0 else 0 }}%</div>
+        <p class="stats-label">绑定进度</p>
+      </div>
+    </div>
+
+    <!-- 两列布局 -->
     <div class="row">
-      <div class="col-md-6">
-        <h3>基本信息</h3>
+      <div>
+        <h3 class="table-title">基本信息</h3>
         <table class="data-table">
           <tbody>
             <tr>
               <th>用户组名称</th>
-              <td>{{ userGroup.name }}</td>
+              <td><strong>{{ userGroup.name }}</strong></td>
             </tr>
             <tr>
               <th>所属学校</th>
-              <td>{{ school.name if school else '未知' }}</td>
+              <td><span class="badge badge--info">{{ school.name if school else '未知' }}</span></td>
             </tr>
             <tr>
               <th>创建时间</th>
-              <td>{{ userGroup.createdAt }}</td>
+              <td><span class="badge badge--success">{{ userGroup.createdAt.toISOString().substring(0, 10) if userGroup.createdAt else '未知' }}</span></td>
             </tr>
             <tr>
               <th>创建者</th>
               <td>{{ userGroup.createdBy }}</td>
             </tr>
-            <tr>
-              <th>学生总数</th>
-              <td>{{ userGroup.students|length }}人</td>
-            </tr>
-            <tr>
-              <th>已绑定学生</th>
-              <td>
-                {% set boundCount = userGroup.students|selectattr('bound')|list|length %}
-                {{ boundCount }}人 ({{ ((boundCount / userGroup.students|length) * 100)|round(1) if userGroup.students|length > 0 else 0 }}%)
-              </td>
-            </tr>
           </tbody>
         </table>
       </div>
       
-      <div class="col-md-6">
-        <h3>添加学生</h3>
-        <form method="post" action="/user-group/detail/{{ userGroup._id }}">
-          <input type="hidden" name="action" value="add_students">
-          <div class="form-group">
-            <label for="studentsData">学生信息</label>
-            <textarea id="studentsData" name="studentsData" class="form-control" rows="8" 
-                      placeholder="请输入学生信息，每行一个学生，格式：学号 姓名" 
-                      required>{{ studentsData }}</textarea>
-            <small class="form-text">每行格式：学号 姓名，例如：20210001 张三</small>
-          </div>
-          <button type="submit" class="button button--primary">添加学生</button>
-        </form>
+      <div>
+        <h3 class="table-title">添加学生</h3>
+        <div class="form-container">
+          <form method="post" action="/user-group/detail/{{ userGroup._id }}">
+            <input type="hidden" name="action" value="add_students">
+            <div class="form-group">
+              <label for="studentsData">学生信息</label>
+              <textarea id="studentsData" name="studentsData" class="form-control" rows="8" 
+                        placeholder="请输入学生信息，每行一个学生，格式：学号 姓名" 
+                        required>{{ studentsData }}</textarea>
+              <small class="form-text">每行格式：学号 姓名，例如：20210001 张三</small>
+            </div>
+            <button type="submit" class="button button--primary">
+              <span>➕</span> 添加学生
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   </div>
   
   <div class="section__body">
-    <h3>学生列表</h3>
+    <div class="table-header">
+      <h3 class="table-title">学生列表</h3>
+    </div>
+    
     {% if userGroup.students|length > 0 %}
     <form method="post" action="/user-group/detail/{{ userGroup._id }}">
       <input type="hidden" name="action" value="remove_students">
       <div class="section__tools">
         <button type="submit" class="button button--danger" 
                 onclick="return confirm('确定要删除选中的学生吗？')">
-          删除选中学生
+          <span>🗑️</span> 删除选中学生
         </button>
       </div>
       
@@ -103,27 +408,27 @@
               <input type="checkbox" name="selectedStudents" value="{{ student.studentId }}">
               {% endif %}
             </td>
-            <td>{{ student.studentId }}</td>
+            <td><strong>{{ student.studentId }}</strong></td>
             <td>{{ student.realName }}</td>
             <td>
               {% if student.bound %}
-                <span class="badge badge--success">已绑定</span>
+                <span class="badge badge--success">✅ 已绑定</span>
               {% else %}
-                <span class="badge badge--warning">未绑定</span>
+                <span class="badge badge--warning">⏳ 未绑定</span>
               {% endif %}
             </td>
             <td>
               {% if student.bound %}
-                {{ student.boundBy }}
+                <strong>{{ student.boundBy }}</strong>
               {% else %}
-                -
+                <span style="color: #9ca3af;">-</span>
               {% endif %}
             </td>
             <td>
               {% if student.bound %}
-                {{ student.boundAt }}
+                <span class="badge badge--success">{{ student.boundAt.toISOString().substring(0, 10) if student.boundAt else '未知' }}</span>
               {% else %}
-                -
+                <span style="color: #9ca3af;">-</span>
               {% endif %}
             </td>
           </tr>
@@ -133,8 +438,11 @@
     </form>
     {% else %}
     <div class="empty">
-      <p>暂无学生</p>
-      <p>请在右侧表单中添加学生信息</p>
+      <div class="empty__icon">👥</div>
+      <div class="empty__text">
+        <p>暂无学生</p>
+        <p>请在右侧表单中添加学生信息</p>
+      </div>
     </div>
     {% endif %}
   </div>

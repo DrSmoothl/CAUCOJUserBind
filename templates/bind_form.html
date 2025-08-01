@@ -2,85 +2,425 @@
 {% block title %}身份绑定{% endblock %}
 
 {% block content %}
-<div class="section">
-  <div class="section__header">
-    <h1 class="section__title">身份绑定</h1>
-  </div>
+<style>
+/* 绑定页面专用样式 */
+.bind-container {
+  max-width: 500px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.bind-header {
+  text-align: center;
+  margin-bottom: 32px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 40px 20px;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.bind-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 20px,
+    rgba(255,255,255,0.1) 20px,
+    rgba(255,255,255,0.1) 40px
+  );
+  animation: float 15s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(2deg); }
+}
+
+.bind-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+
+.bind-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.bind-subtitle {
+  font-size: 1rem;
+  opacity: 0.9;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* 绑定目标卡片 */
+.target-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+  overflow: hidden;
+  border: 2px solid #e2e8f0;
+}
+
+.target-header {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  padding: 16px 20px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.target-body {
+  padding: 20px;
+}
+
+.target-info {
+  background: #f0f9ff;
+  border-radius: 8px;
+  padding: 16px;
+  border-left: 4px solid #3b82f6;
+}
+
+.target-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e40af;
+  margin: 0;
+}
+
+.target-type {
+  font-size: 0.875rem;
+  color: #3b82f6;
+  margin: 4px 0 0 0;
+}
+
+/* 表单样式 */
+.form-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 32px;
+}
+
+.form__group {
+  margin-bottom: 24px;
+}
+
+.form__label {
+  display: block;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form__input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.form__input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  transform: translateY(-1px);
+}
+
+.form__input:valid {
+  border-color: #10b981;
+}
+
+/* 按钮样式 */
+.button {
+  width: 100%;
+  padding: 14px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.button--primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+}
+
+.button--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+.button--primary:active {
+  transform: translateY(0);
+}
+
+/* 提示框样式 */
+.alert {
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  border: 1px solid;
+  font-size: 14px;
+}
+
+.alert--error {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.alert--error::before {
+  content: '⚠️';
+  flex-shrink: 0;
+}
+
+.alert--warning {
+  background-color: #fffbeb;
+  border-color: #fed7aa;
+  color: #92400e;
+}
+
+.alert--warning ul {
+  margin: 8px 0 0 0;
+  padding-left: 20px;
+}
+
+.alert--warning li {
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+/* section重置 */
+.section {
+  background: transparent;
+  box-shadow: none;
+}
+
+.section__header {
+  display: none;
+}
+
+.section__body {
+  padding: 0;
+}
+
+/* 加载状态 */
+.loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .bind-container {
+    margin: 20px auto;
+    padding: 0 16px;
+  }
   
+  .form-container {
+    padding: 24px 20px;
+  }
+  
+  .bind-header {
+    padding: 32px 16px;
+  }
+}
+</style>
+
+<div class="section">
   <div class="section__body">
-    {% if bindInfo %}
-    <div class="card">
-      <div class="card__header">
-        <h4>绑定目标</h4>
+    <div class="bind-container">
+      <div class="bind-header">
+        <span class="bind-icon">🔗</span>
+        <h1 class="bind-title">身份绑定</h1>
+        <p class="bind-subtitle">请输入您的学号和姓名完成绑定</p>
       </div>
-      <div class="card__body">
-        {% if bindInfo.type == 'school_group' %}
-        <div class="alert alert--info">
-          <p><strong>学校组绑定</strong></p>
-          <p>您将绑定到学校：<strong>{{ bindInfo.target.name }}</strong></p>
+      
+      {% if bindInfo %}
+      <div class="target-card">
+        <div class="target-header">
+          {% if bindInfo.type == 'school_group' %}
+            <span>🏫</span> 学校组绑定
+          {% else %}
+            <span>👥</span> 用户组绑定
+          {% endif %}
         </div>
-        {% else %}
-        <div class="alert alert--info">
-          <p><strong>用户组绑定</strong></p>
-          <p>您将绑定到用户组：<strong>{{ bindInfo.target.name }}</strong></p>
+        <div class="target-body">
+          <div class="target-info">
+            {% if bindInfo.type == 'school_group' %}
+              <p class="target-name">{{ bindInfo.target.name }}</p>
+              <p class="target-type">学校组绑定</p>
+            {% else %}
+              <p class="target-name">{{ bindInfo.target.name }}</p>
+              <p class="target-type">用户组绑定</p>
+            {% endif %}
+          </div>
         </div>
-        {% endif %}
-      </div>
-    </div>
-    {% endif %}
-    
-    <form method="post" class="form">
-      {% if error %}
-      <div class="alert alert--error">
-        {{ error }}
       </div>
       {% endif %}
       
-      <div class="form__group">
-        <label for="studentId" class="form__label">学号</label>
-        <input type="text" 
-               id="studentId" 
-               name="studentId" 
-               class="form__input" 
-               value="{{ studentId or '' }}"
-               placeholder="请输入您的学号" 
-               required>
-      </div>
-      
-      <div class="form__group">
-        <label for="realName" class="form__label">真实姓名</label>
-        <input type="text" 
-               id="realName" 
-               name="realName" 
-               class="form__input" 
-               value="{{ realName or '' }}"
-               placeholder="请输入您的真实姓名" 
-               required>
-      </div>
-      
-      <div class="alert alert--warning">
-        <p><strong>注意：</strong></p>
-        <ul>
-          {% if bindInfo and bindInfo.type == 'school_group' %}
-          <li>请确保输入的学号和姓名与学校管理员导入的信息完全一致</li>
-          <li>只有已导入的学校成员才能成功绑定</li>
-          <li>每个学生信息只能绑定一次</li>
-          <li>绑定成功后将获得学校组权限</li>
-          {% else %}
-          <li>请确保输入的学号和姓名与老师导入的信息完全一致</li>
-          <li>只有已导入的班级学生才能成功绑定</li>
-          <li>每个学生信息只能绑定一次</li>
-          <li>绑定成功后将获得相应的学习权限</li>
+      <div class="form-container">
+        <form method="post" class="form" id="bindForm">
+          {% if error %}
+          <div class="alert alert--error">
+            {{ error }}
+          </div>
           {% endif %}
-        </ul>
+          
+          <div class="form__group">
+            <label for="studentId" class="form__label">
+              <span>🆔</span> 学号
+            </label>
+            <input type="text" 
+                   id="studentId" 
+                   name="studentId" 
+                   class="form__input" 
+                   value="{{ studentId or '' }}"
+                   placeholder="请输入您的学号" 
+                   required>
+          </div>
+          
+          <div class="form__group">
+            <label for="realName" class="form__label">
+              <span>👤</span> 真实姓名
+            </label>
+            <input type="text" 
+                   id="realName" 
+                   name="realName" 
+                   class="form__input" 
+                   value="{{ realName or '' }}"
+                   placeholder="请输入您的真实姓名" 
+                   required>
+          </div>
+          
+          <div class="alert alert--warning">
+            <p><strong>📋 绑定须知：</strong></p>
+            <ul>
+              {% if bindInfo and bindInfo.type == 'school_group' %}
+              <li>请确保输入的学号和姓名与学校管理员导入的信息完全一致</li>
+              <li>只有已导入的学校成员才能成功绑定</li>
+              <li>每个学生信息只能绑定一次</li>
+              <li>绑定成功后将获得学校组权限</li>
+              {% else %}
+              <li>请确保输入的学号和姓名与老师导入的信息完全一致</li>
+              <li>只有已导入的班级学生才能成功绑定</li>
+              <li>每个学生信息只能绑定一次</li>
+              <li>绑定成功后将获得相应的学习权限</li>
+              {% endif %}
+            </ul>
+          </div>
+          
+          <div class="form__group">
+            <button type="submit" class="button button--primary" id="submitBtn">
+              <span>🔗</span> 确认绑定
+            </button>
+          </div>
+        </form>
       </div>
-      
-      <div class="form__group">
-        <button type="submit" class="button button--primary">
-          <span class="icon icon-link"></span> 确认绑定
-        </button>
-      </div>
-    </form>
+    </div>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('bindForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const studentIdInput = document.getElementById('studentId');
+  const realNameInput = document.getElementById('realName');
+  
+  // 表单提交处理
+  form.addEventListener('submit', function(e) {
+    // 验证输入
+    if (!studentIdInput.value.trim() || !realNameInput.value.trim()) {
+      e.preventDefault();
+      alert('请填写完整的学号和姓名');
+      return;
+    }
+    
+    // 显示加载状态
+    submitBtn.disabled = true;
+    submitBtn.className = 'button button--primary loading';
+    submitBtn.innerHTML = '<span>⏳</span> 绑定中...';
+  });
+  
+  // 输入验证
+  function validateInput(input) {
+    if (input.value.trim()) {
+      input.classList.add('valid');
+    } else {
+      input.classList.remove('valid');
+    }
+  }
+  
+  studentIdInput.addEventListener('input', () => validateInput(studentIdInput));
+  realNameInput.addEventListener('input', () => validateInput(realNameInput));
+  
+  // 页面加载动画
+  const container = document.querySelector('.bind-container');
+  container.style.opacity = '0';
+  container.style.transform = 'translateY(20px)';
+  container.style.transition = 'all 0.6s ease';
+  
+  setTimeout(() => {
+    container.style.opacity = '1';
+    container.style.transform = 'translateY(0)';
+  }, 100);
+});
+</script>
 {% endblock %}
