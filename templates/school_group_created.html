@@ -2,88 +2,425 @@
 {% block title %}学校组创建成功{% endblock %}
 
 {% block content %}
+<style>
+/* 成功页面样式 */
+.success-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.success-header {
+  text-align: center;
+  padding: 40px 20px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border-radius: 12px 12px 0 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.success-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(255,255,255,0.1) 10px,
+    rgba(255,255,255,0.1) 20px
+  );
+  animation: slide 20s linear infinite;
+}
+
+@keyframes slide {
+  0% { transform: translateX(-50px); }
+  100% { transform: translateX(50px); }
+}
+
+.success-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.success-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.success-subtitle {
+  font-size: 1.125rem;
+  opacity: 0.9;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* 卡片样式 */
+.card {
+  background: white;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.card__header {
+  background: #f8fafc;
+  padding: 16px 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.card__header h4 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.card__body {
+  padding: 24px;
+}
+
+/* 表单组样式 */
+.form__group {
+  margin-bottom: 24px;
+}
+
+.form__label {
+  display: block;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+/* 输入组样式 */
+.input-group {
+  display: flex;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid #e5e7eb;
+  transition: border-color 0.2s ease;
+}
+
+.input-group:focus-within {
+  border-color: #3b82f6;
+}
+
+.input-group .form__input {
+  flex: 1;
+  border: none;
+  padding: 12px 16px;
+  font-size: 14px;
+  background: #f9fafb;
+  font-family: 'Courier New', monospace;
+}
+
+.input-group .form__input:focus {
+  outline: none;
+  background: white;
+}
+
+.input-group .button {
+  border-radius: 0;
+  border: none;
+  padding: 12px 20px;
+  margin-right: 0; /* 移除复制按钮的右边距 */
+  flex-shrink: 0; /* 防止按钮收缩 */
+}
+
+/* 按钮样式 */
+.button {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 12px;
+}
+
+/* 操作按钮区域中的按钮不需要右边距 */
+.action-buttons .button {
+  margin-right: 12px;
+}
+
+.action-buttons .button:last-child {
+  margin-right: 0;
+}
+
+.button--primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+}
+
+.button--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+.button--secondary {
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+  color: white;
+}
+
+.button--secondary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+/* 提示框样式 */
+.alert {
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border: 1px solid;
+  font-size: 14px;
+}
+
+.alert--info {
+  background-color: #eff6ff;
+  border-color: #93c5fd;
+  color: #1e40af;
+}
+
+.alert--info ul {
+  margin: 8px 0 0 0;
+  padding-left: 20px;
+}
+
+.alert--info li {
+  margin-bottom: 4px;
+}
+
+/* 操作按钮区域 */
+.action-buttons {
+  text-align: center;
+  padding: 24px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* section样式 */
+.section {
+  background: transparent;
+  box-shadow: none;
+}
+
+.section__header {
+  display: none;
+}
+
+.section__body {
+  padding: 0;
+}
+
+/* 复制成功动画 */
+.copy-success {
+  position: relative;
+}
+
+.copy-success::after {
+  content: '✅ 已复制';
+  position: absolute;
+  top: -30px;
+  right: 0;
+  background: #10b981;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  animation: fadeInOut 2s ease;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(10px); }
+  20% { opacity: 1; transform: translateY(0); }
+  80% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
+
+/* 统计信息卡片 */
+.stats-info {
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border-left: 4px solid #0ea5e9;
+}
+
+.stats-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #0369a1;
+  margin: 0;
+}
+
+.stats-label {
+  color: #0369a1;
+  font-size: 14px;
+  margin: 4px 0 0 0;
+}
+</style>
+
 <div class="section">
-  <div class="section__header">
-    <h1 class="section__title">学校组创建成功</h1>
-  </div>
-  
   <div class="section__body">
-    <div class="alert alert--success">
-      <h3>学校组 "{{ school.name }}" 创建成功！</h3>
-      <p>已导入 {{ membersCount }} 名成员</p>
-    </div>
-    
-    <div class="card">
-      <div class="card__header">
-        <h4>绑定信息</h4>
+    <div class="success-container">
+      <div class="success-header">
+        <span class="success-icon">🏫</span>
+        <h1 class="success-title">学校组创建成功！</h1>
+        <p class="success-subtitle">{{ school.name }}</p>
       </div>
-      <div class="card__body">
-        <div class="form__group">
-          <label class="form__label">绑定令牌</label>
-          <div class="input-group">
-            <input type="text" 
-                   id="bindToken" 
-                   class="form__input" 
-                   value="{{ bindToken }}" 
-                   readonly>
-            <button type="button" 
-                    class="button button--secondary" 
-                    onclick="copyToClipboard('bindToken')">
-              复制
-            </button>
+      
+      <div class="card">
+        <div class="card__body">
+          <div class="stats-info">
+            <p class="stats-number">{{ membersCount }}</p>
+            <p class="stats-label">名成员已成功导入</p>
+          </div>
+          
+          <div class="form__group">
+            <label class="form__label">🔑 绑定令牌</label>
+            <div class="input-group">
+              <input type="text" 
+                     id="bindToken" 
+                     class="form__input" 
+                     value="{{ bindToken }}" 
+                     readonly>
+              <button type="button" 
+                      class="button button--secondary" 
+                      onclick="copyToClipboard('bindToken', this)">
+                📋 复制
+              </button>
+            </div>
+          </div>
+          
+          <div class="form__group">
+            <label class="form__label">🔗 绑定链接</label>
+            <div class="input-group">
+              <input type="text" 
+                     id="bindUrl" 
+                     class="form__input" 
+                     value="{{ request.host }}{{ bindUrl }}" 
+                     readonly>
+              <button type="button" 
+                      class="button button--secondary" 
+                      onclick="copyToClipboard('bindUrl', this)">
+                📋 复制
+              </button>
+            </div>
+          </div>
+          
+          <div class="alert alert--info">
+            <p><strong>📖 使用说明：</strong></p>
+            <ul>
+              <li>📤 将此绑定链接发送给学校成员</li>
+              <li>🔍 成员访问链接后输入学号和姓名进行绑定</li>
+              <li>✅ 只有导入的成员才能成功绑定</li>
+              <li>🎯 绑定成功后成员将获得相应的访问权限</li>
+            </ul>
           </div>
         </div>
         
-        <div class="form__group">
-          <label class="form__label">绑定链接</label>
-          <div class="input-group">
-            <input type="text" 
-                   id="bindUrl" 
-                   class="form__input" 
-                   value="{{ request.host }}{{ bindUrl }}" 
-                   readonly>
-            <button type="button" 
-                    class="button button--secondary" 
-                    onclick="copyToClipboard('bindUrl')">
-              复制
-            </button>
-          </div>
-        </div>
-        
-        <div class="alert alert--info">
-          <p><strong>使用说明：</strong></p>
-          <ul>
-            <li>此绑定链接用于直接绑定到学校组</li>
-            <li>学生访问此链接后可以直接绑定到 "{{ school.name }}"</li>
-            <li>建议保存好此链接，用于后续学生绑定</li>
-          </ul>
+        <div class="action-buttons">
+          <a href="/school-group/manage" class="button button--primary">
+            <span>📊</span> 返回学校组管理
+          </a>
+          <a href="/school-group/create" class="button button--secondary">
+            <span>➕</span> 继续创建学校组
+          </a>
         </div>
       </div>
-    </div>
-    
-    <div class="form__group">
-      <a href="/school-group/manage" class="button button--primary">
-        返回学校组管理
-      </a>
-      <a href="/user-group/create" class="button button--secondary">
-        创建用户组
-      </a>
     </div>
   </div>
 </div>
 
 <script>
-function copyToClipboard(elementId) {
+function copyToClipboard(elementId, buttonElement) {
   const element = document.getElementById(elementId);
+  
+  // 选择文本
   element.select();
   element.setSelectionRange(0, 99999);
   
   try {
-    document.execCommand('copy');
-    alert('已复制到剪贴板');
+    // 尝试使用现代API
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(element.value).then(() => {
+        showCopySuccess(buttonElement);
+      });
+    } else {
+      // 兼容旧版浏览器
+      document.execCommand('copy');
+      showCopySuccess(buttonElement);
+    }
   } catch (err) {
-    alert('复制失败，请手动复制');
+    // 创建临时提示
+    const tempAlert = document.createElement('div');
+    tempAlert.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #ef4444;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    `;
+    tempAlert.textContent = '复制失败，请手动复制';
+    document.body.appendChild(tempAlert);
+    
+    setTimeout(() => {
+      document.body.removeChild(tempAlert);
+    }, 3000);
   }
 }
+
+function showCopySuccess(buttonElement) {
+  // 添加成功样式
+  buttonElement.classList.add('copy-success');
+  
+  // 暂时改变按钮文本
+  const originalText = buttonElement.innerHTML;
+  buttonElement.innerHTML = '✅ 已复制';
+  buttonElement.disabled = true;
+  
+  setTimeout(() => {
+    buttonElement.innerHTML = originalText;
+    buttonElement.disabled = false;
+    buttonElement.classList.remove('copy-success');
+  }, 2000);
+}
+
+// 页面加载动画
+document.addEventListener('DOMContentLoaded', function() {
+  const container = document.querySelector('.success-container');
+  container.style.opacity = '0';
+  container.style.transform = 'translateY(20px)';
+  container.style.transition = 'all 0.6s ease';
+  
+  setTimeout(() => {
+    container.style.opacity = '1';
+    container.style.transform = 'translateY(0)';
+  }, 100);
+});
 </script>
 {% endblock %}

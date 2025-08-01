@@ -132,6 +132,8 @@
   border-radius: 0;
   border: none;
   padding: 12px 20px;
+  margin-right: 0; /* 移除复制按钮的右边距 */
+  flex-shrink: 0; /* 防止按钮收缩 */
 }
 
 /* 按钮样式 */
@@ -148,6 +150,15 @@
   align-items: center;
   gap: 8px;
   margin-right: 12px;
+}
+
+/* 操作按钮区域中的按钮不需要右边距 */
+.action-buttons .button {
+  margin-right: 12px;
+}
+
+.action-buttons .button:last-child {
+  margin-right: 0;
 }
 
 .button--primary {
