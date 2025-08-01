@@ -1,0 +1,130 @@
+{% extends "layout/basic.html" %}
+{% block title %}绑定结果{% endblock %}
+
+{% block content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">绑定结果</h1>
+  </div>
+  
+  <div class="section__body">
+    {% if success %}
+      <div class="alert alert--success">
+        <h3>绑定成功！</h3>
+        <p>欢迎，{{ studentName }}（学号：{{ studentId }}）</p>
+        <p>您已成功绑定到用户组：{{ userGroupName }}</p>
+      </div>
+      
+      <div class="card">
+        <div class="card__header">
+          <h4>绑定信息</h4>
+        </div>
+        <div class="card__body">
+          <div class="form__group">
+            <label class="form__label">学生姓名</label>
+            <p class="form__text">{{ studentName }}</p>
+          </div>
+          
+          <div class="form__group">
+            <label class="form__label">学号</label>
+            <p class="form__text">{{ studentId }}</p>
+          </div>
+          
+          <div class="form__group">
+            <label class="form__label">所属用户组</label>
+            <p class="form__text">{{ userGroupName }}</p>
+          </div>
+          
+          {% if schoolGroupName %}
+          <div class="form__group">
+            <label class="form__label">所属学校组</label>
+            <p class="form__text">{{ schoolGroupName }}</p>
+          </div>
+          {% endif %}
+          
+          <div class="form__group">
+            <label class="form__label">绑定时间</label>
+            <p class="form__text">{{ bindTime | date('Y-m-d H:i:s') }}</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="alert alert--info">
+        <p><strong>接下来您可以：</strong></p>
+        <ul>
+          <li>开始使用平台进行练习和比赛</li>
+          <li>查看您的个人资料和统计信息</li>
+          <li>参与您所在用户组的活动</li>
+        </ul>
+      </div>
+      
+    {% else %}
+      <div class="alert alert--error">
+        <h3>绑定失败</h3>
+        <p>{{ errorMessage | default('未知错误，请联系管理员') }}</p>
+      </div>
+      
+      <div class="card">
+        <div class="card__header">
+          <h4>可能的原因</h4>
+        </div>
+        <div class="card__body">
+          <ul>
+            <li>学号或姓名不正确</li>
+            <li>您不在此用户组的学生名单中</li>
+            <li>绑定令牌已过期或无效</li>
+            <li>您已经绑定过其他用户组</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="alert alert--warning">
+        <p><strong>如需帮助：</strong></p>
+        <ul>
+          <li>请检查您的学号和姓名是否正确</li>
+          <li>确认您在相应班级的学生名单中</li>
+          <li>联系您的老师或管理员获取帮助</li>
+        </ul>
+      </div>
+    {% endif %}
+    
+    <div class="form__group">
+      {% if success %}
+        <a href="/" class="button button--primary">
+          返回首页
+        </a>
+        <a href="/user/{{ userId }}" class="button button--secondary">
+          查看个人资料
+        </a>
+      {% else %}
+        <a href="{{ bindUrl }}" class="button button--primary">
+          重新绑定
+        </a>
+        <a href="/" class="button button--secondary">
+          返回首页
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<style>
+.form__text {
+  padding: 8px 0;
+  color: #333;
+  font-weight: 500;
+}
+
+.alert ul {
+  margin: 8px 0 0 20px;
+}
+
+.alert li {
+  margin: 4px 0;
+}
+
+.card .form__group:last-child {
+  margin-bottom: 0;
+}
+</style>
+{% endblock %}
