@@ -235,9 +235,9 @@
             <form method="post" style="display: inline; margin-left: 8px;">
               <input type="hidden" name="action" value="delete_school">
               <input type="hidden" name="schoolId" value="{{ school._id }}">
-              <button type="submit" class="button--danger" 
+              <button type="submit" class="button button--small button--danger" 
                       onclick="return confirm('确定要删除学校组「{{ school.name }}」吗？\n\n删除操作将：\n1. 解绑所有已绑定成员\n2. 删除学校下的所有用户组\n3. 永久删除学校组\n\n此操作不可撤销！')">
-                🗑️ 删除
+                🗑️ 删除学校组
               </button>
             </form>
           </td>

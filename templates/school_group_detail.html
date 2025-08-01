@@ -328,6 +328,12 @@
   </div>
   {% endif %}
   
+  {% if success %}
+  <div class="section__body">
+    <div class="alert alert--success">{{ message }}</div>
+  </div>
+  {% endif %}
+  
   <div class="section__body">
     <!-- 统计信息 -->
     <div class="stats-grid">

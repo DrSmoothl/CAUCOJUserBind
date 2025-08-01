@@ -963,8 +963,18 @@ class SchoolGroupManageHandler extends Handler {
         const page = +(this.request.query.page || '1');
         const { schools, total, pageCount } = await userBindModel.getSchoolGroups(page);
         
+        // 检查是否有成功消息
+        const { success, message } = this.request.query;
+        
         this.response.template = 'school_group_manage.html';
-        this.response.body = { schools, total, pageCount, page };
+        this.response.body = { 
+            schools, 
+            total, 
+            pageCount, 
+            page,
+            success: success === '1',
+            message: message ? decodeURIComponent(message as string) : null
+        };
     }
 
     async post(domainId: string) {
@@ -977,8 +987,16 @@ class SchoolGroupManageHandler extends Handler {
                     throw new Error('学校组ID无效');
                 }
                 
+                // 获取学校组信息用于显示
+                const school = await userBindModel.getSchoolGroupById(schoolId);
+                if (!school) {
+                    throw new Error('学校组不存在');
+                }
+                
                 await userBindModel.deleteSchoolGroup(schoolId);
-                this.response.body = { success: true, message: '学校组删除成功' };
+                
+                // 跳转到成功页面，带上成功信息
+                this.response.redirect = `/school-group/manage?success=1&message=${encodeURIComponent(`学校组"${school.name}"删除成功`)}`;
             } else {
                 throw new Error('未知操作');
             }
@@ -1017,8 +1035,15 @@ class SchoolGroupDetailHandler extends Handler {
             throw new NotFoundError('学校组不存在');
         }
         
+        // 检查是否有成功消息
+        const { success, message } = this.request.query;
+        
         this.response.template = 'school_group_detail.html';
-        this.response.body = { school };
+        this.response.body = { 
+            school,
+            success: success === '1',
+            message: message ? decodeURIComponent(message as string) : null
+        };
     }
 
     async post(domainId: string) {
@@ -1051,6 +1076,7 @@ class SchoolGroupDetailHandler extends Handler {
                 }
 
                 await userBindModel.addSchoolGroupMembers(schoolId, members);
+                this.response.redirect = `/school-group/detail/${schoolId}?success=1&message=${encodeURIComponent(`成功添加 ${members.length} 个成员`)}`;
                 
             } else if (action === 'remove_members') {
                 // 移除成员（旧版本，只能删除未绑定的）
@@ -1060,6 +1086,7 @@ class SchoolGroupDetailHandler extends Handler {
                 
                 const studentIds = Array.isArray(selectedMembers) ? selectedMembers : [selectedMembers];
                 await userBindModel.removeSchoolGroupMembers(schoolId, studentIds);
+                this.response.redirect = `/school-group/detail/${schoolId}?success=1&message=${encodeURIComponent(`成功删除 ${studentIds.length} 个成员`)}`;
                 
             } else if (action === 'edit_member') {
                 // 编辑成员信息
@@ -1068,6 +1095,7 @@ class SchoolGroupDetailHandler extends Handler {
                 }
                 
                 await userBindModel.editSchoolGroupMember(schoolId, studentId, newStudentId, newRealName);
+                this.response.redirect = `/school-group/detail/${schoolId}?success=1&message=${encodeURIComponent(`成功编辑成员信息：${newStudentId} ${newRealName}`)}`;
                 
             } else if (action === 'delete_member') {
                 // 删除成员（支持已绑定的成员）
@@ -1076,6 +1104,7 @@ class SchoolGroupDetailHandler extends Handler {
                 }
                 
                 await userBindModel.deleteSchoolGroupMember(schoolId, studentId);
+                this.response.redirect = `/school-group/detail/${schoolId}?success=1&message=${encodeURIComponent(`成功删除成员：${studentId}`)}`;
             }
 
             this.response.redirect = `/school-group/detail/${schoolId}`;

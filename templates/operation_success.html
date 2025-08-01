@@ -1,0 +1,183 @@
+{% extends "layout/basic.html" %}
+{% block title %}操作成功{% endblock %}
+
+{% block content %}
+<style>
+/* 成功页面样式 */
+.success-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  padding: 40px 20px;
+}
+
+.success-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  padding: 48px 40px;
+  text-align: center;
+  max-width: 500px;
+  width: 100%;
+}
+
+.success-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  animation: successPulse 2s infinite;
+}
+
+.success-icon svg {
+  width: 40px;
+  height: 40px;
+  color: white;
+}
+
+.success-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 16px;
+}
+
+.success-message {
+  font-size: 16px;
+  color: #6b7280;
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.success-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.button {
+  padding: 12px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.button--primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+}
+
+.button--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+.button--secondary {
+  background: white;
+  color: #374151;
+  border: 2px solid #e5e7eb;
+}
+
+.button--secondary:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: #374151;
+  text-decoration: none;
+}
+
+/* 动画 */
+@keyframes successPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .success-card {
+    padding: 32px 24px;
+  }
+  
+  .success-actions {
+    flex-direction: column;
+  }
+  
+  .button {
+    width: 100%;
+  }
+}
+</style>
+
+<div class="success-container">
+  <div class="success-card">
+    <div class="success-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+        <polyline points="20,6 9,17 4,12"></polyline>
+      </svg>
+    </div>
+    
+    <h1 class="success-title">操作成功！</h1>
+    
+    <p class="success-message">
+      {% if message %}
+        {{ message }}
+      {% else %}
+        您的操作已成功完成。
+      {% endif %}
+    </p>
+    
+    <div class="success-actions">
+      {% if returnUrl %}
+        <a href="{{ returnUrl }}" class="button button--primary">
+          ← 返回
+        </a>
+      {% else %}
+        <a href="/school-group/manage" class="button button--primary">
+          ← 返回学校组管理
+        </a>
+      {% endif %}
+      
+      {% if continueUrl %}
+        <a href="{{ continueUrl }}" class="button button--secondary">
+          继续操作 →
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+// 自动跳转（可选）
+{% if autoRedirect %}
+setTimeout(function() {
+  window.location.href = '{{ returnUrl or "/school-group/manage" }}';
+}, {{ redirectDelay or 3000 }});
+{% endif %}
+</script>
+{% endblock %}
