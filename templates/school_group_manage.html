@@ -249,7 +249,7 @@
           <div class="school-info">
             <div class="info-item">
               <div class="info-label">创建时间</div>
-              <div class="info-value">{{ school.createdAt.strftime('%Y-%m-%d %H:%M') if school.createdAt else '未知' }}</div>
+              <div class="info-value">{{ school.createdAt if school.createdAt else '未知' }}</div>
             </div>
             <div class="info-item">
               <div class="info-label">成员数量</div>
