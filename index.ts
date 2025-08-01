@@ -488,11 +488,19 @@ class UserGroupCreateHandler extends Handler {
 
 // 绑定界面 - 处理令牌绑定
 class BindHandler extends Handler {
-    async get(domainId: string, token: string) {
+    async get() {
         console.log('BindHandler.get: 收到请求');
-        console.log('BindHandler.get: domainId:', domainId);
-        console.log('BindHandler.get: token:', token);
+        console.log('BindHandler.get: request.params:', this.request.params);
+        console.log('BindHandler.get: request.path:', this.request.path);
         console.log('BindHandler.get: 用户ID:', this.user._id);
+        
+        const token = this.request.params.token;
+        console.log('BindHandler.get: 从params获取的token:', token);
+        
+        if (!token) {
+            console.log('BindHandler.get: 令牌参数缺失');
+            throw new NotFoundError('绑定链接格式错误');
+        }
         
         if (!this.user._id) {
             console.log('BindHandler.get: 用户未登录，重定向到登录页');
@@ -551,9 +559,16 @@ class BindHandler extends Handler {
         };
     }
 
-    async post(domainId: string, token: string) {
+    async post() {
+        const { token } = this.request.params;
+        console.log('BindHandler.post: token:', token);
+        
         if (!this.user._id) {
             throw new ForbiddenError('请先登录');
+        }
+
+        if (!token) {
+            throw new NotFoundError('绑定链接格式错误');
         }
 
         const { studentId, realName } = this.request.body;
