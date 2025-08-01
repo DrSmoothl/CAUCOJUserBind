@@ -1,235 +1,247 @@
 {% extends "layout/basic.html" %}
 {% block title %}学校组管理{% endblock %}
 
-{% block head %}
+{% block content %}
 <style>
+/* 重置默认样式并使用更高优先级 */
+.bind-management * {
+  box-sizing: border-box;
+}
+
 .bind-management {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
   min-height: 100vh;
   padding: 2rem 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .management-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1rem;
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+  padding: 0 1rem !important;
 }
 
 .page-header {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.95) !important;
   backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 2rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px !important;
+  padding: 2rem !important;
+  margin-bottom: 2rem !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
 }
 
 .page-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #2d3748;
-  margin: 0 0 0.5rem 0;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-size: 2.5rem !important;
+  font-weight: 700 !important;
+  color: #2d3748 !important;
+  margin: 0 0 0.5rem 0 !important;
+  background: linear-gradient(135deg, #667eea, #764ba2) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
 }
 
 .page-subtitle {
-  font-size: 1.1rem;
-  color: #718096;
-  margin: 0;
+  font-size: 1.1rem !important;
+  color: #718096 !important;
+  margin: 0 !important;
+}
+
+.header-flex {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 1rem !important;
 }
 
 .action-button {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  color: white;
-  padding: 12px 24px;
-  border-radius: 50px;
-  text-decoration: none;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.3s ease;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
+  color: white !important;
+  padding: 12px 24px !important;
+  border-radius: 50px !important;
+  text-decoration: none !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  transition: all 0.3s ease !important;
+  border: none !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4) !important;
 }
 
 .action-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(79, 172, 254, 0.6);
-  text-decoration: none;
-  color: white;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(79, 172, 254, 0.6) !important;
+  text-decoration: none !important;
+  color: white !important;
 }
 
 .schools-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1.5rem;
-  margin-top: 2rem;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)) !important;
+  gap: 1.5rem !important;
+  margin-top: 2rem !important;
 }
 
 .school-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.95) !important;
   backdrop-filter: blur(10px);
-  border-radius: 16px;
-  padding: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
+  border-radius: 16px !important;
+  padding: 1.5rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.3s ease !important;
+  position: relative !important;
+  overflow: hidden !important;
 }
 
 .school-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 4px !important;
+  background: linear-gradient(135deg, #667eea, #764ba2) !important;
 }
 
 .school-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+  transform: translateY(-5px) !important;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15) !important;
 }
 
 .school-name {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: #2d3748;
-  margin: 0 0 1rem 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  font-size: 1.3rem !important;
+  font-weight: 600 !important;
+  color: #2d3748 !important;
+  margin: 0 0 1rem 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
 }
 
 .school-name::before {
-  content: '🏫';
-  font-size: 1.2rem;
+  content: '🏫' !important;
+  font-size: 1.2rem !important;
 }
 
 .school-info {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 1rem !important;
+  margin-bottom: 1.5rem !important;
 }
 
 .info-item {
-  padding: 0.8rem;
-  background: rgba(102, 126, 234, 0.1);
-  border-radius: 10px;
-  border-left: 3px solid #667eea;
+  padding: 0.8rem !important;
+  background: rgba(102, 126, 234, 0.1) !important;
+  border-radius: 10px !important;
+  border-left: 3px solid #667eea !important;
 }
 
 .info-label {
-  font-size: 0.85rem;
-  color: #718096;
-  margin-bottom: 0.25rem;
-  font-weight: 500;
+  font-size: 0.85rem !important;
+  color: #718096 !important;
+  margin-bottom: 0.25rem !important;
+  font-weight: 500 !important;
 }
 
 .info-value {
-  font-weight: 600;
-  color: #2d3748;
-  font-size: 0.9rem;
+  font-weight: 600 !important;
+  color: #2d3748 !important;
+  font-size: 0.9rem !important;
 }
 
 .school-actions {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  display: flex !important;
+  gap: 0.5rem !important;
+  flex-wrap: wrap !important;
 }
 
 .btn-detail {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  padding: 8px 16px;
-  border-radius: 20px;
-  text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  border: none;
-  cursor: pointer;
+  background: linear-gradient(135deg, #667eea, #764ba2) !important;
+  color: white !important;
+  padding: 8px 16px !important;
+  border-radius: 20px !important;
+  text-decoration: none !important;
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  transition: all 0.3s ease !important;
+  border: none !important;
+  cursor: pointer !important;
 }
 
 .btn-detail:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-  text-decoration: none;
-  color: white;
+  transform: scale(1.05) !important;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
+  text-decoration: none !important;
+  color: white !important;
 }
 
 .empty-state {
-  text-align: center;
-  padding: 4rem 2rem;
-  background: rgba(255, 255, 255, 0.95);
+  text-align: center !important;
+  padding: 4rem 2rem !important;
+  background: rgba(255, 255, 255, 0.95) !important;
   backdrop-filter: blur(10px);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border-radius: 20px !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
 }
 
 .empty-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
+  font-size: 4rem !important;
+  margin-bottom: 1rem !important;
 }
 
 .empty-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #2d3748;
-  margin-bottom: 0.5rem;
+  font-size: 1.5rem !important;
+  font-weight: 600 !important;
+  color: #2d3748 !important;
+  margin-bottom: 0.5rem !important;
 }
 
 .empty-subtitle {
-  color: #718096;
-  margin-bottom: 2rem;
+  color: #718096 !important;
+  margin-bottom: 2rem !important;
 }
 
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 2rem;
+.custom-pagination {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  margin-top: 2rem !important;
 }
 
-.pagination a, .pagination span {
-  padding: 8px 12px;
-  border-radius: 8px;
-  text-decoration: none;
-  color: #667eea;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(102, 126, 234, 0.2);
-  transition: all 0.3s ease;
+.custom-pagination a, .custom-pagination span {
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  text-decoration: none !important;
+  color: #667eea !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(102, 126, 234, 0.2) !important;
+  transition: all 0.3s ease !important;
 }
 
-.pagination a:hover {
-  background: #667eea;
-  color: white;
-  text-decoration: none;
+.custom-pagination a:hover {
+  background: #667eea !important;
+  color: white !important;
+  text-decoration: none !important;
 }
 
-.pagination .current {
-  background: #667eea;
-  color: white;
+.custom-pagination .current {
+  background: #667eea !important;
+  color: white !important;
 }
 </style>
-{% endblock %}
 
-{% block content %}
 <div class="bind-management">
   <div class="management-container">
     <div class="page-header">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div class="header-flex">
         <div>
           <h1 class="page-title">学校组管理</h1>
           <p class="page-subtitle">管理所有学校组，创建绑定链接，查看成员详情</p>
@@ -249,7 +261,7 @@
           <div class="school-info">
             <div class="info-item">
               <div class="info-label">创建时间</div>
-              <div class="info-value">{{ school.createdAt if school.createdAt else '未知' }}</div>
+              <div class="info-value">{{ school.createdAt.toISOString().substring(0, 10) if school.createdAt else '未知' }}</div>
             </div>
             <div class="info-item">
               <div class="info-label">成员数量</div>
@@ -267,7 +279,7 @@
       </div>
       
       {% if pageCount > 1 %}
-      <div class="pagination">
+      <div class="custom-pagination">
         {% if page > 1 %}
           <a href="?page={{ page - 1 }}">&laquo; 上一页</a>
         {% endif %}
