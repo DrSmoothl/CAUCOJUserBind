@@ -1672,6 +1672,115 @@ class UserGroupCreateHandler extends Handler {
     }
 }
 
+// 昵称修改界面
+class NicknameHandler extends Handler {
+    async get() {
+        if (!this.user._id) {
+            this.response.redirect = `/login?redirect=${encodeURIComponent(this.request.path)}`;
+            return;
+        }
+
+        // 获取当前用户信息
+        const userColl = db.collection('user');
+        const currentUser = await userColl.findOne({ _id: this.user._id });
+        
+        this.response.template = 'nickname_edit.html';
+        this.response.body = {
+            currentNickname: currentUser?.uname || '',
+            currentUser: currentUser
+        };
+    }
+
+    async post() {
+        if (!this.user._id) {
+            throw new ForbiddenError('请先登录');
+        }
+
+        const { nickname } = this.request.body;
+        
+        if (!nickname || !nickname.trim()) {
+            const userColl = db.collection('user');
+            const currentUser = await userColl.findOne({ _id: this.user._id });
+            
+            this.response.template = 'nickname_edit.html';
+            this.response.body = {
+                error: '请输入昵称',
+                currentNickname: currentUser?.uname || '',
+                currentUser: currentUser,
+                nickname: nickname
+            };
+            return;
+        }
+
+        try {
+            console.log('====== 昵称修改请求 ======');
+            console.log('用户ID:', this.user._id);
+            console.log('新昵称:', nickname.trim());
+
+            const userColl = db.collection('user');
+            const trimmedNickname = nickname.trim();
+            
+            // 检查昵称是否已被其他用户使用
+            const existingUser = await userColl.findOne({ 
+                uname: trimmedNickname, 
+                _id: { $ne: this.user._id } 
+            });
+            
+            if (existingUser) {
+                console.log('昵称已被其他用户使用:', trimmedNickname);
+                const currentUser = await userColl.findOne({ _id: this.user._id });
+                
+                this.response.template = 'nickname_edit.html';
+                this.response.body = {
+                    error: '该昵称已被其他用户使用，请选择其他昵称',
+                    currentNickname: currentUser?.uname || '',
+                    currentUser: currentUser,
+                    nickname: trimmedNickname
+                };
+                return;
+            }
+            
+            // 更新用户昵称
+            const updateResult = await userColl.updateOne(
+                { _id: this.user._id },
+                { 
+                    $set: { 
+                        uname: trimmedNickname,
+                        unameLower: trimmedNickname.toLowerCase()
+                    }
+                }
+            );
+            
+            console.log('昵称更新结果:', updateResult);
+            console.log('====== 昵称修改完成 ======');
+            
+            // 获取更新后的用户信息
+            const updatedUser = await userColl.findOne({ _id: this.user._id });
+            
+            this.response.template = 'nickname_edit.html';
+            this.response.body = {
+                success: '昵称修改成功！',
+                currentNickname: updatedUser?.uname || '',
+                currentUser: updatedUser
+            };
+            
+        } catch (error: any) {
+            console.error('昵称修改失败:', error);
+            
+            const userColl = db.collection('user');
+            const currentUser = await userColl.findOne({ _id: this.user._id });
+            
+            this.response.template = 'nickname_edit.html';
+            this.response.body = {
+                error: '昵称修改失败: ' + error.message,
+                currentNickname: currentUser?.uname || '',
+                currentUser: currentUser,
+                nickname: nickname
+            };
+        }
+    }
+}
+
 // 绑定界面 - 处理令牌绑定
 class BindHandler extends Handler {
     async get() {
@@ -1853,155 +1962,7 @@ class BindHandler extends Handler {
 
 // 插件配置和路由
 export async function apply(ctx: Context) {
-    // 添加用户设置项
-    ctx.inject(['setting'], (c) => {
-        c.setting.AccountSetting(
-            SettingModel.Setting('setting_info', 'nickname', '', 'text', '昵称', '自定义显示昵称', 0)
-        );
-    });
-
-    // 监听用户设置更新事件，同步昵称到用户名
-    ctx.on('handler/after/UserSettings#post', async (h) => {
-        console.log('====== UserSettings#post 事件触发 ======');
-        console.log('用户:', h.user ? h.user._id : '无用户');
-        console.log('请求体:', h.request.body ? Object.keys(h.request.body) : '无请求体');
-        
-        if (h.request.body && h.request.body.nickname !== undefined) {
-            console.log('====== 用户昵称更新 ======');
-            console.log('用户ID:', h.user._id);
-            console.log('新昵称:', h.request.body.nickname);
-            
-            try {
-                const userColl = db.collection('user');
-                const nickname = h.request.body.nickname.trim();
-                
-                if (nickname) {
-                    // 检查昵称是否已被其他用户使用
-                    const existingUser = await userColl.findOne({ 
-                        uname: nickname, 
-                        _id: { $ne: h.user._id } 
-                    });
-                    
-                    if (existingUser) {
-                        console.log('昵称已被其他用户使用:', nickname);
-                        return;
-                    }
-                    
-                    // 如果昵称不为空，将昵称同步到uname和unameLower字段
-                    await userColl.updateOne(
-                        { _id: h.user._id },
-                        { 
-                            $set: { 
-                                uname: nickname,
-                                unameLower: nickname.toLowerCase()
-                            }
-                        }
-                    );
-                    console.log('昵称已同步到用户名:', nickname);
-                } else {
-                    console.log('昵称为空，不更新用户名');
-                }
-            } catch (error) {
-                console.error('昵称同步失败:', error);
-            }
-            console.log('====== 用户昵称更新结束 ======');
-        }
-    });
-
-    // 尝试监听其他可能的用户设置事件
-    ctx.on('handler/after/UserSetting#post', async (h) => {
-        console.log('====== UserSetting#post 事件触发 ======');
-        console.log('用户:', h.user ? h.user._id : '无用户');
-        console.log('请求体:', h.request.body ? Object.keys(h.request.body) : '无请求体');
-        if (h.request.body && h.request.body.nickname !== undefined) {
-            console.log('在UserSetting#post中发现昵称字段:', h.request.body.nickname);
-        }
-    });
-
-    ctx.on('handler/after/UserAccountSetting#post', async (h) => {
-        console.log('====== UserAccountSetting#post 事件触发 ======');
-        console.log('用户:', h.user ? h.user._id : '无用户');
-        console.log('请求体:', h.request.body ? Object.keys(h.request.body) : '无请求体');
-        if (h.request.body && h.request.body.nickname !== undefined) {
-            console.log('在UserAccountSetting#post中发现昵称字段:', h.request.body.nickname);
-        }
-    });
-
-    ctx.on('handler/after/UserPreferenceSetting#post', async (h) => {
-        console.log('====== UserPreferenceSetting#post 事件触发 ======');
-        console.log('用户:', h.user ? h.user._id : '无用户');
-        console.log('请求体:', h.request.body ? Object.keys(h.request.body) : '无请求体');
-        if (h.request.body && h.request.body.nickname !== undefined) {
-            console.log('在UserPreferenceSetting#post中发现昵称字段:', h.request.body.nickname);
-        }
-    });
-
-    // 通用请求监听器 - 用于调试
-    ctx.on('handler/after', async (h) => {
-        // 记录所有POST请求以便调试
-        if (h.request.method === 'POST' && h.user && h.user._id) {
-            console.log('====== POST请求监听 ======');
-            console.log('用户ID:', h.user._id);
-            console.log('请求路径:', h.request.path);
-            console.log('请求体键:', h.request.body ? Object.keys(h.request.body) : '无请求体');
-            if (h.request.body && h.request.body.nickname !== undefined) {
-                console.log('发现昵称字段:', h.request.body.nickname);
-            }
-            console.log('====== POST请求监听结束 ======');
-        }
-    });
-
-    // 通用的用户设置更新监听（适配不同的设置页面）
-    ctx.on('handler/after', async (h) => {
-        // 检查是否是用户设置相关的POST请求
-        if (h.request.method === 'POST' && 
-            (h.request.path.includes('/user/') || h.request.path.includes('/settings') || h.request.path.includes('/preference')) &&
-            h.request.body && h.request.body.nickname !== undefined && h.user && h.user._id) {
-            
-            console.log('====== 通用用户昵称更新 ======');
-            console.log('用户ID:', h.user._id);
-            console.log('请求路径:', h.request.path);
-            console.log('新昵称:', h.request.body.nickname);
-            console.log('完整请求体:', JSON.stringify(h.request.body, null, 2));
-            
-            try {
-                const userColl = db.collection('user');
-                const nickname = h.request.body.nickname ? h.request.body.nickname.trim() : '';
-                
-                if (nickname) {
-                    // 检查昵称是否已被其他用户使用
-                    const existingUser = await userColl.findOne({ 
-                        uname: nickname, 
-                        _id: { $ne: h.user._id } 
-                    });
-                    
-                    if (existingUser) {
-                        console.log('昵称已被其他用户使用:', nickname);
-                        return;
-                    }
-                    
-                    // 将昵称同步到uname和unameLower字段
-                    const updateResult = await userColl.updateOne(
-                        { _id: h.user._id },
-                        { 
-                            $set: { 
-                                uname: nickname,
-                                unameLower: nickname.toLowerCase()
-                            }
-                        }
-                    );
-                    console.log('昵称已同步到用户名:', nickname);
-                    console.log('数据库更新结果:', updateResult);
-                } else {
-                    console.log('昵称为空，不更新用户名');
-                }
-            } catch (error) {
-                console.error('通用昵称同步失败:', error);
-            }
-            console.log('====== 通用用户昵称更新结束 ======');
-        }
-    });
-
+    
     // 注册路由
     ctx.Route('school_group_manage', '/school-group/manage', SchoolGroupManageHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('school_group_detail', '/school-group/detail/:schoolId', SchoolGroupDetailHandler, PRIV.PRIV_EDIT_SYSTEM);
@@ -2011,6 +1972,7 @@ export async function apply(ctx: Context) {
     ctx.Route('user_group_create', '/user-group/create', UserGroupCreateHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('contest_permission', '/contest/:contestId/permission', ContestPermissionHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('bind', '/bind/:token', BindHandler);
+    ctx.Route('nickname', '/nickname', NicknameHandler); // 昵称修改页面
     
     // 调试路由 - 检查绑定令牌
     ctx.Route('debug_tokens', '/debug/tokens', class extends Handler {

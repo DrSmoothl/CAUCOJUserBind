@@ -1,0 +1,543 @@
+{% extends "layout/basic.html" %}
+{% block title %}修改昵称{% endblock %}
+
+{% block content %}
+<style>
+/* 昵称修改页面专用样式 */
+.nickname-container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.nickname-header {
+  text-align: center;
+  margin-bottom: 32px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 40px 20px;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.nickname-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 20px,
+    rgba(255,255,255,0.1) 20px,
+    rgba(255,255,255,0.1) 40px
+  );
+  animation: float 15s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(2deg); }
+}
+
+.nickname-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+
+.nickname-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.nickname-subtitle {
+  font-size: 1rem;
+  opacity: 0.9;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* 当前信息卡片 */
+.current-info-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+  overflow: hidden;
+  border: 2px solid #e2e8f0;
+}
+
+.current-info-header {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+  padding: 16px 20px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.current-info-body {
+  padding: 20px;
+}
+
+.current-nickname {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 16px;
+  border-left: 4px solid #8b5cf6;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  font-family: 'Courier New', monospace;
+}
+
+/* 表单样式 */
+.form-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 32px;
+  margin-bottom: 24px;
+}
+
+.form__group {
+  margin-bottom: 24px;
+}
+
+.form__label {
+  display: block;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form__input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.form__input:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  transform: translateY(-1px);
+}
+
+.form__input:valid {
+  border-color: #10b981;
+}
+
+.form__help {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+/* 按钮样式 */
+.button {
+  padding: 14px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-right: 12px;
+}
+
+.button--primary {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.button--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+.button--secondary {
+  background: #f8fafc;
+  color: #64748b;
+  border: 2px solid #e2e8f0;
+}
+
+.button--secondary:hover {
+  background: #e2e8f0;
+  color: #475569;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.button--primary:active,
+.button--secondary:active {
+  transform: translateY(0);
+}
+
+/* 提示框样式 */
+.alert {
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  border: 1px solid;
+  font-size: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.alert--success {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.alert--success::before {
+  content: '✅';
+  flex-shrink: 0;
+}
+
+.alert--error {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.alert--error::before {
+  content: '⚠️';
+  flex-shrink: 0;
+}
+
+/* 信息卡片 */
+.info-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: 2px solid #e2e8f0;
+}
+
+.info-card-header {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  padding: 16px 20px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-card-body {
+  padding: 20px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-weight: 600;
+  color: #475569;
+}
+
+.info-value {
+  color: #1e293b;
+  font-family: 'Courier New', monospace;
+}
+
+/* 注意事项样式 */
+.notice-card {
+  background: #fffbeb;
+  border: 2px solid #fed7aa;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 24px;
+}
+
+.notice-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #92400e;
+  margin-bottom: 12px;
+}
+
+.notice-list {
+  margin: 0;
+  padding-left: 20px;
+  color: #92400e;
+}
+
+.notice-list li {
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+/* 链接卡片样式 */
+.links-card {
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 24px;
+}
+
+.links-header {
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.links-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.links-list li {
+  margin-bottom: 8px;
+}
+
+.links-list a {
+  color: #3b82f6;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.links-list a:hover {
+  background-color: #dbeafe;
+  text-decoration: none;
+}
+
+/* 响应式设计 */
+@media (max-width: 640px) {
+  .nickname-container {
+    margin: 20px auto;
+    padding: 0 16px;
+  }
+  
+  .nickname-header {
+    padding: 24px 16px;
+  }
+  
+  .nickname-title {
+    font-size: 1.5rem;
+  }
+  
+  .form-container,
+  .info-card-body,
+  .notice-card {
+    padding: 20px 16px;
+  }
+  
+  .button {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 12px;
+  }
+}
+</style>
+
+<div class="nickname-container">
+  <!-- 页面标题 -->
+  <div class="nickname-header">
+    <span class="nickname-icon">👤</span>
+    <h1 class="nickname-title">修改昵称</h1>
+    <p class="nickname-subtitle">自定义您在网站上的显示名称</p>
+  </div>
+
+  <!-- 成功提示 -->
+  {% if success %}
+  <div class="alert alert--success">
+    <div>{{ success }}</div>
+  </div>
+  {% endif %}
+  
+  <!-- 错误提示 -->
+  {% if error %}
+  <div class="alert alert--error">
+    <div>{{ error }}</div>
+  </div>
+  {% endif %}
+
+  <!-- 当前昵称显示 -->
+  <div class="current-info-card">
+    <div class="current-info-header">
+      <span>📋</span>
+      <span>当前昵称</span>
+    </div>
+    <div class="current-info-body">
+      <div class="current-nickname">{{ currentNickname or '未设置' }}</div>
+    </div>
+  </div>
+
+  <!-- 修改表单 -->
+  <div class="form-container">
+    <form method="post">
+      <div class="form__group">
+        <label class="form__label" for="nickname">
+          <span>✏️</span>
+          <span>新昵称</span>
+        </label>
+        <input 
+          type="text" 
+          id="nickname"
+          name="nickname" 
+          class="form__input"
+          value="{{ nickname if nickname else '' }}" 
+          placeholder="请输入新的昵称" 
+          required
+          maxlength="50"
+          pattern="[^\s].*[^\s]"
+          title="昵称不能以空格开头或结尾"
+        >
+        <div class="form__help">
+          昵称将作为您在网站上的显示名称，请选择一个您喜欢的名称。
+        </div>
+      </div>
+      
+      <div class="form__group">
+        <button type="submit" class="button button--primary">
+          <span>💾</span>
+          <span>保存昵称</span>
+        </button>
+        <a href="/" class="button button--secondary">
+          <span>🏠</span>
+          <span>返回首页</span>
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <div class="row">
+    <!-- 用户信息卡片 -->
+    <div class="columns medium-6">
+      {% if currentUser %}
+      <div class="info-card">
+        <div class="info-card-header">
+          <span>👤</span>
+          <span>用户信息</span>
+        </div>
+        <div class="info-card-body">
+          <div class="info-item">
+            <span class="info-label">用户ID</span>
+            <span class="info-value">{{ currentUser._id }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">当前昵称</span>
+            <span class="info-value">{{ currentUser.uname or '未设置' }}</span>
+          </div>
+          {% if currentUser.realName %}
+          <div class="info-item">
+            <span class="info-label">真实姓名</span>
+            <span class="info-value">{{ currentUser.realName }}</span>
+          </div>
+          {% endif %}
+          {% if currentUser.studentId %}
+          <div class="info-item">
+            <span class="info-label">学号</span>
+            <span class="info-value">{{ currentUser.studentId }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    
+    <!-- 快捷链接 -->
+    <div class="columns medium-6">
+      <div class="links-card">
+        <div class="links-header">
+          <span>🔗</span>
+          <span>相关链接</span>
+        </div>
+        <ul class="links-list">
+          <li>
+            <a href="/user/{{ currentUser._id if currentUser else user._id }}">
+              <span>👁️</span>
+              <span>查看个人资料</span>
+            </a>
+          </li>
+          <li>
+            <a href="/settings">
+              <span>⚙️</span>
+              <span>账户设置</span>
+            </a>
+          </li>
+          <li>
+            <a href="/ranking">
+              <span>🏆</span>
+              <span>排行榜</span>
+            </a>
+          </li>
+          <li>
+            <a href="/">
+              <span>🏠</span>
+              <span>返回首页</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 注意事项 -->
+  <div class="notice-card">
+    <div class="notice-header">
+      <span>💡</span>
+      <span>注意事项</span>
+    </div>
+    <ul class="notice-list">
+      <li>昵称不能与其他用户重复</li>
+      <li>昵称修改后将立即在所有页面生效</li>
+      <li>昵称将在排行榜、比赛成绩等地方显示</li>
+      <li>建议选择容易识别和记忆的昵称</li>
+      <li>昵称长度建议在2-20个字符之间</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}
