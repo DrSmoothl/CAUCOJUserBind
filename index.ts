@@ -2327,16 +2327,16 @@ export async function apply(ctx: Context) {
     });
 
     // 为排名页面添加处理，管理员查看时显示真实姓名
-    ctx.on('handler/after/DomainRankHandler#get', async (h) => {
+    ctx.on('handler/after/DomainRank#get', async (h) => {
         console.log('====== 排名页面Hook开始 ======');
-        console.log('DomainRankHandler hook triggered, user:', h.user?._id, 'hasPriv:', h.user?.hasPriv(PRIV.PRIV_EDIT_SYSTEM));
-        console.log('DomainRankHandler hook - response body keys:', Object.keys(h.response.body || {}));
+        console.log('DomainRank hook triggered, user:', h.user?._id, 'hasPriv:', h.user?.hasPriv(PRIV.PRIV_EDIT_SYSTEM));
+        console.log('DomainRank hook - response body keys:', Object.keys(h.response.body || {}));
         
         if (h.user && h.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)) {
             const udocs = h.response.body.udocs || [];
             const userColl = db.collection('user');
-            console.log('DomainRankHandler hook - Processing', udocs.length, 'users in ranking');
-            console.log('DomainRankHandler hook - Sample udoc structure:', udocs.length > 0 ? {
+            console.log('DomainRank hook - Processing', udocs.length, 'users in ranking');
+            console.log('DomainRank hook - Sample udoc structure:', udocs.length > 0 ? {
                 keys: Object.keys(udocs[0]),
                 _id: udocs[0]._id,
                 uname: udocs[0].uname,
