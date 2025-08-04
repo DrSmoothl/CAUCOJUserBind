@@ -103,7 +103,7 @@
 }
 
 /* 表单样式 */
-.form-container {
+.nickname-form-container {
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -111,11 +111,11 @@
   margin-bottom: 24px;
 }
 
-.form__group {
+.nickname-form__group {
   margin-bottom: 24px;
 }
 
-.form__label {
+.nickname-form__label {
   display: block;
   font-weight: 600;
   color: #374151;
@@ -126,7 +126,7 @@
   gap: 8px;
 }
 
-.form__input {
+.nickname-form__input {
   width: 100%;
   padding: 14px 16px;
   border: 2px solid #e5e7eb;
@@ -136,18 +136,18 @@
   box-sizing: border-box;
 }
 
-.form__input:focus {
+.nickname-form__input:focus {
   outline: none;
   border-color: #10b981;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
   transform: translateY(-1px);
 }
 
-.form__input:valid {
+.nickname-form__input:valid {
   border-color: #10b981;
 }
 
-.form__help {
+.nickname-form__help {
   margin-top: 8px;
   font-size: 14px;
   color: #6b7280;
@@ -155,7 +155,7 @@
 }
 
 /* 按钮样式 */
-.button {
+.nickname-button {
   padding: 14px 24px;
   border-radius: 8px;
   font-size: 16px;
@@ -171,38 +171,38 @@
   margin-right: 12px;
 }
 
-.button--primary {
+.nickname-button--primary {
   background: linear-gradient(135deg, #10b981, #059669);
   color: white;
 }
 
-.button--primary:hover {
+.nickname-button--primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
   color: white;
   text-decoration: none;
 }
 
-.button--secondary {
+.nickname-button--secondary {
   background: #f8fafc;
   color: #64748b;
   border: 2px solid #e2e8f0;
 }
 
-.button--secondary:hover {
+.nickname-button--secondary:hover {
   background: #e2e8f0;
   color: #475569;
   text-decoration: none;
   transform: translateY(-1px);
 }
 
-.button--primary:active,
-.button--secondary:active {
+.nickname-button--primary:active,
+.nickname-button--secondary:active {
   transform: translateY(0);
 }
 
 /* 提示框样式 */
-.alert {
+.nickname-alert {
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 24px;
@@ -213,24 +213,24 @@
   gap: 12px;
 }
 
-.alert--success {
+.nickname-alert--success {
   background-color: #f0fdf4;
   border-color: #bbf7d0;
   color: #166534;
 }
 
-.alert--success::before {
+.nickname-alert--success::before {
   content: '✅';
   flex-shrink: 0;
 }
 
-.alert--error {
+.nickname-alert--error {
   background-color: #fef2f2;
   border-color: #fecaca;
   color: #dc2626;
 }
 
-.alert--error::before {
+.nickname-alert--error::before {
   content: '⚠️';
   flex-shrink: 0;
 }
@@ -358,21 +358,21 @@
 }
 
 /* 卡片行对齐 */
-.row {
+.nickname-cards-row {
   display: flex;
   flex-wrap: wrap;
   margin-left: -0.625rem;
   margin-right: -0.625rem;
 }
 
-.row .columns {
+.nickname-cards-row .nickname-card-col {
   padding-left: 0.625rem;
   padding-right: 0.625rem;
   display: flex;
   flex-direction: column;
 }
 
-.row .medium-6 {
+.nickname-cards-row .nickname-card-half {
   width: 50%;
   flex: 0 0 50%;
 }
@@ -392,23 +392,23 @@
     font-size: 1.5rem;
   }
   
-  .form-container,
+  .nickname-form-container,
   .info-card-body,
   .notice-card {
     padding: 20px 16px;
   }
   
-  .button {
+  .nickname-button {
     width: 100%;
     margin-right: 0;
     margin-bottom: 12px;
   }
   
-  .row {
+  .nickname-cards-row {
     flex-direction: column;
   }
   
-  .row .medium-6 {
+  .nickname-cards-row .nickname-card-half {
     width: 100%;
     flex: none;
     margin-bottom: 20px;
@@ -431,14 +431,14 @@
 
   <!-- 成功提示 -->
   {% if success %}
-  <div class="alert alert--success">
+  <div class="nickname-alert nickname-alert--success">
     <div>{{ success }}</div>
   </div>
   {% endif %}
   
   <!-- 错误提示 -->
   {% if error %}
-  <div class="alert alert--error">
+  <div class="nickname-alert nickname-alert--error">
     <div>{{ error }}</div>
   </div>
   {% endif %}
@@ -455,10 +455,10 @@
   </div>
 
   <!-- 修改表单 -->
-  <div class="form-container">
+  <div class="nickname-form-container">
     <form method="post">
-      <div class="form__group">
-        <label class="form__label" for="nickname">
+      <div class="nickname-form__group">
+        <label class="nickname-form__label" for="nickname">
           <span>✏️</span>
           <span>新昵称</span>
         </label>
@@ -466,7 +466,7 @@
           type="text" 
           id="nickname"
           name="nickname" 
-          class="form__input"
+          class="nickname-form__input"
           value="{{ nickname if nickname else '' }}" 
           placeholder="请输入新的昵称" 
           required
@@ -474,17 +474,17 @@
           pattern="[^\s].*[^\s]"
           title="昵称不能以空格开头或结尾"
         >
-        <div class="form__help">
+        <div class="nickname-form__help">
           昵称将作为您在网站上的显示名称，请选择一个您喜欢的名称。
         </div>
       </div>
       
-      <div class="form__group">
-        <button type="submit" class="button button--primary">
+      <div class="nickname-form__group">
+        <button type="submit" class="nickname-button nickname-button--primary">
           <span>💾</span>
           <span>保存昵称</span>
         </button>
-        <a href="/" class="button button--secondary">
+        <a href="/" class="nickname-button nickname-button--secondary">
           <span>🏠</span>
           <span>返回首页</span>
         </a>
@@ -492,9 +492,9 @@
     </form>
   </div>
 
-  <div class="row">
+  <div class="nickname-cards-row">
     <!-- 用户信息卡片 -->
-    <div class="columns medium-6">
+    <div class="nickname-card-col nickname-card-half">
       {% if currentUser %}
       <div class="info-card">
         <div class="info-card-header">
@@ -528,7 +528,7 @@
     </div>
     
     <!-- 快捷链接 -->
-    <div class="columns medium-6">
+    <div class="nickname-card-col nickname-card-half">
       <div class="links-card">
         <div class="links-header">
           <span>🔗</span>
