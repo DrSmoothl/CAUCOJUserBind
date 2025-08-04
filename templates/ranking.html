@@ -2,338 +2,7 @@
 {% import "components/paginator.html" as paginator with context %}
 {% import "components/nothing.html" as nothing with context %}
 {% import "components/user.html" as user with context %}
-{% block title %}排名榜{% endblock %}
-
 {% block content %}
-<style>
-/* 美化排名页面样式 */
-.ranking-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  text-align: center;
-  padding: 24px;
-  border-radius: 12px 12px 0 0;
-  margin-bottom: 0;
-}
-
-.ranking-title {
-  font-size: 28px;
-  font-weight: 700;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-}
-
-.ranking-subtitle {
-  font-size: 14px;
-  opacity: 0.9;
-  margin-top: 8px;
-  margin-bottom: 0;
-}
-
-/* 美化表格 */
-.ranking-table {
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  background: white;
-  width: 100%;
-  table-layout: fixed;
-}
-
-/* 表格容器样式 */
-.section__table-container {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  overflow-x: auto;
-}
-
-/* 排名页面主容器 */
-.section__body {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-}
-
-[data-fragment-id="ranking"] {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  min-width: 0; /* 允许flex收缩 */
-}
-
-.ranking-table th {
-  background: #f8fafc;
-  font-weight: 600;
-  color: #374151;
-  padding: 16px 12px;
-  border-bottom: 2px solid #e5e7eb;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.ranking-table th .icon {
-  margin-right: 6px;
-  opacity: 0.7;
-}
-
-.ranking-table td {
-  padding: 14px 12px;
-  border-bottom: 1px solid #f3f4f6;
-  vertical-align: middle;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.ranking-table tr:hover {
-  background: #f8fafc;
-  transition: background-color 0.2s ease;
-}
-
-/* 优化列宽 */
-.col--rank {
-  text-align: center;
-  font-weight: 600;
-  color: #374151;
-  width: 60px;
-  min-width: 60px;
-}
-
-.col--user {
-  width: 140px;
-  min-width: 120px;
-}
-
-.col--student_info {
-  width: 120px;
-  min-width: 100px;
-}
-
-.col--rp {
-  width: 80px;
-  min-width: 60px;
-  text-align: center;
-  font-weight: 600;
-  color: #059669;
-}
-
-.col--detail {
-  width: 100px !important;
-  min-width: 80px !important;
-  text-align: center;
-  flex: 1;
-}
-
-/* 特定列宽设置 */
-.rp-problem {
-  width: 100px !important;
-  min-width: 100px !important;
-  flex: 1;
-}
-
-.rp-contest {
-  width: 100px !important;
-  min-width: 100px !important;
-  flex: 1;
-}
-
-.col--ac {
-  width: 80px;
-  min-width: 60px;
-  text-align: center;
-  font-weight: 600;
-  color: #dc2626;
-}
-
-.col--bio {
-  min-width: 200px;
-  flex: 2; /* 个人简介占更多空间 */
-}
-
-/* 前三名特殊样式 */
-.rank-1 {
-  background: linear-gradient(135deg, #ffd700, #ffed4e);
-  color: #92400e;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  box-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
-}
-
-.rank-2 {
-  background: linear-gradient(135deg, #c0c0c0, #e5e5e5);
-  color: #374151;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  box-shadow: 0 2px 4px rgba(192, 192, 192, 0.3);
-}
-
-.rank-3 {
-  background: linear-gradient(135deg, #cd7f32, #d4994e);
-  color: white;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  box-shadow: 0 2px 4px rgba(205, 127, 50, 0.3);
-}
-
-/* 学号姓名列美化 */
-.student-info {
-  font-size: 13px;
-  color: #6b7280;
-  background: #f3f4f6;
-  padding: 4px 8px;
-  border-radius: 6px;
-  white-space: nowrap;
-  display: inline-block;
-  font-family: 'Courier New', monospace;
-}
-
-.student-info:empty {
-  display: none;
-}
-
-/* 当前用户行高亮 */
-.current-user-row {
-  background: #fef3c7 !important;
-  border-left: 4px solid #f59e0b;
-}
-
-.current-user-row:hover {
-  background: #fde68a !important;
-}
-
-/* 空状态美化 */
-.empty-ranking {
-  text-align: center;
-  padding: 48px 24px;
-  background: #f9fafb;
-  border-radius: 12px;
-  border: 2px dashed #d1d5db;
-  margin: 24px 0;
-}
-
-.empty-ranking__icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-  opacity: 0.6;
-  color: #9ca3af;
-}
-
-.empty-ranking__text {
-  color: #6b7280;
-  font-size: 16px;
-  line-height: 1.5;
-}
-
-/* 信息提示美化 */
-.ranking-note {
-  background: #eff6ff;
-  border: 1px solid #93c5fd;
-  color: #1d4ed8;
-  padding: 12px 16px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  font-size: 14px;
-}
-
-.ranking-note .icon {
-  margin-right: 8px;
-}
-
-/* 分页美化 */
-.pagination-wrapper {
-  margin-top: 32px;
-  padding: 20px 0;
-  border-top: 1px solid #e5e7eb;
-}
-
-/* 响应式设计 */
-@media (max-width: 1200px) {
-  .col--bio {
-    min-width: 150px;
-  }
-  
-  .col--user {
-    width: 120px;
-    min-width: 100px;
-  }
-  
-  .col--student_info {
-    width: 100px;
-    min-width: 80px;
-  }
-}
-
-@media (max-width: 768px) {
-  .ranking-table th,
-  .ranking-table td {
-    padding: 10px 8px;
-    font-size: 14px;
-  }
-  
-  .col--rank {
-    width: 50px;
-    min-width: 50px;
-  }
-  
-  .col--user {
-    width: 100px;
-    min-width: 90px;
-  }
-  
-  .col--student_info {
-    width: 90px;
-    min-width: 80px;
-  }
-  
-  .col--rp,
-  .col--ac {
-    width: 60px;
-    min-width: 50px;
-  }
-  
-  .col--detail {
-    width: 70px !important;
-    min-width: 60px !important;
-  }
-  
-  .rp-problem,
-  .rp-contest {
-    width: 70px !important;
-    min-width: 60px !important;
-  }
-  
-  .col--bio {
-    min-width: 120px;
-  }
-  
-  .student-info {
-    font-size: 11px;
-    padding: 2px 6px;
-  }
-}
-</style>
-
 <div class="row">
   <div class="medium-12 columns">
     <div class="section">
@@ -341,21 +10,11 @@
         <div data-fragment-id="ranking">
           {% if not udocs.length %}
             {% if page == 1 %}
-              <div class="ranking-note">
-                <span class="icon icon-info"></span>
-                排名页面不是实时更新的，可能存在延迟。
-              </div>
+              <blockquote class="note">{{ _('The ranking page is not updated realtime.') }}</blockquote>
             {% endif %}
-            <div class="empty-ranking">
-              <div class="empty-ranking__icon">
-                <span class="icon icon-trophy"></span>
-              </div>
-              <div class="empty-ranking__text">
-                该域内暂无用户排名数据
-              </div>
-            </div>
+          {{ nothing.render('Sorry, there are no users in this domain.') }}
           {% else %}
-          <table class="data-table ranking-table">
+          <table class="data-table">
             <colgroup>
               <col class="col--rank">
               <col class="col--user">
@@ -371,57 +30,28 @@
             </colgroup>
             <thead>
               <tr>
-                <th class="col--rank">
-                  <span class="icon icon-hashtag"></span>
-                  {{ _('Rank') }}
-                </th>
-                <th class="col--user">
-                  <span class="icon icon-user"></span>
-                  {{ _('Username') }}
-                </th>
-                <th class="col--student_info">
-                  <span class="icon icon-id-card"></span>
-                  学号姓名
-                </th>
-                <th class="col--rp">
-                  <span class="icon icon-award"></span>
-                  {{ _('RP') }}
-                </th>
+                <th class="col--rank">{{ _('Rank') }}</th>
+                <th class="col--user">{{ _('Username') }}</th>
+                <th class="col--student_info">学号姓名</th>
+                <th class="col--rp">{{ _('RP') }}</th>
                 {% for key, def in model.rp %}
                   {% if not def.hidden %}
                     <th class="col--detail rp-{{ key }}">{{ _('rpDetailText_' + key) }}</th>
                   {% endif %}
                 {% endfor %}
-                <th class="col--ac">
-                  <span class="icon icon-check"></span>
-                  {{ _('Accept') }}
-                </th>
-                <th class="col--bio">
-                  <span class="icon icon-comment"></span>
-                  {{ _('Bio') }}
-                </th>
+                <th class="col--ac">{{ _('Accept') }}</th>
+                <th class="col--bio">{{ _('Bio') }}</th>
               </tr>
             </thead>
             <tbody>
               {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
-              <tr class="current-user-row">
-                <td class="col--rank">
-                  {% set user_rank = handler.user.rank|default('-') %}
-                  {% if user_rank == 1 %}
-                    <span class="rank-1">{{ user_rank }}</span>
-                  {% elif user_rank == 2 %}
-                    <span class="rank-2">{{ user_rank }}</span>
-                  {% elif user_rank == 3 %}
-                    <span class="rank-3">{{ user_rank }}</span>
-                  {% else %}
-                    {{ user_rank }}
-                  {% endif %}
-                </td>
+              <tr>
+                <td class="col--rank">{{ handler.user.rank|default('-') }}</td>
                 <td class="col--user">{{ user.render_inline(handler.user) }}</td>
                 <td class="col--student_info">
-                  {% if handler.user.studentInfo %}
-                    <span class="student-info">{{ handler.user.studentInfo }}</span>
-                  {% endif %}
+                  <span style="font-size: 12px; color: #666; white-space: nowrap;">
+                    {{ handler.user.studentInfo|default('') }}
+                  </span>
                 </td>
                 <td class="col--rp">{{ handler.user.rp|default(0)|round(0) }}</td>
                 {% for key, def in model.rp %}
@@ -434,24 +64,13 @@
               </tr>
               {% endif %}
               {%- for udoc in udocs -%}
-              {% set current_rank = (page - 1) * model.system.get('pagination.ranking') + loop.index %}
               <tr>
-                <td class="col--rank">
-                  {% if current_rank == 1 %}
-                    <span class="rank-1">{{ current_rank }}</span>
-                  {% elif current_rank == 2 %}
-                    <span class="rank-2">{{ current_rank }}</span>
-                  {% elif current_rank == 3 %}
-                    <span class="rank-3">{{ current_rank }}</span>
-                  {% else %}
-                    {{ current_rank }}
-                  {% endif %}
-                </td>
+                <td class="col--rank">{{ (page - 1) * model.system.get('pagination.ranking') + loop.index }}</td>
                 <td class="col--user">{{ user.render_inline(udoc) }}</td>
                 <td class="col--student_info">
-                  {% if udoc.studentInfo %}
-                    <span class="student-info">{{ udoc.studentInfo }}</span>
-                  {% endif %}
+                  <span style="font-size: 12px; color: #666; white-space: nowrap;">
+                    {{ udoc.studentInfo|default('') }}
+                  </span>
                 </td>
                 <td class="col--rp">{{ udoc.rp|default(0)|round(0) }}</td>
                 {% for key, def in model.rp %}
@@ -465,9 +84,7 @@
               {%- endfor -%}
             </tbody>
           </table>
-          <div class="pagination-wrapper">
-            {{ paginator.render(page, upcount) }}
-          </div>
+          {{ paginator.render(page, upcount) }}
           {% endif %}
         </div>
       </div>
