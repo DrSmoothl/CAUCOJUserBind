@@ -2068,22 +2068,52 @@ export async function apply(ctx: Context) {
     // 在用户详情页面添加绑定信息显示
     ctx.on('handler/after/UserDetail#get', async (h) => {
         if (h.response.body.udoc) {
+            console.log('====== 用户详情页面 - 绑定信息检查 ======');
+            console.log('用户ID:', h.response.body.udoc._id);
+            console.log('用户名:', h.response.body.udoc.uname);
+            console.log('用户数据中的字段:', {
+                studentId: h.response.body.udoc.studentId,
+                realName: h.response.body.udoc.realName,
+                parentSchoolId: h.response.body.udoc.parentSchoolId,
+                parentUserGroupId: h.response.body.udoc.parentUserGroupId
+            });
+            
             // 检查用户是否属于学校组
             const isInSchool = await userBindModel.isUserInSchool(h.response.body.udoc._id);
+            console.log('用户是否属于学校组:', isInSchool);
+            
             if (isInSchool) {
+                // 从数据库重新获取用户信息，确保数据完整
+                const userColl = db.collection('user');
+                const dbUser = await userColl.findOne({ _id: h.response.body.udoc._id });
+                console.log('数据库中的用户信息:', {
+                    _id: dbUser?._id,
+                    uname: dbUser?.uname,
+                    studentId: dbUser?.studentId,
+                    realName: dbUser?.realName,
+                    parentSchoolId: dbUser?.parentSchoolId,
+                    parentUserGroupId: dbUser?.parentUserGroupId
+                });
+                
                 h.response.body.showBindInfo = true;
                 h.response.body.bindInfo = {
-                    studentId: h.response.body.udoc.studentId || '未绑定',
-                    realName: h.response.body.udoc.realName || '未绑定',
-                    isBound: !!(h.response.body.udoc.studentId && h.response.body.udoc.realName)
+                    studentId: (dbUser?.studentId || h.response.body.udoc.studentId) || '未绑定',
+                    realName: (dbUser?.realName || h.response.body.udoc.realName) || '未绑定',
+                    isBound: !!((dbUser?.studentId || h.response.body.udoc.studentId) && (dbUser?.realName || h.response.body.udoc.realName))
                 };
+                
+                console.log('最终绑定信息:', h.response.body.bindInfo);
                 
                 // 获取用户所属的学校组和用户组信息
                 const userSchools = await userBindModel.getUserSchoolGroups(h.response.body.udoc._id);
                 const userGroups = await userBindModel.getUserGroups(h.response.body.udoc._id);
+                console.log('用户所属学校组:', userSchools);
+                console.log('用户所属用户组:', userGroups);
+                
                 h.response.body.bindInfo.schools = userSchools;
                 h.response.body.bindInfo.userGroups = userGroups;
             }
+            console.log('====== 用户详情页面 - 绑定信息检查结束 ======');
         }
     });
 
