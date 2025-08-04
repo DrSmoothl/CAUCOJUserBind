@@ -1856,9 +1856,7 @@ export async function apply(ctx: Context) {
     // 添加用户设置项
     ctx.inject(['setting'], (c) => {
         c.setting.AccountSetting(
-            SettingModel.Setting('setting_info', 'nickname', '', 'text', '昵称', '自定义显示昵称', 0),
-            SettingModel.Setting('setting_info', 'realName', '', 'text', '真实姓名', '学生真实姓名', 2),
-            SettingModel.Setting('setting_info', 'studentNumber', '', 'text', '学生学号', '学生学号信息', 2)
+            SettingModel.Setting('setting_info', 'nickname', '', 'text', '昵称', '自定义显示昵称', 0)
         );
     });
 
@@ -1874,10 +1872,26 @@ export async function apply(ctx: Context) {
                 const nickname = h.request.body.nickname.trim();
                 
                 if (nickname) {
-                    // 如果昵称不为空，将昵称同步到uname字段
+                    // 检查昵称是否已被其他用户使用
+                    const existingUser = await userColl.findOne({ 
+                        uname: nickname, 
+                        _id: { $ne: h.user._id } 
+                    });
+                    
+                    if (existingUser) {
+                        console.log('昵称已被其他用户使用:', nickname);
+                        return;
+                    }
+                    
+                    // 如果昵称不为空，将昵称同步到uname和unameLower字段
                     await userColl.updateOne(
                         { _id: h.user._id },
-                        { $set: { uname: nickname } }
+                        { 
+                            $set: { 
+                                uname: nickname,
+                                unameLower: nickname.toLowerCase()
+                            }
+                        }
                     );
                     console.log('昵称已同步到用户名:', nickname);
                 } else {
@@ -1901,6 +1915,7 @@ export async function apply(ctx: Context) {
             console.log('用户ID:', h.user._id);
             console.log('请求路径:', h.request.path);
             console.log('新昵称:', h.request.body.nickname);
+            console.log('完整请求体:', JSON.stringify(h.request.body, null, 2));
             
             try {
                 const userColl = db.collection('user');
@@ -1918,12 +1933,18 @@ export async function apply(ctx: Context) {
                         return;
                     }
                     
-                    // 将昵称同步到uname字段
-                    await userColl.updateOne(
+                    // 将昵称同步到uname和unameLower字段
+                    const updateResult = await userColl.updateOne(
                         { _id: h.user._id },
-                        { $set: { uname: nickname } }
+                        { 
+                            $set: { 
+                                uname: nickname,
+                                unameLower: nickname.toLowerCase()
+                            }
+                        }
                     );
                     console.log('昵称已同步到用户名:', nickname);
+                    console.log('数据库更新结果:', updateResult);
                 } else {
                     console.log('昵称为空，不更新用户名');
                 }
