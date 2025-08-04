@@ -2092,8 +2092,7 @@ export async function apply(ctx: Context) {
             const schoolGroupRequiredPaths = [
                 '/training',
                 '/homework',
-                '/contest',
-                '/p'
+                '/contest'
             ];
             
             // 需要排除的路径（不进行任何检查）
