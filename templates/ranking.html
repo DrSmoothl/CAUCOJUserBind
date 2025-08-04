@@ -39,6 +39,30 @@
   overflow: hidden;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   background: white;
+  width: 100%;
+  table-layout: fixed;
+}
+
+/* 表格容器样式 */
+.section__table-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* 排名页面主容器 */
+.section__body {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+[data-fragment-id="ranking"] {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0; /* 允许flex收缩 */
 }
 
 .ranking-table th {
@@ -48,6 +72,9 @@
   padding: 16px 12px;
   border-bottom: 2px solid #e5e7eb;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ranking-table th .icon {
@@ -59,6 +86,9 @@
   padding: 14px 12px;
   border-bottom: 1px solid #f3f4f6;
   vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ranking-table tr:hover {
@@ -72,18 +102,22 @@
   font-weight: 600;
   color: #374151;
   width: 60px;
+  min-width: 60px;
 }
 
 .col--user {
   width: 140px;
+  min-width: 120px;
 }
 
 .col--student_info {
   width: 120px;
+  min-width: 100px;
 }
 
 .col--rp {
   width: 80px;
+  min-width: 60px;
   text-align: center;
   font-weight: 600;
   color: #059669;
@@ -91,22 +125,27 @@
 
 .col--detail {
   width: 100px !important;
+  min-width: 80px !important;
   text-align: center;
+  flex: 1;
 }
 
 /* 特定列宽设置 */
 .rp-problem {
   width: 100px !important;
   min-width: 100px !important;
+  flex: 1;
 }
 
 .rp-contest {
   width: 100px !important;
   min-width: 100px !important;
+  flex: 1;
 }
 
 .col--ac {
   width: 80px;
+  min-width: 60px;
   text-align: center;
   font-weight: 600;
   color: #dc2626;
@@ -114,6 +153,7 @@
 
 .col--bio {
   min-width: 200px;
+  flex: 2; /* 个人简介占更多空间 */
 }
 
 /* 前三名特殊样式 */
@@ -225,6 +265,72 @@
   margin-top: 32px;
   padding: 20px 0;
   border-top: 1px solid #e5e7eb;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .col--bio {
+    min-width: 150px;
+  }
+  
+  .col--user {
+    width: 120px;
+    min-width: 100px;
+  }
+  
+  .col--student_info {
+    width: 100px;
+    min-width: 80px;
+  }
+}
+
+@media (max-width: 768px) {
+  .ranking-table th,
+  .ranking-table td {
+    padding: 10px 8px;
+    font-size: 14px;
+  }
+  
+  .col--rank {
+    width: 50px;
+    min-width: 50px;
+  }
+  
+  .col--user {
+    width: 100px;
+    min-width: 90px;
+  }
+  
+  .col--student_info {
+    width: 90px;
+    min-width: 80px;
+  }
+  
+  .col--rp,
+  .col--ac {
+    width: 60px;
+    min-width: 50px;
+  }
+  
+  .col--detail {
+    width: 70px !important;
+    min-width: 60px !important;
+  }
+  
+  .rp-problem,
+  .rp-contest {
+    width: 70px !important;
+    min-width: 60px !important;
+  }
+  
+  .col--bio {
+    min-width: 120px;
+  }
+  
+  .student-info {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
 }
 </style>
 
