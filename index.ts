@@ -1757,12 +1757,35 @@ class NicknameHandler extends Handler {
             // 获取更新后的用户信息
             const updatedUser = await userColl.findOne({ _id: this.user._id });
             
+            // 格式化时间
+            const now = new Date();
+            const modifyTime = now.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            
+            const lastLoginTime = updatedUser?.loginat 
+                ? new Date(updatedUser.loginat).toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }) 
+                : null;
+            
             // 跳转到成功页面
             this.response.template = 'nickname_success.html';
             this.response.body = {
                 oldNickname: this.user.uname || '未设置',
                 newNickname: updatedUser?.uname || '',
-                currentUser: updatedUser
+                currentUser: updatedUser,
+                modifyTime: modifyTime,
+                lastLoginTime: lastLoginTime
             };
             
         } catch (error: any) {

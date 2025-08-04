@@ -380,7 +380,7 @@
         </div>
       </div>
       <div style="text-align: center; color: #6b7280; font-size: 14px;">
-        修改时间：{{ moment().format('YYYY年MM月DD日 HH:mm:ss') }}
+        修改时间：{{ modifyTime }}
       </div>
     </div>
   </div>
@@ -445,7 +445,7 @@
       {% endif %}
       <div class="summary-item">
         <span class="summary-label">最后登录</span>
-        <span class="summary-value">{{ moment(currentUser.loginat).format('YYYY-MM-DD HH:mm') if currentUser.loginat else '未知' }}</span>
+        <span class="summary-value">{{ lastLoginTime or '未知' }}</span>
       </div>
     </div>
   </div>
