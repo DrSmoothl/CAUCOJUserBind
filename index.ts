@@ -1757,10 +1757,11 @@ class NicknameHandler extends Handler {
             // 获取更新后的用户信息
             const updatedUser = await userColl.findOne({ _id: this.user._id });
             
-            this.response.template = 'nickname_edit.html';
+            // 跳转到成功页面
+            this.response.template = 'nickname_success.html';
             this.response.body = {
-                success: '昵称修改成功！',
-                currentNickname: updatedUser?.uname || '',
+                oldNickname: this.user.uname || '未设置',
+                newNickname: updatedUser?.uname || '',
                 currentUser: updatedUser
             };
             
