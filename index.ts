@@ -2084,25 +2084,43 @@ export async function apply(ctx: Context) {
             for (let i = 0; i < rows.length; i++) {
                 const row = rows[i];
                 if (i === 0) {
-                    continue; // 跳过表头
-                }
-                
-                // 寻找用户列 (type === 'user')
-                for (let j = 0; j < row.length; j++) {
-                    const col = row[j];
-                    if (col && col.type === 'user') {
-                        const userId = col.raw;
-                        const userName = col.value;
-                        
-                        if (userId && userName) {
-                            // 检查用户是否有绑定信息
-                            const dbUser = await userColl.findOne({ _id: userId });
-                            const isInSchool = await userBindModel.isUserInSchool(userId);
+                    // 处理表头，在用户名列后添加学号姓名列
+                    for (let j = 0; j < row.length; j++) {
+                        const col = row[j];
+                        if (col && col.type === 'user') {
+                            // 在用户名列后插入学号姓名列
+                            row.splice(j + 1, 0, {
+                                type: 'student_info',
+                                value: '学号姓名'
+                            });
+                            break;
+                        }
+                    }
+                } else {
+                    // 处理数据行，在用户名列后添加学号姓名数据
+                    for (let j = 0; j < row.length; j++) {
+                        const col = row[j];
+                        if (col && col.type === 'user') {
+                            const userId = col.raw;
+                            let studentInfo = '';
                             
-                            if (isInSchool && dbUser?.realName && dbUser?.studentId) {
-                                // 修改显示值为学号+姓名+用户名格式
-                                col.value = `${dbUser.studentId} ${dbUser.realName}(${userName})`;
+                            if (userId) {
+                                // 检查用户是否有绑定信息
+                                const dbUser = await userColl.findOne({ _id: userId });
+                                const isInSchool = await userBindModel.isUserInSchool(userId);
+                                
+                                if (isInSchool && dbUser?.realName && dbUser?.studentId) {
+                                    studentInfo = `${dbUser.studentId} ${dbUser.realName}`;
+                                }
                             }
+                            
+                            // 在用户名列后插入学号姓名列
+                            row.splice(j + 1, 0, {
+                                type: 'student_info',
+                                value: studentInfo,
+                                raw: userId
+                            });
+                            break;
                         }
                     }
                 }
@@ -2115,14 +2133,27 @@ export async function apply(ctx: Context) {
         if (h.user && h.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)) {
             const rows = h.response.body.rows || [];
             const userColl = db.collection('user');
-            for (const row of rows) {
-                if (row[1] && row[1]._id) {
-                    const isInSchool = await userBindModel.isUserInSchool(row[1]._id);
-                    if (isInSchool) {
-                        const dbUser = await userColl.findOne({ _id: row[1]._id });
-                        if (dbUser?.realName && dbUser?.studentId) {
-                            row[1].displayName = `${dbUser.studentId} ${dbUser.realName}(${row[1].uname})`;
+            
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                if (i === 0) {
+                    // 处理表头，在用户名列后添加学号姓名列
+                    if (row.length > 1) {
+                        row.splice(2, 0, '学号姓名'); // 在第2个位置（用户名后）插入
+                    }
+                } else {
+                    // 处理数据行
+                    if (row[1] && row[1]._id) {
+                        let studentInfo = '';
+                        const isInSchool = await userBindModel.isUserInSchool(row[1]._id);
+                        if (isInSchool) {
+                            const dbUser = await userColl.findOne({ _id: row[1]._id });
+                            if (dbUser?.realName && dbUser?.studentId) {
+                                studentInfo = `${dbUser.studentId} ${dbUser.realName}`;
+                            }
                         }
+                        // 在用户名列后插入学号姓名
+                        row.splice(2, 0, studentInfo);
                     }
                 }
             }
@@ -2134,14 +2165,27 @@ export async function apply(ctx: Context) {
         if (h.user && h.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)) {
             const rows = h.response.body.rows || [];
             const userColl = db.collection('user');
-            for (const row of rows) {
-                if (row[1] && row[1]._id) {
-                    const isInSchool = await userBindModel.isUserInSchool(row[1]._id);
-                    if (isInSchool) {
-                        const dbUser = await userColl.findOne({ _id: row[1]._id });
-                        if (dbUser?.realName && dbUser?.studentId) {
-                            row[1].displayName = `${dbUser.studentId} ${dbUser.realName}(${row[1].uname})`;
+            
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                if (i === 0) {
+                    // 处理表头，在用户名列后添加学号姓名列
+                    if (row.length > 1) {
+                        row.splice(2, 0, '学号姓名'); // 在第2个位置（用户名后）插入
+                    }
+                } else {
+                    // 处理数据行
+                    if (row[1] && row[1]._id) {
+                        let studentInfo = '';
+                        const isInSchool = await userBindModel.isUserInSchool(row[1]._id);
+                        if (isInSchool) {
+                            const dbUser = await userColl.findOne({ _id: row[1]._id });
+                            if (dbUser?.realName && dbUser?.studentId) {
+                                studentInfo = `${dbUser.studentId} ${dbUser.realName}`;
+                            }
                         }
+                        // 在用户名列后插入学号姓名
+                        row.splice(2, 0, studentInfo);
                     }
                 }
             }

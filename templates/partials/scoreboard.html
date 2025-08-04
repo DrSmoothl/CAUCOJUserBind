@@ -54,18 +54,11 @@
                 <span class="starred--hide"><span class="icon icon-star--outline" data-tooltip="{{ _('Star') }}"></span></span>
                 <span class="starred--show"><span class="icon icon-star" data-tooltip="{{ _('Unstar') }}"></span></span>
               </button>
-              {%- if handler.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM) and column.value != udict[column.raw].uname -%}
-                {# 管理员看到真实姓名 #}
-                <span class="user-profile-link">
-                  <img class="small user-profile-avatar v-center" loading="lazy" src="{{ avatarUrl(udict[column.raw].avatar|default('')) }}" width="20" height="20">
-                  <a class="user-profile-name uname--lv{{ udict[column.raw].level|default(0) }}" href="{{ url('user_detail', uid=column.raw) }}">
-                    {{ column.value }}
-                  </a>
-                </span>
-              {%- else -%}
-                {# 普通用户看到正常显示 #}
-                {{ user.render_inline(udict[column.raw], badge=false) }}
-              {%- endif -%}
+              {# 保持原有的用户名显示 #}
+              {{ user.render_inline(udict[column.raw], badge=false) }}
+            {%- elif column.type == 'student_info' -%}
+              {# 新增的学号姓名列 #}
+              <span style="font-size: 12px; color: #666; white-space: nowrap;">{{ column.value|string|nl2br|safe }}</span>
             {%- elif column.type == 'record' and column.raw -%}
               {{ renderRecord(column, canView) }}
             {%- elif column.type == 'records' -%}
