@@ -1856,9 +1856,9 @@ export async function apply(ctx: Context) {
     // 添加用户设置项
     ctx.inject(['setting'], (c) => {
         c.setting.AccountSetting(
-            SettingModel.Setting('setting_customize', 'nickname', '', 'text', '昵称', '自定义显示昵称', 1),
+            SettingModel.Setting('setting_customize', 'nickname', '', 'text', '昵称', '自定义显示昵称', 2),
             SettingModel.Setting('setting_info', 'realName', '', 'text', '真实姓名', '学生真实姓名', 2),
-            SettingModel.Setting('setting_info', 'studentNumber', '', 'text', '学生学号', '学生学号信息', 3)
+            SettingModel.Setting('setting_info', 'studentNumber', '', 'text', '学生学号', '学生学号信息', 2)
         );
     });
 
