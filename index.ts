@@ -2326,122 +2326,117 @@ export async function apply(ctx: Context) {
         }
     });
 
-    // 为排名页面添加处理，管理员查看时显示真实姓名
+    // 为排名页面添加处理，所有人都能看到真实姓名
     ctx.on('handler/after/DomainRank#get', async (h) => {
         console.log('====== 排名页面Hook开始 ======');
-        console.log('DomainRank hook triggered, user:', h.user?._id, 'hasPriv:', h.user?.hasPriv(PRIV.PRIV_EDIT_SYSTEM));
+        console.log('DomainRank hook triggered, user:', h.user?._id);
         console.log('DomainRank hook - response body keys:', Object.keys(h.response.body || {}));
         
-        if (h.user && h.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)) {
-            const udocs = h.response.body.udocs || [];
-            const userColl = db.collection('user');
-            console.log('DomainRank hook - Processing', udocs.length, 'users in ranking');
-            console.log('DomainRank hook - Sample udoc structure:', udocs.length > 0 ? {
-                keys: Object.keys(udocs[0]),
-                _id: udocs[0]._id,
-                uname: udocs[0].uname,
-                rp: udocs[0].rp
-            } : 'No udocs');
+        const udocs = h.response.body.udocs || [];
+        const userColl = db.collection('user');
+        console.log('DomainRank hook - Processing', udocs.length, 'users in ranking');
+        console.log('DomainRank hook - Sample udoc structure:', udocs.length > 0 ? {
+            keys: Object.keys(udocs[0]),
+            _id: udocs[0]._id,
+            uname: udocs[0].uname,
+            rp: udocs[0].rp
+        } : 'No udocs');
+        
+        // 处理当前用户的学号姓名信息
+        if (h.user && h.user._id) {
+            console.log('DomainRank hook - Processing current user:', h.user._id);
+            const isCurrentUserInSchool = await userBindModel.isUserInSchool(h.user._id);
+            console.log('DomainRank hook - Current user isInSchool:', isCurrentUserInSchool);
             
-            // 处理当前用户（管理员）的学号姓名信息
-            if (h.user._id) {
-                console.log('DomainRankHandler hook - Processing current user (admin):', h.user._id);
-                const isCurrentUserInSchool = await userBindModel.isUserInSchool(h.user._id);
-                console.log('DomainRankHandler hook - Current user isInSchool:', isCurrentUserInSchool);
-                
-                if (isCurrentUserInSchool) {
-                    const currentDbUser = await userColl.findOne({ _id: h.user._id });
-                    console.log('DomainRankHandler hook - Current user DB data:', {
-                        _id: currentDbUser?._id,
-                        uname: currentDbUser?.uname,
-                        realName: currentDbUser?.realName,
-                        studentId: currentDbUser?.studentId,
-                        parentSchoolId: currentDbUser?.parentSchoolId
-                    });
-                    
-                    if (currentDbUser?.realName && currentDbUser?.studentId) {
-                        h.user.studentInfo = `${currentDbUser.studentId} ${currentDbUser.realName}`;
-                        console.log('DomainRankHandler hook - Set studentInfo for current user', h.user._id, 'to', h.user.studentInfo);
-                    } else {
-                        console.log('DomainRankHandler hook - Current user missing realName or studentId:', {
-                            realName: currentDbUser?.realName,
-                            studentId: currentDbUser?.studentId
-                        });
-                    }
-                } else {
-                    console.log('DomainRankHandler hook - Current user not in school, checking user data...');
-                    const currentDbUser = await userColl.findOne({ _id: h.user._id });
-                    console.log('DomainRankHandler hook - Current user full data:', {
-                        _id: currentDbUser?._id,
-                        uname: currentDbUser?.uname,
-                        parentSchoolId: currentDbUser?.parentSchoolId,
-                        parentUserGroupId: currentDbUser?.parentUserGroupId
-                    });
-                }
-            }
-            
-            // 处理排名列表中的用户
-            console.log('DomainRankHandler hook - Processing ranking list users...');
-            let processedCount = 0;
-            let foundStudentInfoCount = 0;
-            
-            for (const udoc of udocs) {
-                processedCount++;
-                console.log(`DomainRankHandler hook - Processing user ${processedCount}/${udocs.length}:`, {
-                    _id: udoc._id,
-                    uname: udoc.uname,
-                    rank: udoc.rank
+            if (isCurrentUserInSchool) {
+                const currentDbUser = await userColl.findOne({ _id: h.user._id });
+                console.log('DomainRank hook - Current user DB data:', {
+                    _id: currentDbUser?._id,
+                    uname: currentDbUser?.uname,
+                    realName: currentDbUser?.realName,
+                    studentId: currentDbUser?.studentId,
+                    parentSchoolId: currentDbUser?.parentSchoolId
                 });
                 
-                if (udoc._id) {
-                    const isInSchool = await userBindModel.isUserInSchool(udoc._id);
-                    console.log(`DomainRankHandler hook - User ${udoc._id} (${udoc.uname}) isInSchool:`, isInSchool);
+                if (currentDbUser?.realName && currentDbUser?.studentId) {
+                    h.user.studentInfo = `${currentDbUser.studentId} ${currentDbUser.realName}`;
+                    console.log('DomainRank hook - Set studentInfo for current user', h.user._id, 'to', h.user.studentInfo);
+                } else {
+                    console.log('DomainRank hook - Current user missing realName or studentId:', {
+                        realName: currentDbUser?.realName,
+                        studentId: currentDbUser?.studentId
+                    });
+                }
+            } else {
+                console.log('DomainRank hook - Current user not in school, checking user data...');
+                const currentDbUser = await userColl.findOne({ _id: h.user._id });
+                console.log('DomainRank hook - Current user full data:', {
+                    _id: currentDbUser?._id,
+                    uname: currentDbUser?.uname,
+                    parentSchoolId: currentDbUser?.parentSchoolId,
+                    parentUserGroupId: currentDbUser?.parentUserGroupId
+                });
+            }
+        }
+        
+        // 处理排名列表中的用户 - 所有人都能看到学号姓名
+        console.log('DomainRank hook - Processing ranking list users...');
+        let processedCount = 0;
+        let foundStudentInfoCount = 0;
+        
+        for (const udoc of udocs) {
+            processedCount++;
+            console.log(`DomainRank hook - Processing user ${processedCount}/${udocs.length}:`, {
+                _id: udoc._id,
+                uname: udoc.uname,
+                rank: udoc.rank
+            });
+            
+            if (udoc._id) {
+                const isInSchool = await userBindModel.isUserInSchool(udoc._id);
+                console.log(`DomainRank hook - User ${udoc._id} (${udoc.uname}) isInSchool:`, isInSchool);
+                
+                if (isInSchool) {
+                    const dbUser = await userColl.findOne({ _id: udoc._id });
+                    console.log(`DomainRank hook - User ${udoc._id} DB data:`, {
+                        found: !!dbUser,
+                        _id: dbUser?._id,
+                        uname: dbUser?.uname,
+                        realName: dbUser?.realName,
+                        studentId: dbUser?.studentId,
+                        parentSchoolId: dbUser?.parentSchoolId,
+                        parentUserGroupId: dbUser?.parentUserGroupId
+                    });
                     
-                    if (isInSchool) {
-                        const dbUser = await userColl.findOne({ _id: udoc._id });
-                        console.log(`DomainRankHandler hook - User ${udoc._id} DB data:`, {
-                            found: !!dbUser,
-                            _id: dbUser?._id,
-                            uname: dbUser?.uname,
-                            realName: dbUser?.realName,
-                            studentId: dbUser?.studentId,
-                            parentSchoolId: dbUser?.parentSchoolId,
-                            parentUserGroupId: dbUser?.parentUserGroupId
-                        });
-                        
-                        if (dbUser?.realName && dbUser?.studentId) {
-                            // 添加学号姓名信息，而不是修改用户名
-                            udoc.studentInfo = `${dbUser.studentId} ${dbUser.realName}`;
-                            foundStudentInfoCount++;
-                            console.log(`DomainRankHandler hook - ✓ Set studentInfo for user ${udoc._id} (${udoc.uname}) to:`, udoc.studentInfo);
-                        } else {
-                            console.log(`DomainRankHandler hook - ✗ User ${udoc._id} (${udoc.uname}) missing student info:`, {
-                                hasRealName: !!dbUser?.realName,
-                                hasStudentId: !!dbUser?.studentId,
-                                realName: dbUser?.realName,
-                                studentId: dbUser?.studentId
-                            });
-                        }
+                    if (dbUser?.realName && dbUser?.studentId) {
+                        // 添加学号姓名信息，而不是修改用户名
+                        udoc.studentInfo = `${dbUser.studentId} ${dbUser.realName}`;
+                        foundStudentInfoCount++;
+                        console.log(`DomainRank hook - ✓ Set studentInfo for user ${udoc._id} (${udoc.uname}) to:`, udoc.studentInfo);
                     } else {
-                        console.log(`DomainRankHandler hook - User ${udoc._id} (${udoc.uname}) not in school, checking user data...`);
-                        const dbUser = await userColl.findOne({ _id: udoc._id });
-                        console.log(`DomainRankHandler hook - Non-school user ${udoc._id} data:`, {
-                            found: !!dbUser,
-                            uname: dbUser?.uname,
-                            parentSchoolId: dbUser?.parentSchoolId,
-                            parentUserGroupId: dbUser?.parentUserGroupId
+                        console.log(`DomainRank hook - ✗ User ${udoc._id} (${udoc.uname}) missing student info:`, {
+                            hasRealName: !!dbUser?.realName,
+                            hasStudentId: !!dbUser?.studentId,
+                            realName: dbUser?.realName,
+                            studentId: dbUser?.studentId
                         });
                     }
                 } else {
-                    console.log(`DomainRankHandler hook - User entry ${processedCount} has no _id:`, udoc);
+                    console.log(`DomainRank hook - User ${udoc._id} (${udoc.uname}) not in school, checking user data...`);
+                    const dbUser = await userColl.findOne({ _id: udoc._id });
+                    console.log(`DomainRank hook - Non-school user ${udoc._id} data:`, {
+                        found: !!dbUser,
+                        uname: dbUser?.uname,
+                        parentSchoolId: dbUser?.parentSchoolId,
+                        parentUserGroupId: dbUser?.parentUserGroupId
+                    });
                 }
+            } else {
+                console.log(`DomainRank hook - User entry ${processedCount} has no _id:`, udoc);
             }
-            
-            console.log(`DomainRankHandler hook - Summary: Processed ${processedCount} users, found student info for ${foundStudentInfoCount} users`);
-        } else {
-            console.log('DomainRankHandler hook - User does not have PRIV_EDIT_SYSTEM privilege or not logged in');
         }
         
+        console.log(`DomainRank hook - Summary: Processed ${processedCount} users, found student info for ${foundStudentInfoCount} users`);
         console.log('====== 排名页面Hook结束 ======');
     });
 
