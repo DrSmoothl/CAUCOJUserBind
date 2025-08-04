@@ -101,17 +101,14 @@ const userBindModel = {
 
     // 创建用户组
     async createUserGroup(name: string, parentSchoolId: any, createdBy: number, students: Array<{studentId: string, realName: string}>): Promise<any> {
-        console.log('createUserGroup: 传入的parentSchoolId:', parentSchoolId, '类型:', typeof parentSchoolId);
-        
         // 使用灵活的查询方式验证学校组是否存在
         let school: SchoolGroup | null = null;
         
         // 方式1: 直接使用传入的ID查询
         try {
             school = await schoolGroupsColl.findOne({ _id: parentSchoolId });
-            console.log('createUserGroup: 直接查询结果:', school ? '找到' : '未找到');
         } catch (error) {
-            console.log('createUserGroup: 直接查询失败:', error);
+            // 查询失败，继续尝试其他方式
         }
         
         // 方式2: 如果直接查询失败，尝试字符串匹配
@@ -119,24 +116,14 @@ const userBindModel = {
             try {
                 const allSchools = await schoolGroupsColl.find().toArray();
                 school = allSchools.find(s => s._id.toString() === parentSchoolId.toString()) || null;
-                console.log('createUserGroup: 字符串匹配查询结果:', school ? '找到' : '未找到');
             } catch (error) {
-                console.log('createUserGroup: 字符串匹配查询失败:', error);
+                // 查询失败
             }
         }
         
         if (!school) {
-            console.log('createUserGroup: 学校组不存在，parentSchoolId:', parentSchoolId);
-            // 列出所有学校组用于调试
-            const allSchools = await schoolGroupsColl.find().limit(5).toArray();
-            console.log('createUserGroup: 现有学校组:');
-            allSchools.forEach((s, i) => {
-                console.log(`  ${i}: _id=${s._id} (${typeof s._id}) name=${s.name}`);
-            });
             throw new Error('指定的学校组不存在');
         }
-
-        console.log('createUserGroup: 找到学校组:', school.name);
 
         const studentsData = students.map(s => ({
             studentId: s.studentId,
@@ -152,7 +139,6 @@ const userBindModel = {
             students: studentsData
         });
         
-        console.log('createUserGroup: 用户组创建成功，ID:', result.insertedId);
         return result.insertedId;
     },
 
@@ -174,9 +160,6 @@ const userBindModel = {
     // 为学校组创建绑定令牌
     async createSchoolGroupBindToken(schoolGroupId: any, createdBy: number): Promise<string> {
         const token = this.generateBindToken();
-        console.log('createSchoolGroupBindToken: 生成的令牌:', token);
-        console.log('createSchoolGroupBindToken: 学校组ID:', schoolGroupId);
-        console.log('createSchoolGroupBindToken: 创建者ID:', createdBy);
         
         const insertResult = await bindTokensColl.insertOne({
             _id: token,
@@ -185,12 +168,6 @@ const userBindModel = {
             createdAt: new Date(),
             createdBy
         });
-        
-        console.log('createSchoolGroupBindToken: 插入结果:', insertResult);
-        
-        // 验证插入是否成功
-        const verification = await bindTokensColl.findOne({ _id: token });
-        console.log('createSchoolGroupBindToken: 验证插入的记录:', verification);
         
         return token;
     },
@@ -201,31 +178,23 @@ const userBindModel = {
         target: UserGroup | SchoolGroup;
         bindToken: BindToken;
     } | null> {
-        console.log('getBindInfo: 查询令牌:', token);
-        
         const bindToken = await bindTokensColl.findOne({ _id: token });
-        console.log('getBindInfo: 找到的绑定令牌:', bindToken);
         
         if (!bindToken) {
-            console.log('getBindInfo: 绑定令牌不存在');
             return null;
         }
 
         let target;
         if (bindToken.type === 'user_group') {
             target = await userGroupsColl.findOne({ _id: bindToken.targetId });
-            console.log('getBindInfo: 用户组目标:', target);
         } else {
             target = await schoolGroupsColl.findOne({ _id: bindToken.targetId });
-            console.log('getBindInfo: 学校组目标:', target);
         }
 
         if (!target) {
-            console.log('getBindInfo: 目标对象不存在');
             return null;
         }
 
-        console.log('getBindInfo: 成功返回绑定信息');
         return { type: bindToken.type, target, bindToken };
     },
 
@@ -267,12 +236,6 @@ const userBindModel = {
                 schoolMatches = userSchoolId.toString() === userGroup.parentSchoolId.toString();
             }
             
-            console.log('bindUserToGroup: 学校组匹配检查:', {
-                userSchoolId: userSchoolId.toString(),
-                groupSchoolId: userGroup.parentSchoolId.toString(),
-                matches: schoolMatches
-            });
-            
             if (!schoolMatches) {
                 throw new Error('您已属于其他学校，无法绑定到此用户组');
             }
@@ -309,41 +272,26 @@ const userBindModel = {
 
     // 用户绑定到学校组
     async bindUserToSchoolGroup(userId: number, token: string, studentId: string, realName: string): Promise<void> {
-        console.log('bindUserToSchoolGroup: 开始绑定');
-        console.log('bindUserToSchoolGroup: userId:', userId);
-        console.log('bindUserToSchoolGroup: token:', token);
-        console.log('bindUserToSchoolGroup: studentId:', studentId);
-        console.log('bindUserToSchoolGroup: realName:', realName);
-        
         const bindInfo = await this.getBindInfo(token);
         if (!bindInfo || bindInfo.type !== 'school_group') {
             throw new Error('无效的绑定令牌');
         }
 
         const schoolGroup = bindInfo.target as SchoolGroup;
-        console.log('bindUserToSchoolGroup: 学校组信息:', schoolGroup);
-        console.log('bindUserToSchoolGroup: 学校组成员:', schoolGroup.members);
         
         // 检查学校组是否有成员数据结构
         if (!schoolGroup.members || !Array.isArray(schoolGroup.members)) {
-            console.log('bindUserToSchoolGroup: 学校组没有成员数据结构');
             throw new Error('此学校组缺少成员信息，请联系管理员重新创建学校组');
         }
         
         // 检查学生是否在学校组中
         const member = schoolGroup.members.find(m => m.studentId === studentId && m.realName === realName);
-        console.log('bindUserToSchoolGroup: 查找成员结果:', member);
         
         if (!member) {
-            console.log('bindUserToSchoolGroup: 成员不存在，可用成员列表:');
-            schoolGroup.members.forEach((m, index) => {
-                console.log(`  ${index}: ${m.studentId} - ${m.realName}`);
-            });
             throw new Error('学号或姓名不匹配，请检查输入信息或联系管理员');
         }
 
         if (member.bound) {
-            console.log('bindUserToSchoolGroup: 成员已绑定');
             throw new Error('该学生信息已被绑定');
         }
 
@@ -351,14 +299,11 @@ const userBindModel = {
 
         // 检查用户是否已有学校组
         const dbUser = await userColl.findOne({ _id: userId });
-        console.log('bindUserToSchoolGroup: 用户信息:', dbUser);
         
         if (dbUser?.parentSchoolId && dbUser.parentSchoolId.length > 0) {
-            console.log('bindUserToSchoolGroup: 用户已有学校组');
             throw new Error('您已属于其他学校组');
         }
 
-        console.log('bindUserToSchoolGroup: 开始更新用户信息');
         // 更新用户信息
         await userColl.updateOne(
             { _id: userId },
@@ -373,7 +318,6 @@ const userBindModel = {
             }
         );
 
-        console.log('bindUserToSchoolGroup: 开始更新学校组成员状态');
         // 更新学校组中的成员状态 - 使用更精确的查询条件
         const updateResult = await schoolGroupsColl.updateOne(
             { 
@@ -395,13 +339,9 @@ const userBindModel = {
             }
         );
         
-        console.log('bindUserToSchoolGroup: 学校组更新结果:', updateResult);
-        
         if (updateResult.matchedCount === 0) {
-            console.log('bindUserToSchoolGroup: 警告 - 学校组成员状态更新失败，可能已经被绑定');
+            // 警告 - 学校组成员状态更新失败，可能已经被绑定
         }
-        
-        console.log('bindUserToSchoolGroup: 绑定完成');
     },
 
     // 获取用户的学校组信息
@@ -485,36 +425,22 @@ const userBindModel = {
 
     // 检查用户是否属于某个学校组
     async isUserInSchool(userId: number): Promise<boolean> {
-        console.log('isUserInSchool: 检查用户是否属于学校组，用户ID:', userId, '类型:', typeof userId);
         const userColl = db.collection('user');
         const dbUser = await userColl.findOne({ _id: userId });
-        console.log('isUserInSchool: 查找到的用户数据:', {
-            found: !!dbUser,
-            _id: dbUser?._id,
-            uname: dbUser?.uname,
-            parentSchoolId: dbUser?.parentSchoolId,
-            parentSchoolIdLength: dbUser?.parentSchoolId?.length,
-            parentSchoolIdType: typeof dbUser?.parentSchoolId
-        });
         
-        const result = !!(dbUser?.parentSchoolId && dbUser.parentSchoolId.length > 0);
-        console.log('isUserInSchool: 判断结果:', result);
-        return result;
+        return !!(dbUser?.parentSchoolId && dbUser.parentSchoolId.length > 0);
     },
 
     // 向学校组添加成员
     async addSchoolGroupMembers(schoolGroupId: any, members: Array<{studentId: string, realName: string}>): Promise<void> {
-        console.log('addSchoolGroupMembers: 传入的schoolGroupId:', schoolGroupId, '类型:', typeof schoolGroupId);
-        
         // 使用灵活的查询方式
         let school: SchoolGroup | null = null;
         
         // 方式1: 直接使用传入的ID查询
         try {
             school = await schoolGroupsColl.findOne({ _id: schoolGroupId });
-            console.log('addSchoolGroupMembers: 直接查询结果:', school);
         } catch (error) {
-            console.log('addSchoolGroupMembers: 直接查询失败:', error);
+            // 查询失败，继续尝试其他方式
         }
         
         // 方式2: 如果直接查询失败，尝试字符串匹配
@@ -522,20 +448,12 @@ const userBindModel = {
             try {
                 const allSchools = await schoolGroupsColl.find().toArray();
                 school = allSchools.find(s => s._id.toString() === schoolGroupId.toString()) || null;
-                console.log('addSchoolGroupMembers: 字符串匹配查询结果:', school);
             } catch (error) {
-                console.log('addSchoolGroupMembers: 字符串匹配查询失败:', error);
+                // 查询失败
             }
         }
         
         if (!school) {
-            console.log('addSchoolGroupMembers: 学校组不存在，schoolGroupId:', schoolGroupId);
-            // 列出所有学校组用于调试
-            const allSchools = await schoolGroupsColl.find().limit(5).toArray();
-            console.log('addSchoolGroupMembers: 现有学校组:');
-            allSchools.forEach((s, i) => {
-                console.log(`  ${i}: _id=${s._id} (${typeof s._id}) name=${s.name}`);
-            });
             throw new Error('学校组不存在');
         }
 
@@ -553,18 +471,14 @@ const userBindModel = {
         }
 
         // 使用查找到的实际学校ID进行更新
-        console.log('addSchoolGroupMembers: 准备更新学校组，使用ID:', school._id);
         await schoolGroupsColl.updateOne(
             { _id: school._id },
             { $push: { members: { $each: newMembers } } }
         );
-        console.log('addSchoolGroupMembers: 更新完成');
     },
 
     // 从学校组移除成员
     async removeSchoolGroupMembers(schoolGroupId: any, studentIds: string[]): Promise<void> {
-        console.log('removeSchoolGroupMembers: 传入的schoolGroupId:', schoolGroupId);
-        
         // 使用灵活的查询方式
         let school: SchoolGroup | null = null;
         
@@ -572,7 +486,7 @@ const userBindModel = {
         try {
             school = await schoolGroupsColl.findOne({ _id: schoolGroupId });
         } catch (error) {
-            console.log('removeSchoolGroupMembers: 直接查询失败:', error);
+            // 查询失败，继续尝试其他方式
         }
         
         // 方式2: 如果直接查询失败，尝试字符串匹配
@@ -581,7 +495,7 @@ const userBindModel = {
                 const allSchools = await schoolGroupsColl.find().toArray();
                 school = allSchools.find(s => s._id.toString() === schoolGroupId.toString()) || null;
             } catch (error) {
-                console.log('removeSchoolGroupMembers: 字符串匹配查询失败:', error);
+                // 查询失败
             }
         }
         
@@ -606,8 +520,6 @@ const userBindModel = {
 
     // 向用户组添加学生
     async addUserGroupStudents(userGroupId: any, students: Array<{studentId: string, realName: string}>): Promise<void> {
-        console.log('addUserGroupStudents: 传入的userGroupId:', userGroupId);
-        
         // 使用灵活的查询方式
         let userGroup: UserGroup | null = null;
         
@@ -615,7 +527,7 @@ const userBindModel = {
         try {
             userGroup = await userGroupsColl.findOne({ _id: userGroupId });
         } catch (error) {
-            console.log('addUserGroupStudents: 直接查询失败:', error);
+            // 查询失败，继续尝试其他方式
         }
         
         // 方式2: 如果直接查询失败，尝试字符串匹配
@@ -624,7 +536,7 @@ const userBindModel = {
                 const allGroups = await userGroupsColl.find().toArray();
                 userGroup = allGroups.find(g => g._id.toString() === userGroupId.toString()) || null;
             } catch (error) {
-                console.log('addUserGroupStudents: 字符串匹配查询失败:', error);
+                // 查询失败
             }
         }
         
@@ -653,8 +565,6 @@ const userBindModel = {
 
     // 从用户组移除学生
     async removeUserGroupStudents(userGroupId: any, studentIds: string[]): Promise<void> {
-        console.log('removeUserGroupStudents: 传入的userGroupId:', userGroupId);
-        
         // 使用灵活的查询方式
         let userGroup: UserGroup | null = null;
         
@@ -662,7 +572,7 @@ const userBindModel = {
         try {
             userGroup = await userGroupsColl.findOne({ _id: userGroupId });
         } catch (error) {
-            console.log('removeUserGroupStudents: 直接查询失败:', error);
+            // 查询失败，继续尝试其他方式
         }
         
         // 方式2: 如果直接查询失败，尝试字符串匹配
@@ -671,7 +581,7 @@ const userBindModel = {
                 const allGroups = await userGroupsColl.find().toArray();
                 userGroup = allGroups.find(g => g._id.toString() === userGroupId.toString()) || null;
             } catch (error) {
-                console.log('removeUserGroupStudents: 字符串匹配查询失败:', error);
+                // 查询失败
             }
         }
         
@@ -696,42 +606,27 @@ const userBindModel = {
 
     // 获取学校组详情
     async getSchoolGroupById(schoolGroupId: any): Promise<SchoolGroup | null> {
-        console.log('getSchoolGroupById: 传入的ID:', schoolGroupId, '类型:', typeof schoolGroupId);
-        
         // 尝试多种查询方式
         let result: SchoolGroup | null = null;
         
         // 方式1: 直接查询
         try {
             result = await schoolGroupsColl.findOne({ _id: schoolGroupId });
-            console.log('getSchoolGroupById: 直接查询结果:', result ? '找到' : '未找到');
         } catch (error) {
-            console.log('getSchoolGroupById: 直接查询失败:', error);
+            // 查询失败，继续尝试其他方式
         }
         
         // 方式2: 如果直接查询失败，尝试字符串匹配
         if (!result) {
             try {
                 const allSchools = await schoolGroupsColl.find().toArray();
-                console.log('getSchoolGroupById: 总共有', allSchools.length, '个学校组');
                 
                 // 尝试字符串匹配
                 result = allSchools.find(school => {
-                    const match = school._id.toString() === schoolGroupId.toString();
-                    if (match) {
-                        console.log('getSchoolGroupById: 字符串匹配成功，找到学校组:', school.name);
-                    }
-                    return match;
+                    return school._id.toString() === schoolGroupId.toString();
                 }) || null;
-                
-                if (!result) {
-                    console.log('getSchoolGroupById: 字符串匹配未找到，列出前5个学校组:');
-                    allSchools.slice(0, 5).forEach((school, index) => {
-                        console.log(`  ${index}: _id=${school._id} (${typeof school._id}) name=${school.name}`);
-                    });
-                }
             } catch (error) {
-                console.log('getSchoolGroupById: 字符串匹配查询失败:', error);
+                // 查询失败
             }
         }
         
@@ -740,42 +635,27 @@ const userBindModel = {
 
     // 获取用户组详情
     async getUserGroupById(userGroupId: any): Promise<UserGroup | null> {
-        console.log('getUserGroupById: 传入的ID:', userGroupId, '类型:', typeof userGroupId);
-        
         // 尝试多种查询方式
         let result: UserGroup | null = null;
         
         // 方式1: 直接查询
         try {
             result = await userGroupsColl.findOne({ _id: userGroupId });
-            console.log('getUserGroupById: 直接查询结果:', result ? '找到' : '未找到');
         } catch (error) {
-            console.log('getUserGroupById: 直接查询失败:', error);
+            // 查询失败，继续尝试其他方式
         }
         
         // 方式2: 如果直接查询失败，尝试字符串匹配
         if (!result) {
             try {
                 const allGroups = await userGroupsColl.find().toArray();
-                console.log('getUserGroupById: 总共有', allGroups.length, '个用户组');
                 
                 // 尝试字符串匹配
                 result = allGroups.find(group => {
-                    const match = group._id.toString() === userGroupId.toString();
-                    if (match) {
-                        console.log('getUserGroupById: 字符串匹配成功，找到用户组:', group.name);
-                    }
-                    return match;
+                    return group._id.toString() === userGroupId.toString();
                 }) || null;
-                
-                if (!result) {
-                    console.log('getUserGroupById: 字符串匹配未找到，列出前5个用户组:');
-                    allGroups.slice(0, 5).forEach((group, index) => {
-                        console.log(`  ${index}: _id=${group._id} (${typeof group._id}) name=${group.name}`);
-                    });
-                }
             } catch (error) {
-                console.log('getUserGroupById: 字符串匹配查询失败:', error);
+                // 查询失败
             }
         }
         
@@ -784,8 +664,6 @@ const userBindModel = {
 
     // 删除学校组（包括解绑所有成员、删除相关用户组）
     async deleteSchoolGroup(schoolGroupId: any): Promise<void> {
-        console.log('deleteSchoolGroup: 删除学校组ID:', schoolGroupId);
-        
         const school = await this.getSchoolGroupById(schoolGroupId);
         if (!school) {
             throw new Error('学校组不存在');
@@ -809,9 +687,8 @@ const userBindModel = {
                                 }
                             }
                         );
-                        console.log(`deleteSchoolGroup: 解绑用户 ${member.boundBy} (${member.studentId})`);
                     } catch (error) {
-                        console.log(`deleteSchoolGroup: 解绑用户 ${member.boundBy} 失败:`, error);
+                        // 解绑失败，继续处理其他成员
                     }
                 }
             }
@@ -820,8 +697,6 @@ const userBindModel = {
         // 2. 删除属于该学校的所有用户组
         const userGroups = await userGroupsColl.find({ parentSchoolId: school._id }).toArray();
         for (const userGroup of userGroups) {
-            console.log(`deleteSchoolGroup: 删除用户组 ${userGroup.name}`);
-            
             // 解绑用户组中的所有已绑定学生
             if (userGroup.students && userGroup.students.length > 0) {
                 const boundStudents = userGroup.students.filter(s => s.bound && s.boundBy);
@@ -840,9 +715,8 @@ const userBindModel = {
                                     }
                                 }
                             );
-                            console.log(`deleteSchoolGroup: 从用户组解绑用户 ${student.boundBy} (${student.studentId})`);
                         } catch (error) {
-                            console.log(`deleteSchoolGroup: 从用户组解绑用户 ${student.boundBy} 失败:`, error);
+                            // 解绑失败，继续处理其他学生
                         }
                     }
                 }
@@ -854,13 +728,10 @@ const userBindModel = {
 
         // 3. 删除学校组
         await schoolGroupsColl.deleteOne({ _id: school._id });
-        console.log(`deleteSchoolGroup: 学校组 ${school.name} 删除完成`);
     },
 
     // 编辑学校组成员信息
     async editSchoolGroupMember(schoolGroupId: any, oldStudentId: string, newStudentId: string, newRealName: string): Promise<void> {
-        console.log('editSchoolGroupMember: 编辑成员信息', { schoolGroupId, oldStudentId, newStudentId, newRealName });
-        
         const school = await this.getSchoolGroupById(schoolGroupId);
         if (!school) {
             throw new Error('学校组不存在');
@@ -919,14 +790,10 @@ const userBindModel = {
                 );
             }
         }
-
-        console.log('editSchoolGroupMember: 成员信息编辑完成');
     },
 
     // 删除学校组成员（包括解绑操作）
     async deleteSchoolGroupMember(schoolGroupId: any, studentId: string): Promise<void> {
-        console.log('deleteSchoolGroupMember: 删除成员', { schoolGroupId, studentId });
-        
         const school = await this.getSchoolGroupById(schoolGroupId);
         if (!school) {
             throw new Error('学校组不存在');
@@ -949,7 +816,6 @@ const userBindModel = {
                     }
                 }
             );
-            console.log(`deleteSchoolGroupMember: 解绑用户 ${member.boundBy} (${studentId})`);
         }
 
         // 从学校组中移除成员
@@ -984,97 +850,60 @@ const userBindModel = {
                 );
             }
         }
-
-        console.log(`deleteSchoolGroupMember: 成员 ${studentId} 删除完成`);
     },
 
     // 检查用户是否有参加比赛的权限
     async checkContestPermission(userId: number, contestId: any): Promise<{ allowed: boolean; reason?: string }> {
-        console.log('====== 开始比赛权限检查 ======');
-        console.log('checkContestPermission: 用户ID:', userId, '类型:', typeof userId);
-        console.log('checkContestPermission: 比赛ID:', contestId, '类型:', typeof contestId);
-        
         try {
             const documentColl = db.collection('document');
             let contest: any = null;
             
             // 尝试多种查询方式
             try {
-                console.log('checkContestPermission: 尝试直接查询比赛...');
                 // 方式1: 直接查询
                 contest = await documentColl.findOne({ 
                     _id: contestId,
                     docType: 30 // 比赛文档类型
                 });
-                console.log('checkContestPermission: 直接查询结果:', contest ? `找到比赛: ${contest.title}` : '未找到');
             } catch (error) {
-                console.log('checkContestPermission: 直接查询失败:', error);
+                // 查询失败，继续尝试其他方式
             }
             
             // 方式2: 如果直接查询失败，尝试字符串匹配
             if (!contest) {
                 try {
-                    console.log('checkContestPermission: 直接查询失败，尝试字符串匹配...');
                     const allContests = await documentColl.find({ docType: 30 }).toArray();
-                    console.log('checkContestPermission: 总共有', allContests.length, '个比赛文档');
                     
                     // 尝试字符串匹配
                     contest = allContests.find(c => {
-                        const match = c._id.toString() === contestId.toString();
-                        if (match) {
-                            console.log('checkContestPermission: 字符串匹配成功，找到比赛:', c.title);
-                        }
-                        return match;
+                        return c._id.toString() === contestId.toString();
                     }) || null;
-                    
-                    if (!contest) {
-                        console.log('checkContestPermission: 字符串匹配未找到，列出前5个比赛:');
-                        allContests.slice(0, 5).forEach((c, index) => {
-                            console.log(`  ${index}: _id=${c._id} (${typeof c._id}) title=${c.title}`);
-                        });
-                    }
                 } catch (error) {
-                    console.log('checkContestPermission: 字符串匹配查询失败:', error);
+                    // 查询失败
                 }
             }
             
             if (!contest) {
-                console.log('checkContestPermission: 比赛不存在，返回拒绝访问');
                 return { allowed: false, reason: '比赛不存在' };
             }
-
-            console.log('checkContestPermission: 找到比赛:', contest.title);
-            console.log('checkContestPermission: 比赛权限配置:', JSON.stringify(contest.userBindPermission, null, 2));
             
             const permission = contest.userBindPermission;
             
             // 如果未启用权限控制，允许所有用户参加
             if (!permission || !permission.enabled) {
-                console.log('checkContestPermission: 权限控制未启用，允许所有用户参加');
                 return { allowed: true };
             }
-
-            console.log('checkContestPermission: 权限控制已启用，模式:', permission.mode);
-            console.log('checkContestPermission: 允许的组列表:', permission.allowedGroups);
 
             const userColl = db.collection('user');
             const dbUser = await userColl.findOne({ _id: userId });
             
             if (!dbUser) {
-                console.log('checkContestPermission: 用户不存在');
                 return { allowed: false, reason: '用户不存在' };
             }
 
-            console.log('checkContestPermission: 用户信息:');
-            console.log('  - 用户名:', dbUser.uname);
-            console.log('  - 学校组ID:', dbUser.parentSchoolId);
-            console.log('  - 用户组ID:', dbUser.parentUserGroupId);
-
             if (permission.mode === 'school') {
-                console.log('checkContestPermission: 进入学校组权限检查模式');
                 // 学校组模式
                 if (!dbUser.parentSchoolId || dbUser.parentSchoolId.length === 0) {
-                    console.log('checkContestPermission: 用户不属于任何学校组');
                     return { allowed: false, reason: '您不属于任何学校组' };
                 }
 
@@ -1082,25 +911,17 @@ const userBindModel = {
                 const userSchoolIds = dbUser.parentSchoolId.map((id: any) => id.toString());
                 const allowedSchoolIds = permission.allowedGroups.map((id: string) => id.toString());
                 
-                console.log('checkContestPermission: 用户的学校组ID (字符串):', userSchoolIds);
-                console.log('checkContestPermission: 允许的学校组ID (字符串):', allowedSchoolIds);
-                
                 const hasPermission = userSchoolIds.some((schoolId: string) => 
                     allowedSchoolIds.includes(schoolId)
                 );
 
-                console.log('checkContestPermission: 学校组权限检查结果:', hasPermission);
-
                 if (!hasPermission) {
-                    console.log('checkContestPermission: 用户所在学校组无权参加此比赛');
                     return { allowed: false, reason: '您所在的学校组无权参加此比赛' };
                 }
                 
             } else if (permission.mode === 'user_group') {
-                console.log('checkContestPermission: 进入用户组权限检查模式');
                 // 用户组模式
                 if (!dbUser.parentUserGroupId || dbUser.parentUserGroupId.length === 0) {
-                    console.log('checkContestPermission: 用户不属于任何用户组');
                     return { allowed: false, reason: '您不属于任何用户组' };
                 }
 
@@ -1108,28 +929,18 @@ const userBindModel = {
                 const userGroupIds = dbUser.parentUserGroupId.map((id: any) => id.toString());
                 const allowedGroupIds = permission.allowedGroups.map((id: string) => id.toString());
                 
-                console.log('checkContestPermission: 用户的用户组ID (字符串):', userGroupIds);
-                console.log('checkContestPermission: 允许的用户组ID (字符串):', allowedGroupIds);
-                
                 const hasPermission = userGroupIds.some((groupId: string) => 
                     allowedGroupIds.includes(groupId)
                 );
 
-                console.log('checkContestPermission: 用户组权限检查结果:', hasPermission);
-
                 if (!hasPermission) {
-                    console.log('checkContestPermission: 用户所在用户组无权参加此比赛');
                     return { allowed: false, reason: '您所在的用户组无权参加此比赛' };
                 }
             }
 
-            console.log('checkContestPermission: 权限检查通过，允许访问');
             return { allowed: true };
         } catch (error) {
-            console.error('checkContestPermission: 检查比赛权限失败:', error);
             return { allowed: false, reason: '权限检查失败' };
-        } finally {
-            console.log('====== 比赛权限检查结束 ======');
         }
     }
 };
@@ -1146,8 +957,6 @@ class ContestPermissionHandler extends Handler {
             throw new NotFoundError('比赛ID无效');
         }
 
-        console.log('ContestPermissionHandler: 收到比赛ID:', contestId, '类型:', typeof contestId);
-
         // 获取比赛信息（从document集合中获取docType为30的文档）
         const documentColl = db.collection('document');
         
@@ -1159,42 +968,27 @@ class ContestPermissionHandler extends Handler {
                 _id: contestId,
                 docType: 30 // 比赛文档类型
             });
-            console.log('ContestPermissionHandler: 直接查询结果:', contest ? '找到' : '未找到');
         } catch (error) {
-            console.log('ContestPermissionHandler: 直接查询失败:', error);
+            // 查询失败，继续尝试其他方式
         }
         
         // 方式2: 如果直接查询失败，尝试字符串匹配
         if (!contest) {
             try {
                 const allContests = await documentColl.find({ docType: 30 }).toArray();
-                console.log('ContestPermissionHandler: 总共有', allContests.length, '个比赛文档');
                 
                 // 尝试字符串匹配
                 contest = allContests.find(c => {
-                    const match = c._id.toString() === contestId.toString();
-                    if (match) {
-                        console.log('ContestPermissionHandler: 字符串匹配成功，找到比赛:', c.title);
-                    }
-                    return match;
+                    return c._id.toString() === contestId.toString();
                 }) || null;
-                
-                if (!contest) {
-                    console.log('ContestPermissionHandler: 字符串匹配未找到，列出前5个比赛:');
-                    allContests.slice(0, 5).forEach((c, index) => {
-                        console.log(`  ${index}: _id=${c._id} (${typeof c._id}) title=${c.title}`);
-                    });
-                }
             } catch (error) {
-                console.log('ContestPermissionHandler: 字符串匹配查询失败:', error);
+                // 查询失败
             }
         }
         
         if (!contest) {
             throw new NotFoundError('比赛不存在');
         }
-
-        console.log('ContestPermissionHandler: 找到比赛:', contest.title);
 
         // 获取所有学校组和用户组
         const { schools } = await userBindModel.getSchoolGroups(1, 1000);
@@ -1242,7 +1036,7 @@ class ContestPermissionHandler extends Handler {
                     docType: 30 // 比赛文档类型
                 });
             } catch (error) {
-                console.log('ContestPermissionHandler.post: 直接查询失败:', error);
+                // 查询失败，继续尝试其他方式
             }
             
             // 方式2: 如果直接查询失败，尝试字符串匹配
@@ -1250,9 +1044,8 @@ class ContestPermissionHandler extends Handler {
                 try {
                     const allContests = await documentColl.find({ docType: 30 }).toArray();
                     contest = allContests.find(c => c._id.toString() === contestId.toString()) || null;
-                    console.log('ContestPermissionHandler.post: 字符串匹配结果:', contest ? '找到' : '未找到');
                 } catch (error) {
-                    console.log('ContestPermissionHandler.post: 字符串匹配查询失败:', error);
+                    // 查询失败
                 }
             }
             
@@ -1360,14 +1153,11 @@ class SchoolGroupDetailHandler extends Handler {
         this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
         const { schoolId } = this.request.params;
         
-        console.log('SchoolGroupDetailHandler.get: schoolId参数:', schoolId);
-        
         if (!schoolId) {
             throw new NotFoundError('学校组ID无效');
         }
         
         const school = await userBindModel.getSchoolGroupById(schoolId);
-        console.log('SchoolGroupDetailHandler.get: 查找到的学校:', school);
         
         if (!school) {
             throw new NotFoundError('学校组不存在');
@@ -1713,10 +1503,6 @@ class NicknameHandler extends Handler {
         }
 
         try {
-            console.log('====== 昵称修改请求 ======');
-            console.log('用户ID:', this.user._id);
-            console.log('新昵称:', nickname.trim());
-
             const userColl = db.collection('user');
             const trimmedNickname = nickname.trim();
             
@@ -1727,7 +1513,6 @@ class NicknameHandler extends Handler {
             });
             
             if (existingUser) {
-                console.log('昵称已被其他用户使用:', trimmedNickname);
                 const currentUser = await userColl.findOne({ _id: this.user._id });
                 
                 this.response.template = 'nickname_edit.html';
@@ -1750,9 +1535,6 @@ class NicknameHandler extends Handler {
                     }
                 }
             );
-            
-            console.log('昵称更新结果:', updateResult);
-            console.log('====== 昵称修改完成 ======');
             
             // 获取更新后的用户信息
             const updatedUser = await userColl.findOne({ _id: this.user._id });
@@ -1789,8 +1571,6 @@ class NicknameHandler extends Handler {
             };
             
         } catch (error: any) {
-            console.error('昵称修改失败:', error);
-            
             const userColl = db.collection('user');
             const currentUser = await userColl.findOne({ _id: this.user._id });
             
@@ -1808,30 +1588,20 @@ class NicknameHandler extends Handler {
 // 绑定界面 - 处理令牌绑定
 class BindHandler extends Handler {
     async get() {
-        console.log('BindHandler.get: 收到请求');
-        console.log('BindHandler.get: request.params:', this.request.params);
-        console.log('BindHandler.get: request.path:', this.request.path);
-        console.log('BindHandler.get: 用户ID:', this.user._id);
-        
         const { token } = this.request.params;
-        console.log('BindHandler.get: 从params获取的token:', token);
         
         if (!token) {
-            console.log('BindHandler.get: 令牌参数缺失');
             throw new NotFoundError('绑定链接格式错误');
         }
         
         if (!this.user._id) {
-            console.log('BindHandler.get: 用户未登录，重定向到登录页');
             this.response.redirect = `/login?redirect=${encodeURIComponent(this.request.path)}`;
             return;
         }
 
         const bindInfo = await userBindModel.getBindInfo(token);
-        console.log('BindHandler.get: 获取的绑定信息:', bindInfo);
         
         if (!bindInfo) {
-            console.log('BindHandler.get: 绑定信息不存在，抛出NotFoundError');
             throw new NotFoundError('绑定链接无效或已过期');
         }
 
@@ -1850,12 +1620,6 @@ class BindHandler extends Handler {
                     // 如果ObjectId比较失败，使用字符串比较
                     return school._id.toString() === targetGroup.parentSchoolId.toString();
                 }
-            });
-
-            console.log('BindHandler.get: 学校组匹配检查:', {
-                userSchools: userSchools.map(s => ({ id: s._id.toString(), name: s.name })),
-                targetGroupSchoolId: targetGroup.parentSchoolId.toString(),
-                hasMatchingSchool
             });
 
             if (hasMatchingSchool) {
@@ -1899,7 +1663,6 @@ class BindHandler extends Handler {
 
     async post() {
         const { token } = this.request.params;
-        console.log('BindHandler.post: token:', token);
         
         if (!this.user._id) {
             throw new ForbiddenError('请先登录');
@@ -1928,8 +1691,6 @@ class BindHandler extends Handler {
             if (!bindInfo) {
                 throw new Error('绑定链接无效或已过期');
             }
-
-            console.log('BindHandler.post: 开始绑定，类型:', bindInfo.type);
             
             if (bindInfo.type === 'user_group') {
                 await userBindModel.bindUserToGroup(this.user._id, token, studentId, realName);
@@ -1937,7 +1698,6 @@ class BindHandler extends Handler {
                 await userBindModel.bindUserToSchoolGroup(this.user._id, token, studentId, realName);
             }
 
-            console.log('BindHandler.post: 绑定成功');
             this.response.template = 'bind_success.html';
             this.response.body = { 
                 studentId,
@@ -1945,7 +1705,6 @@ class BindHandler extends Handler {
                 groupName: bindInfo.target.name
             };
         } catch (error: any) {
-            console.log('BindHandler.post: 绑定失败，错误:', error.message);
             const bindInfo = await userBindModel.getBindInfo(token);
             this.response.template = 'bind_form.html';
             this.response.body = { 
@@ -2143,18 +1902,14 @@ export async function apply(ctx: Context) {
             if (isSchoolGroupRequiredPath) {
                 // 非学校组成员禁止访问
                 if (!isInSchool) {
-                    console.log(`访问控制 - 用户 ${user.uname} 试图访问学校组专用路径: ${currentPath}`);
                     throw new ForbiddenError('此功能仅限学校组成员使用，请联系管理员');
                 }
                 
                 // 学校组成员但未绑定，重定向到首页
                 if (!isBound) {
-                    console.log(`绑定检查 - 学校组成员 ${user.uname} 未绑定，重定向到首页`);
                     h.response.redirect = '/';
                     return;
                 }
-                
-                console.log(`访问允许 - 学校组成员 ${user.uname} 访问路径: ${currentPath}`);
             }
         } catch (error) {
             // 如果是权限错误，直接抛出
@@ -2162,7 +1917,6 @@ export async function apply(ctx: Context) {
                 throw error;
             }
             // 如果获取用户信息失败，不执行重定向
-            console.error('用户绑定检查失败:', error);
         }
     });
 
@@ -2184,42 +1938,22 @@ export async function apply(ctx: Context) {
             // 只有学校组成员才需要强制绑定
             if (isInSchool && !await userBindModel.isUserBound(h.user._id)) {
                 // 这里可以添加提示信息，但不强制重定向
-                console.log(`登录提示 - 学校组成员 ${user.uname} 尚未完成身份绑定`);
             }
         } catch (error) {
-            console.error('登录后绑定检查失败:', error);
+            // 处理错误但不记录日志
         }
     });
 
     // 在用户详情页面添加绑定信息显示
     ctx.on('handler/after/UserDetail#get', async (h) => {
         if (h.response.body.udoc) {
-            console.log('====== 用户详情页面 - 绑定信息检查 ======');
-            console.log('用户ID:', h.response.body.udoc._id);
-            console.log('用户名:', h.response.body.udoc.uname);
-            console.log('用户数据中的字段:', {
-                studentId: h.response.body.udoc.studentId,
-                realName: h.response.body.udoc.realName,
-                parentSchoolId: h.response.body.udoc.parentSchoolId,
-                parentUserGroupId: h.response.body.udoc.parentUserGroupId
-            });
-            
             // 检查用户是否属于学校组
             const isInSchool = await userBindModel.isUserInSchool(h.response.body.udoc._id);
-            console.log('用户是否属于学校组:', isInSchool);
             
             if (isInSchool) {
                 // 从数据库重新获取用户信息，确保数据完整
                 const userColl = db.collection('user');
                 const dbUser = await userColl.findOne({ _id: h.response.body.udoc._id });
-                console.log('数据库中的用户信息:', {
-                    _id: dbUser?._id,
-                    uname: dbUser?.uname,
-                    studentId: dbUser?.studentId,
-                    realName: dbUser?.realName,
-                    parentSchoolId: dbUser?.parentSchoolId,
-                    parentUserGroupId: dbUser?.parentUserGroupId
-                });
                 
                 h.response.body.showBindInfo = true;
                 h.response.body.bindInfo = {
@@ -2228,18 +1962,13 @@ export async function apply(ctx: Context) {
                     isBound: !!((dbUser?.studentId || h.response.body.udoc.studentId) && (dbUser?.realName || h.response.body.udoc.realName))
                 };
                 
-                console.log('最终绑定信息:', h.response.body.bindInfo);
-                
                 // 获取用户所属的学校组和用户组信息
                 const userSchools = await userBindModel.getUserSchoolGroups(h.response.body.udoc._id);
                 const userGroups = await userBindModel.getUserGroups(h.response.body.udoc._id);
-                console.log('用户所属学校组:', userSchools);
-                console.log('用户所属用户组:', userGroups);
                 
                 h.response.body.bindInfo.schools = userSchools;
                 h.response.body.bindInfo.userGroups = userGroups;
             }
-            console.log('====== 用户详情页面 - 绑定信息检查结束 ======');
         }
     });
 
@@ -2383,217 +2112,102 @@ export async function apply(ctx: Context) {
 
     // 比赛参赛权限检查
     ctx.on('handler/before/ContestDetail#get', async (h) => {
-        console.log('===== 比赛页面访问权限检查 =====');
-        console.log('ContestDetail#get hook: 用户:', h.user?._id, '路径:', h.request.path);
-        
         if (!h.user || !h.user._id) {
-            console.log('ContestDetail#get hook: 用户未登录，跳过检查');
             return;
         }
 
         try {
             const contestId = h.request.params.tid || h.request.params.contestId;
-            console.log('ContestDetail#get hook: 比赛ID:', contestId);
             
             if (!contestId) {
-                console.log('ContestDetail#get hook: 没有比赛ID，跳过检查');
                 return;
             }
 
             // 超级管理员跳过权限检查
             if (h.user._id === 2 || h.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)) {
-                console.log('ContestDetail#get hook: 超级管理员，跳过权限检查');
                 return;
             }
 
-            console.log('ContestDetail#get hook: 开始权限检查...');
             const permissionCheck = await userBindModel.checkContestPermission(h.user._id, contestId);
-            console.log('ContestDetail#get hook: 权限检查结果:', permissionCheck);
             
             if (!permissionCheck.allowed) {
-                console.log('ContestDetail#get hook: 权限不足，抛出ForbiddenError');
                 throw new ForbiddenError(permissionCheck.reason || '您无权访问此比赛');
             }
-            
-            console.log('ContestDetail#get hook: 权限检查通过');
         } catch (error) {
             if (error instanceof ForbiddenError) {
-                console.log('ContestDetail#get hook: 抛出权限错误:', error.message);
                 throw error;
             }
-            console.error('ContestDetail#get hook: 权限检查失败:', error);
-        } finally {
-            console.log('===== 比赛页面访问权限检查结束 =====');
         }
     });
 
     // 比赛报名权限检查
     ctx.on('handler/before/ContestDetail#post', async (h) => {
-        console.log('===== 比赛报名/操作权限检查 =====');
-        console.log('ContestDetail#post hook: 用户:', h.user?._id, '路径:', h.request.path);
-        
         if (!h.user || !h.user._id) {
-            console.log('ContestDetail#post hook: 用户未登录，跳过检查');
             return;
         }
 
         try {
             const contestId = h.request.params.tid || h.request.params.contestId;
-            console.log('ContestDetail#post hook: 比赛ID:', contestId);
             
             if (!contestId) {
-                console.log('ContestDetail#post hook: 没有比赛ID，跳过检查');
                 return;
             }
 
             // 超级管理员跳过权限检查
             if (h.user._id === 2 || h.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)) {
-                console.log('ContestDetail#post hook: 超级管理员，跳过权限检查');
                 return;
             }
 
             const action = h.request.body.operation || h.request.body.action;
-            console.log('ContestDetail#post hook: 操作类型:', action);
-            console.log('ContestDetail#post hook: 请求体:', JSON.stringify(h.request.body, null, 2));
             
             // 只对报名操作进行权限检查
             if (action === 'attend' || action === 'register') {
-                console.log('ContestDetail#post hook: 检查', action, '操作权限...');
                 const permissionCheck = await userBindModel.checkContestPermission(h.user._id, contestId);
-                console.log('ContestDetail#post hook: 权限检查结果:', permissionCheck);
                 
                 if (!permissionCheck.allowed) {
-                    console.log('ContestDetail#post hook: 权限不足，抛出ForbiddenError');
                     throw new ForbiddenError(permissionCheck.reason || '您无权参加此比赛');
                 }
-                
-                console.log('ContestDetail#post hook: 权限检查通过');
-            } else {
-                console.log('ContestDetail#post hook: 非报名操作，跳过权限检查');
             }
         } catch (error) {
             if (error instanceof ForbiddenError) {
-                console.log('ContestDetail#post hook: 抛出权限错误:', error.message);
                 throw error;
             }
-            console.error('ContestDetail#post hook: 权限检查失败:', error);
-        } finally {
-            console.log('===== 比赛报名/操作权限检查结束 =====');
         }
     });
 
     // 为排名页面添加处理，所有人都能看到真实姓名
     ctx.on('handler/after/DomainRank#get', async (h) => {
-        console.log('====== 排名页面Hook开始 ======');
-        console.log('DomainRank hook triggered, user:', h.user?._id);
-        console.log('DomainRank hook - response body keys:', Object.keys(h.response.body || {}));
-        
         const udocs = h.response.body.udocs || [];
         const userColl = db.collection('user');
-        console.log('DomainRank hook - Processing', udocs.length, 'users in ranking');
-        console.log('DomainRank hook - Sample udoc structure:', udocs.length > 0 ? {
-            keys: Object.keys(udocs[0]),
-            _id: udocs[0]._id,
-            uname: udocs[0].uname,
-            rp: udocs[0].rp
-        } : 'No udocs');
         
         // 处理当前用户的学号姓名信息
         if (h.user && h.user._id) {
-            console.log('DomainRank hook - Processing current user:', h.user._id);
             const isCurrentUserInSchool = await userBindModel.isUserInSchool(h.user._id);
-            console.log('DomainRank hook - Current user isInSchool:', isCurrentUserInSchool);
             
             if (isCurrentUserInSchool) {
                 const currentDbUser = await userColl.findOne({ _id: h.user._id });
-                console.log('DomainRank hook - Current user DB data:', {
-                    _id: currentDbUser?._id,
-                    uname: currentDbUser?.uname,
-                    realName: currentDbUser?.realName,
-                    studentId: currentDbUser?.studentId,
-                    parentSchoolId: currentDbUser?.parentSchoolId
-                });
                 
                 if (currentDbUser?.realName && currentDbUser?.studentId) {
                     h.user.studentInfo = `${currentDbUser.studentId} ${currentDbUser.realName}`;
-                    console.log('DomainRank hook - Set studentInfo for current user', h.user._id, 'to', h.user.studentInfo);
-                } else {
-                    console.log('DomainRank hook - Current user missing realName or studentId:', {
-                        realName: currentDbUser?.realName,
-                        studentId: currentDbUser?.studentId
-                    });
                 }
-            } else {
-                console.log('DomainRank hook - Current user not in school, checking user data...');
-                const currentDbUser = await userColl.findOne({ _id: h.user._id });
-                console.log('DomainRank hook - Current user full data:', {
-                    _id: currentDbUser?._id,
-                    uname: currentDbUser?.uname,
-                    parentSchoolId: currentDbUser?.parentSchoolId,
-                    parentUserGroupId: currentDbUser?.parentUserGroupId
-                });
             }
         }
         
         // 处理排名列表中的用户 - 所有人都能看到学号姓名
-        console.log('DomainRank hook - Processing ranking list users...');
-        let processedCount = 0;
-        let foundStudentInfoCount = 0;
-        
         for (const udoc of udocs) {
-            processedCount++;
-            console.log(`DomainRank hook - Processing user ${processedCount}/${udocs.length}:`, {
-                _id: udoc._id,
-                uname: udoc.uname,
-                rank: udoc.rank
-            });
-            
             if (udoc._id) {
                 const isInSchool = await userBindModel.isUserInSchool(udoc._id);
-                console.log(`DomainRank hook - User ${udoc._id} (${udoc.uname}) isInSchool:`, isInSchool);
                 
                 if (isInSchool) {
                     const dbUser = await userColl.findOne({ _id: udoc._id });
-                    console.log(`DomainRank hook - User ${udoc._id} DB data:`, {
-                        found: !!dbUser,
-                        _id: dbUser?._id,
-                        uname: dbUser?.uname,
-                        realName: dbUser?.realName,
-                        studentId: dbUser?.studentId,
-                        parentSchoolId: dbUser?.parentSchoolId,
-                        parentUserGroupId: dbUser?.parentUserGroupId
-                    });
                     
                     if (dbUser?.realName && dbUser?.studentId) {
                         // 添加学号姓名信息，而不是修改用户名
                         udoc.studentInfo = `${dbUser.studentId} ${dbUser.realName}`;
-                        foundStudentInfoCount++;
-                        console.log(`DomainRank hook - ✓ Set studentInfo for user ${udoc._id} (${udoc.uname}) to:`, udoc.studentInfo);
-                    } else {
-                        console.log(`DomainRank hook - ✗ User ${udoc._id} (${udoc.uname}) missing student info:`, {
-                            hasRealName: !!dbUser?.realName,
-                            hasStudentId: !!dbUser?.studentId,
-                            realName: dbUser?.realName,
-                            studentId: dbUser?.studentId
-                        });
                     }
-                } else {
-                    console.log(`DomainRank hook - User ${udoc._id} (${udoc.uname}) not in school, checking user data...`);
-                    const dbUser = await userColl.findOne({ _id: udoc._id });
-                    console.log(`DomainRank hook - Non-school user ${udoc._id} data:`, {
-                        found: !!dbUser,
-                        uname: dbUser?.uname,
-                        parentSchoolId: dbUser?.parentSchoolId,
-                        parentUserGroupId: dbUser?.parentUserGroupId
-                    });
                 }
-            } else {
-                console.log(`DomainRank hook - User entry ${processedCount} has no _id:`, udoc);
             }
         }
-        
-        console.log(`DomainRank hook - Summary: Processed ${processedCount} users, found student info for ${foundStudentInfoCount} users`);
-        console.log('====== 排名页面Hook结束 ======');
     });
 
 }
