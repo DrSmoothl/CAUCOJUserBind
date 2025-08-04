@@ -1862,6 +1862,10 @@ export async function apply(ctx: Context) {
 
     // 监听用户设置更新事件，同步昵称到用户名
     ctx.on('handler/after/UserSettings#post', async (h) => {
+        console.log('====== UserSettings#post 事件触发 ======');
+        console.log('用户:', h.user ? h.user._id : '无用户');
+        console.log('请求体:', h.request.body ? Object.keys(h.request.body) : '无请求体');
+        
         if (h.request.body && h.request.body.nickname !== undefined) {
             console.log('====== 用户昵称更新 ======');
             console.log('用户ID:', h.user._id);
@@ -1901,6 +1905,49 @@ export async function apply(ctx: Context) {
                 console.error('昵称同步失败:', error);
             }
             console.log('====== 用户昵称更新结束 ======');
+        }
+    });
+
+    // 尝试监听其他可能的用户设置事件
+    ctx.on('handler/after/UserSetting#post', async (h) => {
+        console.log('====== UserSetting#post 事件触发 ======');
+        console.log('用户:', h.user ? h.user._id : '无用户');
+        console.log('请求体:', h.request.body ? Object.keys(h.request.body) : '无请求体');
+        if (h.request.body && h.request.body.nickname !== undefined) {
+            console.log('在UserSetting#post中发现昵称字段:', h.request.body.nickname);
+        }
+    });
+
+    ctx.on('handler/after/UserAccountSetting#post', async (h) => {
+        console.log('====== UserAccountSetting#post 事件触发 ======');
+        console.log('用户:', h.user ? h.user._id : '无用户');
+        console.log('请求体:', h.request.body ? Object.keys(h.request.body) : '无请求体');
+        if (h.request.body && h.request.body.nickname !== undefined) {
+            console.log('在UserAccountSetting#post中发现昵称字段:', h.request.body.nickname);
+        }
+    });
+
+    ctx.on('handler/after/UserPreferenceSetting#post', async (h) => {
+        console.log('====== UserPreferenceSetting#post 事件触发 ======');
+        console.log('用户:', h.user ? h.user._id : '无用户');
+        console.log('请求体:', h.request.body ? Object.keys(h.request.body) : '无请求体');
+        if (h.request.body && h.request.body.nickname !== undefined) {
+            console.log('在UserPreferenceSetting#post中发现昵称字段:', h.request.body.nickname);
+        }
+    });
+
+    // 通用请求监听器 - 用于调试
+    ctx.on('handler/after', async (h) => {
+        // 记录所有POST请求以便调试
+        if (h.request.method === 'POST' && h.user && h.user._id) {
+            console.log('====== POST请求监听 ======');
+            console.log('用户ID:', h.user._id);
+            console.log('请求路径:', h.request.path);
+            console.log('请求体键:', h.request.body ? Object.keys(h.request.body) : '无请求体');
+            if (h.request.body && h.request.body.nickname !== undefined) {
+                console.log('发现昵称字段:', h.request.body.nickname);
+            }
+            console.log('====== POST请求监听结束 ======');
         }
     });
 
