@@ -1856,22 +1856,22 @@ export async function apply(ctx: Context) {
     // 添加用户设置项
     ctx.inject(['setting'], (c) => {
         c.setting.AccountSetting(
-            SettingModel.Setting('user_info', 'custom_nickname', '', 'text', '用户名（昵称）', '可自定义的用户昵称，支持修改', 5),
-            SettingModel.Setting('user_info', 'student_id', '', 'text', '学号', '学生学号', 6),
-            SettingModel.Setting('user_info', 'real_name', '', 'text', '姓名', '真实姓名', 7)
+            SettingModel.Setting('setting_customize', 'nickname', '', 'text', '昵称', '自定义显示昵称', 1),
+            SettingModel.Setting('setting_info', 'realName', '', 'text', '真实姓名', '学生真实姓名', 2),
+            SettingModel.Setting('setting_info', 'studentNumber', '', 'text', '学生学号', '学生学号信息', 3)
         );
     });
 
     // 监听用户设置更新事件，同步昵称到用户名
     ctx.on('handler/after/UserSettings#post', async (h) => {
-        if (h.request.body && h.request.body.custom_nickname !== undefined) {
+        if (h.request.body && h.request.body.nickname !== undefined) {
             console.log('====== 用户昵称更新 ======');
             console.log('用户ID:', h.user._id);
-            console.log('新昵称:', h.request.body.custom_nickname);
+            console.log('新昵称:', h.request.body.nickname);
             
             try {
                 const userColl = db.collection('user');
-                const nickname = h.request.body.custom_nickname.trim();
+                const nickname = h.request.body.nickname.trim();
                 
                 if (nickname) {
                     // 如果昵称不为空，将昵称同步到uname字段
@@ -1895,16 +1895,16 @@ export async function apply(ctx: Context) {
         // 检查是否是用户设置相关的POST请求
         if (h.request.method === 'POST' && 
             (h.request.path.includes('/user/') || h.request.path.includes('/settings') || h.request.path.includes('/preference')) &&
-            h.request.body && h.request.body.custom_nickname !== undefined && h.user && h.user._id) {
+            h.request.body && h.request.body.nickname !== undefined && h.user && h.user._id) {
             
             console.log('====== 通用用户昵称更新 ======');
             console.log('用户ID:', h.user._id);
             console.log('请求路径:', h.request.path);
-            console.log('新昵称:', h.request.body.custom_nickname);
+            console.log('新昵称:', h.request.body.nickname);
             
             try {
                 const userColl = db.collection('user');
-                const nickname = h.request.body.custom_nickname ? h.request.body.custom_nickname.trim() : '';
+                const nickname = h.request.body.nickname ? h.request.body.nickname.trim() : '';
                 
                 if (nickname) {
                     // 检查昵称是否已被其他用户使用
