@@ -2322,6 +2322,19 @@ export async function apply(ctx: Context) {
             const userColl = db.collection('user');
             console.log('Processing', udocs.length, 'users in ranking');
             
+            // 处理当前用户（管理员）的学号姓名信息
+            if (h.user._id) {
+                const isCurrentUserInSchool = await userBindModel.isUserInSchool(h.user._id);
+                if (isCurrentUserInSchool) {
+                    const currentDbUser = await userColl.findOne({ _id: h.user._id });
+                    if (currentDbUser?.realName && currentDbUser?.studentId) {
+                        h.user.studentInfo = `${currentDbUser.studentId} ${currentDbUser.realName}`;
+                        console.log('Set studentInfo for current user', h.user._id, 'to', h.user.studentInfo);
+                    }
+                }
+            }
+            
+            // 处理排名列表中的用户
             for (const udoc of udocs) {
                 if (udoc._id) {
                     const isInSchool = await userBindModel.isUserInSchool(udoc._id);
@@ -2333,9 +2346,9 @@ export async function apply(ctx: Context) {
                             studentId: dbUser?.studentId
                         });
                         if (dbUser?.realName && dbUser?.studentId) {
-                            const oldName = udoc.uname;
-                            udoc.displayName = `${dbUser.studentId} ${dbUser.realName}(${udoc.uname})`;
-                            console.log('Set displayName for ranking user', udoc._id, 'from', oldName, 'to', udoc.displayName);
+                            // 添加学号姓名信息，而不是修改用户名
+                            udoc.studentInfo = `${dbUser.studentId} ${dbUser.realName}`;
+                            console.log('Set studentInfo for ranking user', udoc._id, 'to', udoc.studentInfo);
                         }
                     }
                 }

@@ -235,7 +235,20 @@ interface UserBindInvite {
   - `handler/before-prepare`: 全局检查本校学生绑定状态
   - `handler/after/UserLogin#post`: 登录后检查绑定状态
   - `handler/after/UserDetail#get`: 用户详情页显示绑定信息
-  - `handler/after/ContestScoreboard#get`: 比赛排行榜显示真实姓名
+  - `handler/after/ContestScoreboard#get`: 比赛排行榜添加学号姓名列
+  - `handler/after/TrainingScoreboard#get`: 训练排行榜添加学号姓名列
+  - `handler/after/HomeworkScoreboard#get`: 作业排行榜添加学号姓名列
+  - `handler/after/Ranking#get`: 总排名页面添加学号姓名列
+
+## 成绩单显示更新
+
+- **管理员查看时**：在用户名右侧添加"学号姓名"列，显示学生的真实学号和姓名
+- **普通用户查看时**：保持原有显示不变
+- **支持的页面**：
+  - 比赛成绩单 (contest_scoreboard.html)
+  - 训练成绩单 (通过 TrainingScoreboard handler)
+  - 作业成绩单 (通过 HomeworkScoreboard handler)  
+  - 总排名页面 (ranking.html)
 
 ## Hook 机制优势
 
