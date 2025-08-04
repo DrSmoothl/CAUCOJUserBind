@@ -35,7 +35,7 @@
 
 /* 美化表格 */
 .ranking-table {
-  border-radius: 0 0 12px 12px;
+  border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   background: white;
@@ -66,12 +66,43 @@
   transition: background-color 0.2s ease;
 }
 
-/* 排名列美化 */
+/* 优化列宽 */
 .col--rank {
   text-align: center;
   font-weight: 600;
   color: #374151;
+  width: 60px;
+}
+
+.col--user {
+  width: 140px;
+}
+
+.col--student_info {
+  width: 120px;
+}
+
+.col--rp {
   width: 80px;
+  text-align: center;
+  font-weight: 600;
+  color: #059669;
+}
+
+.col--detail {
+  width: 80px;
+  text-align: center;
+}
+
+.col--ac {
+  width: 70px;
+  text-align: center;
+  font-weight: 600;
+  color: #dc2626;
+}
+
+.col--bio {
+  min-width: 200px;
 }
 
 /* 前三名特殊样式 */
@@ -128,20 +159,6 @@
 
 .student-info:empty {
   display: none;
-}
-
-/* RP列美化 */
-.col--rp {
-  text-align: center;
-  font-weight: 600;
-  color: #059669;
-}
-
-/* AC列美化 */
-.col--ac {
-  text-align: center;
-  font-weight: 600;
-  color: #dc2626;
 }
 
 /* 当前用户行高亮 */
@@ -203,14 +220,6 @@
 <div class="row">
   <div class="medium-12 columns">
     <div class="section">
-      <div class="ranking-header">
-        <h1 class="ranking-title">
-          <span class="icon icon-trophy"></span>
-          排名榜
-        </h1>
-        <p class="ranking-subtitle">展示域内用户的实力排名和积分情况</p>
-      </div>
-      
       <div class="section__body no-padding">
         <div data-fragment-id="ranking">
           {% if not udocs.length %}
