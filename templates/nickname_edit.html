@@ -242,6 +242,7 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   border: 2px solid #e2e8f0;
+  height: 100%;
 }
 
 .info-card-header {
@@ -311,17 +312,20 @@
 
 /* 链接卡片样式 */
 .links-card {
-  background: #f8fafc;
-  border: 2px solid #e2e8f0;
+  background: white;
   border-radius: 12px;
-  padding: 20px;
-  margin-top: 24px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: 2px solid #e2e8f0;
+  height: 100%;
 }
 
 .links-header {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  padding: 16px 20px;
   font-weight: 600;
-  color: #475569;
-  margin-bottom: 12px;
+  margin-bottom: 0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -330,7 +334,7 @@
 .links-list {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 20px;
 }
 
 .links-list li {
@@ -351,6 +355,26 @@
 .links-list a:hover {
   background-color: #dbeafe;
   text-decoration: none;
+}
+
+/* 卡片行对齐 */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-left: -0.625rem;
+  margin-right: -0.625rem;
+}
+
+.row .columns {
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.row .medium-6 {
+  width: 50%;
+  flex: 0 0 50%;
 }
 
 /* 响应式设计 */
@@ -378,6 +402,21 @@
     width: 100%;
     margin-right: 0;
     margin-bottom: 12px;
+  }
+  
+  .row {
+    flex-direction: column;
+  }
+  
+  .row .medium-6 {
+    width: 100%;
+    flex: none;
+    margin-bottom: 20px;
+  }
+  
+  .info-card,
+  .links-card {
+    height: auto;
   }
 }
 </style>
