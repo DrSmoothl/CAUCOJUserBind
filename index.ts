@@ -485,9 +485,21 @@ const userBindModel = {
 
     // 检查用户是否属于某个学校组
     async isUserInSchool(userId: number): Promise<boolean> {
+        console.log('isUserInSchool: 检查用户是否属于学校组，用户ID:', userId, '类型:', typeof userId);
         const userColl = db.collection('user');
         const dbUser = await userColl.findOne({ _id: userId });
-        return !!(dbUser?.parentSchoolId && dbUser.parentSchoolId.length > 0);
+        console.log('isUserInSchool: 查找到的用户数据:', {
+            found: !!dbUser,
+            _id: dbUser?._id,
+            uname: dbUser?.uname,
+            parentSchoolId: dbUser?.parentSchoolId,
+            parentSchoolIdLength: dbUser?.parentSchoolId?.length,
+            parentSchoolIdType: typeof dbUser?.parentSchoolId
+        });
+        
+        const result = !!(dbUser?.parentSchoolId && dbUser.parentSchoolId.length > 0);
+        console.log('isUserInSchool: 判断结果:', result);
+        return result;
     },
 
     // 向学校组添加成员
@@ -2431,5 +2443,37 @@ export async function apply(ctx: Context) {
         }
         
         console.log('====== 排名页面Hook结束 ======');
+    });
+    
+    // 添加通用hook来捕获所有排名相关的请求
+    ctx.on('handler/after', async (h) => {
+        const handlerName = h.constructor.name;
+        const url = h.request.path;
+        
+        // 只记录排名相关的请求
+        if (url.includes('ranking') || handlerName.toLowerCase().includes('ranking')) {
+            console.log('====== 通用Hook - 捕获到排名相关请求 ======');
+            console.log('Handler名称:', handlerName);
+            console.log('URL路径:', url);
+            console.log('请求方法:', h.request.method);
+            console.log('用户:', h.user?._id);
+            console.log('Response body keys:', Object.keys(h.response.body || {}));
+            console.log('====== 通用Hook结束 ======');
+        }
+    });
+    
+    // 尝试其他可能的hook名称
+    ctx.on('handler/after/DomainRanking#get', async (h) => {
+        console.log('====== DomainRanking Hook触发 ======');
+        console.log('DomainRanking hook triggered, user:', h.user?._id);
+        console.log('Response body keys:', Object.keys(h.response.body || {}));
+        console.log('====== DomainRanking Hook结束 ======');
+    });
+    
+    ctx.on('handler/after/GlobalRanking#get', async (h) => {
+        console.log('====== GlobalRanking Hook触发 ======');
+        console.log('GlobalRanking hook triggered, user:', h.user?._id);
+        console.log('Response body keys:', Object.keys(h.response.body || {}));
+        console.log('====== GlobalRanking Hook结束 ======');
     });
 }
