@@ -1856,9 +1856,82 @@ export async function apply(ctx: Context) {
     // 添加用户设置项
     ctx.inject(['setting'], (c) => {
         c.setting.AccountSetting(
+            SettingModel.Setting('user_info', 'nickname', '', 'text', '用户名（昵称）', '可自定义的用户昵称，支持修改', 9),
             SettingModel.Setting('user_info', 'studentId', '', 'text', '学号', '学生学号', 10),
             SettingModel.Setting('user_info', 'studentName', '', 'text', '姓名', '真实姓名', 11)
         );
+    });
+
+    // 监听用户设置更新事件，同步昵称到用户名
+    ctx.on('handler/after/UserSettings#post', async (h) => {
+        if (h.request.body && h.request.body.nickname !== undefined) {
+            console.log('====== 用户昵称更新 ======');
+            console.log('用户ID:', h.user._id);
+            console.log('新昵称:', h.request.body.nickname);
+            
+            try {
+                const userColl = db.collection('user');
+                const nickname = h.request.body.nickname.trim();
+                
+                if (nickname) {
+                    // 如果昵称不为空，将昵称同步到uname字段
+                    await userColl.updateOne(
+                        { _id: h.user._id },
+                        { $set: { uname: nickname } }
+                    );
+                    console.log('昵称已同步到用户名:', nickname);
+                } else {
+                    console.log('昵称为空，不更新用户名');
+                }
+            } catch (error) {
+                console.error('昵称同步失败:', error);
+            }
+            console.log('====== 用户昵称更新结束 ======');
+        }
+    });
+
+    // 通用的用户设置更新监听（适配不同的设置页面）
+    ctx.on('handler/after', async (h) => {
+        // 检查是否是用户设置相关的POST请求
+        if (h.request.method === 'POST' && 
+            (h.request.path.includes('/user/') || h.request.path.includes('/settings') || h.request.path.includes('/preference')) &&
+            h.request.body && h.request.body.nickname !== undefined && h.user && h.user._id) {
+            
+            console.log('====== 通用用户昵称更新 ======');
+            console.log('用户ID:', h.user._id);
+            console.log('请求路径:', h.request.path);
+            console.log('新昵称:', h.request.body.nickname);
+            
+            try {
+                const userColl = db.collection('user');
+                const nickname = h.request.body.nickname ? h.request.body.nickname.trim() : '';
+                
+                if (nickname) {
+                    // 检查昵称是否已被其他用户使用
+                    const existingUser = await userColl.findOne({ 
+                        uname: nickname, 
+                        _id: { $ne: h.user._id } 
+                    });
+                    
+                    if (existingUser) {
+                        console.log('昵称已被其他用户使用:', nickname);
+                        return;
+                    }
+                    
+                    // 将昵称同步到uname字段
+                    await userColl.updateOne(
+                        { _id: h.user._id },
+                        { $set: { uname: nickname } }
+                    );
+                    console.log('昵称已同步到用户名:', nickname);
+                } else {
+                    console.log('昵称为空，不更新用户名');
+                }
+            } catch (error) {
+                console.error('通用昵称同步失败:', error);
+            }
+            console.log('====== 通用用户昵称更新结束 ======');
+        }
     });
 
     // 注册路由
