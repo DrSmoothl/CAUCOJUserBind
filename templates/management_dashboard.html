@@ -3,13 +3,13 @@
 
 {% block content %}
 <style>
-.management-container {
+.userbind-management-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
 }
 
-.management-header {
+.userbind-management-header {
   text-align: center;
   margin-bottom: 40px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -20,7 +20,7 @@
   overflow: hidden;
 }
 
-.management-header::before {
+.userbind-management-header::before {
   content: '';
   position: absolute;
   top: -50%;
@@ -34,15 +34,15 @@
     rgba(255,255,255,0.1) 20px,
     rgba(255,255,255,0.1) 40px
   );
-  animation: float 15s ease-in-out infinite;
+  animation: userbind-float 15s ease-in-out infinite;
 }
 
-@keyframes float {
+@keyframes userbind-float {
   0%, 100% { transform: translateY(0) rotate(0deg); }
   50% { transform: translateY(-20px) rotate(2deg); }
 }
 
-.management-title {
+.userbind-management-title {
   font-size: 2.5rem;
   font-weight: 700;
   margin: 0 0 10px 0;
@@ -50,7 +50,7 @@
   z-index: 1;
 }
 
-.management-subtitle {
+.userbind-management-subtitle {
   font-size: 1.1rem;
   opacity: 0.9;
   margin: 0;
@@ -58,14 +58,14 @@
   z-index: 1;
 }
 
-.management-grid {
+.userbind-management-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 24px;
   margin-bottom: 40px;
 }
 
-.management-card {
+.userbind-management-card {
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -74,13 +74,13 @@
   border: 2px solid #e2e8f0;
 }
 
-.management-card:hover {
+.userbind-management-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
   border-color: #3b82f6;
 }
 
-.card-header {
+.userbind-card-header {
   background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   color: white;
   padding: 20px;
@@ -89,33 +89,33 @@
   gap: 12px;
 }
 
-.card-icon {
+.userbind-card-icon {
   font-size: 2rem;
 }
 
-.card-title {
+.userbind-card-title {
   font-size: 1.25rem;
   font-weight: 600;
   margin: 0;
 }
 
-.card-body {
+.userbind-card-body {
   padding: 20px;
 }
 
-.card-description {
+.userbind-card-description {
   color: #6b7280;
   margin-bottom: 20px;
   line-height: 1.6;
 }
 
-.card-features {
+.userbind-card-features {
   list-style: none;
   padding: 0;
   margin: 0 0 20px 0;
 }
 
-.card-features li {
+.userbind-card-features li {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -123,20 +123,20 @@
   color: #374151;
 }
 
-.card-features li:before {
+.userbind-card-features li:before {
   content: '✓';
   color: #10b981;
   font-weight: bold;
   font-size: 14px;
 }
 
-.card-actions {
+.userbind-card-actions {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
 }
 
-.btn {
+.userbind-btn {
   padding: 10px 16px;
   border-radius: 8px;
   text-decoration: none;
@@ -150,12 +150,12 @@
   font-size: 14px;
 }
 
-.btn-primary {
+.userbind-btn-primary {
   background: #3b82f6;
   color: white;
 }
 
-.btn-primary:hover {
+.userbind-btn-primary:hover {
   background: #2563eb;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
@@ -163,12 +163,12 @@
   text-decoration: none;
 }
 
-.btn-secondary {
+.userbind-btn-secondary {
   background: #6b7280;
   color: white;
 }
 
-.btn-secondary:hover {
+.userbind-btn-secondary:hover {
   background: #4b5563;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(107, 114, 128, 0.4);
@@ -176,12 +176,12 @@
   text-decoration: none;
 }
 
-.btn-success {
+.userbind-btn-success {
   background: #10b981;
   color: white;
 }
 
-.btn-success:hover {
+.userbind-btn-success:hover {
   background: #059669;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
@@ -189,12 +189,12 @@
   text-decoration: none;
 }
 
-.btn-warning {
+.userbind-btn-warning {
   background: #f59e0b;
   color: white;
 }
 
-.btn-warning:hover {
+.userbind-btn-warning:hover {
   background: #d97706;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
@@ -202,7 +202,7 @@
   text-decoration: none;
 }
 
-.stats-section {
+.userbind-stats-section {
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -210,7 +210,7 @@
   margin-bottom: 30px;
 }
 
-.stats-title {
+.userbind-stats-title {
   font-size: 1.5rem;
   font-weight: 600;
   color: #374151;
@@ -218,40 +218,40 @@
   text-align: center;
 }
 
-.stats-grid {
+.userbind-stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
 }
 
-.stat-item {
+.userbind-stat-item {
   text-align: center;
   padding: 20px;
   background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
   border-radius: 10px;
 }
 
-.stat-number {
+.userbind-stat-number {
   font-size: 2rem;
   font-weight: 700;
   color: #3b82f6;
   margin: 0 0 5px 0;
 }
 
-.stat-label {
+.userbind-stat-label {
   color: #6b7280;
   font-size: 0.9rem;
   margin: 0;
 }
 
-.quick-actions {
+.userbind-quick-actions {
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   padding: 30px;
 }
 
-.quick-actions-title {
+.userbind-quick-actions-title {
   font-size: 1.5rem;
   font-weight: 600;
   color: #374151;
@@ -259,13 +259,13 @@
   text-align: center;
 }
 
-.quick-actions-grid {
+.userbind-quick-actions-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 16px;
 }
 
-.quick-action-btn {
+.userbind-quick-action-btn {
   padding: 16px 20px;
   border-radius: 10px;
   text-decoration: none;
@@ -279,101 +279,158 @@
   text-align: left;
 }
 
-.quick-action-btn.create {
+.userbind-quick-action-icon {
+  font-size: 2rem;
+  margin: 0;
+}
+
+.userbind-quick-action-content {
+  flex: 1;
+}
+
+.userbind-quick-action-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.userbind-quick-action-desc {
+  font-size: 0.85rem;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.userbind-create {
+  background: linear-gradient(135deg, #10b981, #065f46);
+}
+
+.userbind-create:hover {
+  background: linear-gradient(135deg, #059669, #064e3b);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+  color: white;
+  text-decoration: none;
+}
+
+.userbind-security {
+  background: linear-gradient(135deg, #f59e0b, #92400e);
+}
+
+.userbind-security:hover {
+  background: linear-gradient(135deg, #d97706, #78350f);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
+  color: white;
+  text-decoration: none;
+}
+
+.userbind-manage {
+  background: linear-gradient(135deg, #3b82f6, #1e3a8a);
+}
+
+.userbind-manage:hover {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+  color: white;
+  text-decoration: none;
+}
+
+.userbind-quick-action-btn.create {
   background: linear-gradient(135deg, #10b981, #059669);
 }
 
-.quick-action-btn.manage {
+.userbind-quick-action-btn.manage {
   background: linear-gradient(135deg, #3b82f6, #1d4ed8);
 }
 
-.quick-action-btn.security {
+.userbind-quick-action-btn.security {
   background: linear-gradient(135deg, #f59e0b, #d97706);
 }
 
-.quick-action-btn.stats {
+.userbind-quick-action-btn.stats {
   background: linear-gradient(135deg, #8b5cf6, #7c3aed);
 }
 
-.quick-action-btn:hover {
+.userbind-quick-action-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
   color: white;
   text-decoration: none;
 }
 
-.quick-action-icon {
+.userbind-quick-action-icon {
   font-size: 1.5rem;
 }
 
-.quick-action-content {
+.userbind-quick-action-content {
   flex: 1;
 }
 
-.quick-action-title {
+.userbind-quick-action-title {
   font-size: 1rem;
   font-weight: 600;
   margin: 0 0 4px 0;
 }
 
-.quick-action-desc {
+.userbind-quick-action-desc {
   font-size: 0.85rem;
   opacity: 0.9;
   margin: 0;
 }
 </style>
 
-<div class="management-container">
+<div class="userbind-management-container">
   <!-- 页面头部 -->
-  <div class="management-header">
-    <h1 class="management-title">🎓 用户绑定系统管理</h1>
-    <p class="management-subtitle">统一管理学校组、用户组、绑定权限和系统配置</p>
+  <div class="userbind-management-header">
+    <h1 class="userbind-management-title">🎓 用户绑定系统管理</h1>
+    <p class="userbind-management-subtitle">统一管理学校组、用户组、绑定权限和系统配置</p>
   </div>
 
   <!-- 统计信息 -->
-  <div class="stats-section">
-    <h2 class="stats-title">📊 系统概览</h2>
-    <div class="stats-grid">
-      <div class="stat-item">
-        <div class="stat-number">{{ schoolCount or 0 }}</div>
-        <div class="stat-label">学校组数量</div>
+  <div class="userbind-stats-section">
+    <h2 class="userbind-stats-title">📊 系统概览</h2>
+    <div class="userbind-stats-grid">
+      <div class="userbind-stat-item">
+        <div class="userbind-stat-number">{{ schoolCount or 0 }}</div>
+        <div class="userbind-stat-label">学校组数量</div>
       </div>
-      <div class="stat-item">
-        <div class="stat-number">{{ userGroupCount or 0 }}</div>
-        <div class="stat-label">用户组数量</div>
+      <div class="userbind-stat-item">
+        <div class="userbind-stat-number">{{ userGroupCount or 0 }}</div>
+        <div class="userbind-stat-label">用户组数量</div>
       </div>
-      <div class="stat-item">
-        <div class="stat-number">{{ boundUserCount or 0 }}</div>
-        <div class="stat-label">已绑定用户</div>
+      <div class="userbind-stat-item">
+        <div class="userbind-stat-number">{{ boundUserCount or 0 }}</div>
+        <div class="userbind-stat-label">已绑定用户</div>
       </div>
-      <div class="stat-item">
-        <div class="stat-number">{{ bypassUserCount or 0 }}</div>
-        <div class="stat-label">绕过权限用户</div>
+      <div class="userbind-stat-item">
+        <div class="userbind-stat-number">{{ bypassUserCount or 0 }}</div>
+        <div class="userbind-stat-label">绕过权限用户</div>
       </div>
     </div>
   </div>
 
   <!-- 主要功能模块 -->
-  <div class="management-grid">
+  <div class="userbind-management-grid">
     <!-- 学校组管理 -->
-    <div class="management-card">
-      <div class="card-header">
-        <div class="card-icon">🏫</div>
-        <h3 class="card-title">学校组管理</h3>
+    <div class="userbind-management-card">
+      <div class="userbind-card-header">
+        <div class="userbind-card-icon">🏫</div>
+        <h3 class="userbind-card-title">学校组管理</h3>
       </div>
-      <div class="card-body">
-        <p class="card-description">管理学校组织，添加成员，创建绑定令牌</p>
-        <ul class="card-features">
+      <div class="userbind-card-body">
+        <p class="userbind-card-description">管理学校组织，添加成员，创建绑定令牌</p>
+        <ul class="userbind-card-features">
           <li>创建和删除学校组</li>
           <li>批量导入学校成员</li>
           <li>生成绑定令牌</li>
           <li>管理成员信息</li>
         </ul>
-        <div class="card-actions">
-          <a href="/school-group/manage" class="btn btn-primary">
+        <div class="userbind-card-actions">
+          <a href="/school-group/manage" class="userbind-btn userbind-btn-primary">
             <span>📋</span> 管理学校组
           </a>
-          <a href="/school-group/create" class="btn btn-success">
+          <a href="/school-group/create" class="userbind-btn userbind-btn-success">
             <span>➕</span> 创建学校组
           </a>
         </div>
@@ -381,24 +438,24 @@
     </div>
 
     <!-- 用户组管理 -->
-    <div class="management-card">
-      <div class="card-header">
-        <div class="card-icon">👥</div>
-        <h3 class="card-title">用户组管理</h3>
+    <div class="userbind-management-card">
+      <div class="userbind-card-header">
+        <div class="userbind-card-icon">👥</div>
+        <h3 class="userbind-card-title">用户组管理</h3>
       </div>
-      <div class="card-body">
-        <p class="card-description">管理学校下的用户分组，细化权限控制</p>
-        <ul class="card-features">
+      <div class="userbind-card-body">
+        <p class="userbind-card-description">管理学校下的用户分组，细化权限控制</p>
+        <ul class="userbind-card-features">
           <li>创建和管理用户组</li>
           <li>分配学生到用户组</li>
           <li>用户组绑定管理</li>
           <li>权限精细化控制</li>
         </ul>
-        <div class="card-actions">
-          <a href="/user-group/manage" class="btn btn-primary">
+        <div class="userbind-card-actions">
+          <a href="/user-group/manage" class="userbind-btn userbind-btn-primary">
             <span>📋</span> 管理用户组
           </a>
-          <a href="/user-group/create" class="btn btn-success">
+          <a href="/user-group/create" class="userbind-btn userbind-btn-success">
             <span>➕</span> 创建用户组
           </a>
         </div>
@@ -406,21 +463,21 @@
     </div>
 
     <!-- 绕过权限管理 -->
-    <div class="management-card">
-      <div class="card-header">
-        <div class="card-icon">🔐</div>
-        <h3 class="card-title">绕过权限管理</h3>
+    <div class="userbind-management-card">
+      <div class="userbind-card-header">
+        <div class="userbind-card-icon">🔐</div>
+        <h3 class="userbind-card-title">绕过权限管理</h3>
       </div>
-      <div class="card-body">
-        <p class="card-description">管理特殊用户的学校组权限绕过设置</p>
-        <ul class="card-features">
+      <div class="userbind-card-body">
+        <p class="userbind-card-description">管理特殊用户的学校组权限绕过设置</p>
+        <ul class="userbind-card-features">
           <li>单个/批量添加绕过权限</li>
           <li>启用/禁用权限控制</li>
           <li>权限状态查询</li>
           <li>批量权限操作</li>
         </ul>
-        <div class="card-actions">
-          <a href="/school-group-bypass/manage" class="btn btn-warning">
+        <div class="userbind-card-actions">
+          <a href="/school-group-bypass/manage" class="userbind-btn userbind-btn-warning">
             <span>🔑</span> 管理绕过权限
           </a>
         </div>
@@ -428,21 +485,21 @@
     </div>
 
     <!-- 比赛权限管理 -->
-    <div class="management-card">
-      <div class="card-header">
-        <div class="card-icon">🏆</div>
-        <h3 class="card-title">比赛权限管理</h3>
+    <div class="userbind-management-card">
+      <div class="userbind-card-header">
+        <div class="userbind-card-icon">🏆</div>
+        <h3 class="userbind-card-title">比赛权限管理</h3>
       </div>
-      <div class="card-body">
-        <p class="card-description">配置比赛的参赛权限和准入控制</p>
-        <ul class="card-features">
+      <div class="userbind-card-body">
+        <p class="userbind-card-description">配置比赛的参赛权限和准入控制</p>
+        <ul class="userbind-card-features">
           <li>设置比赛参赛权限</li>
           <li>学校组/用户组准入</li>
           <li>权限模式切换</li>
           <li>参赛资格验证</li>
         </ul>
-        <div class="card-actions">
-          <a href="#" onclick="alert('请在具体比赛页面中配置权限')" class="btn btn-secondary">
+        <div class="userbind-card-actions">
+          <a href="#" onclick="alert('请在具体比赛页面中配置权限')" class="userbind-btn userbind-btn-secondary">
             <span>⚙️</span> 配置权限
           </a>
         </div>
@@ -451,38 +508,38 @@
   </div>
 
   <!-- 快速操作 -->
-  <div class="quick-actions">
-    <h2 class="quick-actions-title">⚡ 快速操作</h2>
-    <div class="quick-actions-grid">
-      <a href="/school-group/create" class="quick-action-btn create">
-        <div class="quick-action-icon">🏫</div>
-        <div class="quick-action-content">
-          <div class="quick-action-title">创建学校组</div>
-          <div class="quick-action-desc">快速创建新的学校组织</div>
+  <div class="userbind-quick-actions">
+    <h2 class="userbind-quick-actions-title">⚡ 快速操作</h2>
+    <div class="userbind-quick-actions-grid">
+      <a href="/school-group/create" class="userbind-quick-action-btn userbind-create">
+        <div class="userbind-quick-action-icon">🏫</div>
+        <div class="userbind-quick-action-content">
+          <div class="userbind-quick-action-title">创建学校组</div>
+          <div class="userbind-quick-action-desc">快速创建新的学校组织</div>
         </div>
       </a>
       
-      <a href="/user-group/create" class="quick-action-btn create">
-        <div class="quick-action-icon">👥</div>
-        <div class="quick-action-content">
-          <div class="quick-action-title">创建用户组</div>
-          <div class="quick-action-desc">在学校下创建用户分组</div>
+      <a href="/user-group/create" class="userbind-quick-action-btn userbind-create">
+        <div class="userbind-quick-action-icon">👥</div>
+        <div class="userbind-quick-action-content">
+          <div class="userbind-quick-action-title">创建用户组</div>
+          <div class="userbind-quick-action-desc">在学校下创建用户分组</div>
         </div>
       </a>
       
-      <a href="/school-group-bypass/manage" class="quick-action-btn security">
-        <div class="quick-action-icon">🔐</div>
-        <div class="quick-action-content">
-          <div class="quick-action-title">权限绕过</div>
-          <div class="quick-action-desc">管理特殊用户权限</div>
+      <a href="/school-group-bypass/manage" class="userbind-quick-action-btn userbind-security">
+        <div class="userbind-quick-action-icon">🔐</div>
+        <div class="userbind-quick-action-content">
+          <div class="userbind-quick-action-title">权限绕过</div>
+          <div class="userbind-quick-action-desc">管理特殊用户权限</div>
         </div>
       </a>
       
-      <a href="/nickname" class="quick-action-btn manage">
-        <div class="quick-action-icon">✏️</div>
-        <div class="quick-action-content">
-          <div class="quick-action-title">修改昵称</div>
-          <div class="quick-action-desc">更新个人昵称设置</div>
+      <a href="/nickname" class="userbind-quick-action-btn userbind-manage">
+        <div class="userbind-quick-action-icon">✏️</div>
+        <div class="userbind-quick-action-content">
+          <div class="userbind-quick-action-title">修改昵称</div>
+          <div class="userbind-quick-action-desc">更新个人昵称设置</div>
         </div>
       </a>
     </div>

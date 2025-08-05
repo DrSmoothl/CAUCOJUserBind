@@ -3,8 +3,10 @@
 
 {% block content %}
 <style>
+/* UserBind 样式命名空间 - 避免与HydroOJ冲突 */
+
 /* 美化提示框样式 */
-.alert {
+.userbind-alert {
   border-radius: 8px;
   padding: 12px 16px;
   margin-bottom: 16px;
@@ -12,26 +14,26 @@
   font-size: 14px;
 }
 
-.alert--error {
+.userbind-alert--error {
   background-color: #fef2f2;
   border-color: #fecaca;
   color: #dc2626;
 }
 
-.alert--success {
+.userbind-alert--success {
   background-color: #f0fdf4;
   border-color: #bbf7d0;
   color: #16a34a;
 }
 
-.alert--info {
+.userbind-alert--info {
   background-color: #eff6ff;
   border-color: #93c5fd;
   color: #2563eb;
 }
 
 /* 美化空状态 */
-.empty {
+.userbind-empty {
   text-align: center;
   padding: 48px 24px;
   background: #f9fafb;
@@ -39,19 +41,19 @@
   border: 2px dashed #d1d5db;
 }
 
-.empty__icon {
+.userbind-empty__icon {
   font-size: 48px;
   margin-bottom: 16px;
   opacity: 0.6;
 }
 
-.empty__text {
+.userbind-empty__text {
   color: #6b7280;
   font-size: 16px;
 }
 
 /* 按钮样式 */
-.button {
+.userbind-button {
   border-radius: 6px;
   padding: 8px 16px;
   font-weight: 500;
@@ -64,12 +66,12 @@
   gap: 6px;
 }
 
-.button--primary {
+.userbind-button--primary {
   background: #3b82f6;
   color: white;
 }
 
-.button--primary:hover {
+.userbind-button--primary:hover {
   background: #2563eb;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
@@ -77,12 +79,12 @@
   text-decoration: none;
 }
 
-.button--secondary {
+.userbind-button--secondary {
   background: #6b7280;
   color: white;
 }
 
-.button--secondary:hover {
+.userbind-button--secondary:hover {
   background: #4b5563;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(107, 114, 128, 0.4);
@@ -90,12 +92,12 @@
   text-decoration: none;
 }
 
-.button--danger {
+.userbind-button--danger {
   background: #ef4444;
   color: white;
 }
 
-.button--danger:hover {
+.userbind-button--danger:hover {
   background: #dc2626;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
@@ -103,12 +105,12 @@
   text-decoration: none;
 }
 
-.button--success {
+.userbind-button--success {
   background: #10b981;
   color: white;
 }
 
-.button--success:hover {
+.userbind-button--success:hover {
   background: #059669;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
@@ -116,13 +118,13 @@
   text-decoration: none;
 }
 
-.button--small {
+.userbind-button--small {
   padding: 6px 12px;
   font-size: 12px;
 }
 
 /* 美化表格 */
-.data-table {
+.userbind-data-table {
   width: 100%;
   border-collapse: collapse;
   border-radius: 8px;
@@ -131,7 +133,7 @@
   margin-bottom: 16px;
 }
 
-.data-table th {
+.userbind-data-table th {
   background: #f8fafc;
   font-weight: 600;
   color: #374151;
@@ -139,24 +141,24 @@
   text-align: left;
 }
 
-.data-table td {
+.userbind-data-table td {
   padding: 12px 16px;
   border-bottom: 1px solid #e5e7eb;
 }
 
-.data-table tr:hover {
+.userbind-data-table tr:hover {
   background: #f9fafb;
 }
 
 /* 美化分页 */
-.pagination {
+.userbind-pagination {
   display: flex;
   justify-content: center;
   gap: 8px;
   margin-top: 24px;
 }
 
-.pagination__item {
+.userbind-pagination__item {
   padding: 8px 12px;
   border-radius: 6px;
   text-decoration: none;
@@ -164,19 +166,19 @@
   border: 1px solid #d1d5db;
 }
 
-.pagination__item:hover {
+.userbind-pagination__item:hover {
   background: #f3f4f6;
   text-decoration: none;
 }
 
-.pagination__item--current {
+.userbind-pagination__item--current {
   background: #3b82f6;
   color: white;
   border-color: #3b82f6;
 }
 
 /* 搜索和筛选区域 */
-.filter-section {
+.userbind-filter-section {
   background: white;
   border-radius: 8px;
   padding: 20px;
@@ -184,14 +186,14 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.filter-row {
+.userbind-filter-row {
   display: flex;
   gap: 16px;
   align-items: end;
   flex-wrap: wrap;
 }
 
-.filter-group {
+.userbind-filter-group {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -199,29 +201,29 @@
   min-width: 200px;
 }
 
-.filter-group label {
+.userbind-filter-group label {
   font-weight: 500;
   color: #374151;
   font-size: 14px;
 }
 
-.filter-group input,
-.filter-group select {
+.userbind-filter-group input,
+.userbind-filter-group select {
   padding: 8px 12px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
   font-size: 14px;
 }
 
-.filter-group input:focus,
-.filter-group select:focus {
+.userbind-filter-group input:focus,
+.userbind-filter-group select:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* 批量操作区域 */
-.batch-actions {
+.userbind-batch-actions {
   background: #f8fafc;
   border-radius: 8px;
   padding: 16px;
@@ -230,49 +232,49 @@
   display: none;
 }
 
-.batch-actions.show {
+.userbind-batch-actions.show {
   display: block;
 }
 
-.batch-info {
+.userbind-batch-info {
   margin-bottom: 12px;
   color: #374151;
   font-weight: 500;
 }
 
-.batch-buttons {
+.userbind-batch-buttons {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
 /* 复选框样式 */
-.checkbox {
+.userbind-checkbox {
   width: 16px;
   height: 16px;
   cursor: pointer;
 }
 
 /* 状态徽章 */
-.status-badge {
+.userbind-status-badge {
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
 }
 
-.status-badge--enabled {
+.userbind-status-badge--enabled {
   background: #dcfce7;
   color: #16a34a;
 }
 
-.status-badge--disabled {
+.userbind-status-badge--disabled {
   background: #fef2f2;
   color: #dc2626;
 }
 
 /* 添加用户表单 */
-.add-user-form {
+.userbind-add-user-form {
   background: white;
   border-radius: 8px;
   padding: 20px;
@@ -281,19 +283,19 @@
   border: 2px solid #e2e8f0;
 }
 
-.form-group {
+.userbind-form-group {
   margin-bottom: 16px;
 }
 
-.form-group label {
+.userbind-form-group label {
   display: block;
   font-weight: 500;
   color: #374151;
   margin-bottom: 4px;
 }
 
-.form-group input,
-.form-group textarea {
+.userbind-form-group input,
+.userbind-form-group textarea {
   width: 100%;
   padding: 8px 12px;
   border: 1px solid #d1d5db;
@@ -301,46 +303,82 @@
   font-size: 14px;
 }
 
-.form-group input:focus,
-.form-group textarea:focus {
+.userbind-form-group input:focus,
+.userbind-form-group textarea:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.form-help {
+.userbind-form-help {
   font-size: 12px;
   color: #6b7280;
   margin-top: 4px;
 }
+
+/* Section样式 */
+.userbind-section {
+  margin-bottom: 24px;
+}
+
+.userbind-section__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.userbind-section__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.userbind-section__tools {
+  display: flex;
+  gap: 12px;
+}
+
+.userbind-section__body {
+  padding: 0;
+}
+
+/* Icon样式 */
+.userbind-icon {
+  display: inline-block;
+  font-size: inherit;
+}
 </style>
 
-<div class="section">
-  <div class="section__header">
-    <h1 class="section__title">学校组绕过权限管理</h1>
-    <div class="section__tools">
-      <button onclick="toggleAddForm()" class="button button--primary">
-        <span class="icon icon-add"></span> 添加绕过权限
+<div class="userbind-section">
+  <div class="userbind-section__header">
+    <h1 class="userbind-section__title">学校组绕过权限管理</h1>
+    <div class="userbind-section__tools">
+      <button onclick="toggleAddForm()" class="userbind-button userbind-button--primary">
+        <span class="userbind-icon userbind-icon-add">➕</span> 添加绕过权限
       </button>
     </div>
   </div>
   
-  <div class="section__body">
+  <div class="userbind-section__body">
     {% if error %}
-    <div class="alert alert--error">{{ error }}</div>
+    <div class="userbind-alert userbind-alert--error">{{ error }}</div>
     {% endif %}
     
     {% if success %}
-    <div class="alert alert--success">{{ message }}</div>
+    <div class="userbind-alert userbind-alert--success">{{ message }}</div>
     {% endif %}
     
     <!-- 添加用户表单 -->
-    <div id="addUserForm" class="add-user-form" style="display: none;">
+    <div id="addUserForm" class="userbind-add-user-form" style="display: none;">
       <h3 style="margin-top: 0; color: #374151;">添加绕过权限用户</h3>
       <form method="post">
         <input type="hidden" name="action" value="add_bypass">
         
-        <div class="form-group">
+        <div class="userbind-form-group">
           <label for="addMethod">添加方式</label>
           <select id="addMethod" name="addMethod" onchange="toggleAddMethod()" required>
             <option value="">请选择添加方式</option>
@@ -352,47 +390,47 @@
         
         <!-- 单个用户添加 -->
         <div id="singleUserSection" style="display: none;">
-          <div class="form-group">
+          <div class="userbind-form-group">
             <label for="username">用户名</label>
             <input type="text" id="username" name="username" placeholder="请输入用户名">
-            <div class="form-help">请输入要添加绕过权限的用户名</div>
+            <div class="userbind-form-help">请输入要添加绕过权限的用户名</div>
           </div>
         </div>
         
         <!-- 批量用户名添加 -->
         <div id="batchUsernameSection" style="display: none;">
-          <div class="form-group">
+          <div class="userbind-form-group">
             <label for="usernames">用户名列表</label>
             <textarea id="usernames" name="usernames" rows="6" placeholder="请输入用户名列表，每行一个用户名"></textarea>
-            <div class="form-help">每行输入一个用户名，支持批量添加</div>
+            <div class="userbind-form-help">每行输入一个用户名，支持批量添加</div>
           </div>
         </div>
         
         <!-- 批量UID添加 -->
         <div id="batchUidSection" style="display: none;">
-          <div class="form-group">
+          <div class="userbind-form-group">
             <label for="uids">UID列表</label>
             <textarea id="uids" name="uids" rows="6" placeholder="请输入UID列表，每行一个UID"></textarea>
-            <div class="form-help">每行输入一个UID（数字），支持批量添加</div>
+            <div class="userbind-form-help">每行输入一个UID（数字），支持批量添加</div>
           </div>
         </div>
         
         <div style="display: flex; gap: 8px; justify-content: flex-end;">
-          <button type="button" onclick="toggleAddForm()" class="button button--secondary">取消</button>
-          <button type="submit" class="button button--success">添加权限</button>
+          <button type="button" onclick="toggleAddForm()" class="userbind-button userbind-button--secondary">取消</button>
+          <button type="submit" class="userbind-button userbind-button--success">添加权限</button>
         </div>
       </form>
     </div>
     
     <!-- 搜索筛选区域 -->
-    <div class="filter-section">
+    <div class="userbind-filter-section">
       <form method="get">
-        <div class="filter-row">
-          <div class="filter-group">
+        <div class="userbind-filter-row">
+          <div class="userbind-filter-group">
             <label for="search">搜索用户</label>
             <input type="text" id="search" name="search" value="{{ search or '' }}" placeholder="输入用户名或UID搜索">
           </div>
-          <div class="filter-group">
+          <div class="userbind-filter-group">
             <label for="status">权限状态</label>
             <select id="status" name="status">
               <option value="">全部状态</option>
@@ -400,38 +438,38 @@
               <option value="disabled" {% if status == 'disabled' %}selected{% endif %}>已禁用</option>
             </select>
           </div>
-          <div class="filter-group">
+          <div class="userbind-filter-group">
             <label>&nbsp;</label>
-            <button type="submit" class="button button--primary">搜索</button>
+            <button type="submit" class="userbind-button userbind-button--primary">搜索</button>
           </div>
         </div>
       </form>
     </div>
     
     <!-- 批量操作区域 -->
-    <div id="batchActions" class="batch-actions">
-      <div class="batch-info">
+    <div id="batchActions" class="userbind-batch-actions">
+      <div class="userbind-batch-info">
         已选择 <span id="selectedCount">0</span> 个用户
       </div>
-      <div class="batch-buttons">
-        <button onclick="batchOperation('enable')" class="button button--success button--small">
-          <span class="icon icon-check"></span> 批量启用
+      <div class="userbind-batch-buttons">
+        <button onclick="batchOperation('enable')" class="userbind-button userbind-button--success userbind-button--small">
+          <span class="userbind-icon userbind-icon-check">✓</span> 批量启用
         </button>
-        <button onclick="batchOperation('disable')" class="button button--danger button--small">
-          <span class="icon icon-close"></span> 批量禁用
+        <button onclick="batchOperation('disable')" class="userbind-button userbind-button--danger userbind-button--small">
+          <span class="userbind-icon userbind-icon-close">✕</span> 批量禁用
         </button>
-        <button onclick="batchOperation('remove')" class="button button--danger button--small">
-          <span class="icon icon-delete"></span> 批量移除
+        <button onclick="batchOperation('remove')" class="userbind-button userbind-button--danger userbind-button--small">
+          <span class="userbind-icon userbind-icon-delete">🗑</span> 批量移除
         </button>
       </div>
     </div>
     
     {% if users|length > 0 %}
-    <table class="data-table">
+    <table class="userbind-data-table">
       <thead>
         <tr>
           <th style="width: 50px;">
-            <input type="checkbox" id="selectAll" class="checkbox" onchange="toggleSelectAll()">
+            <input type="checkbox" id="selectAll" class="userbind-checkbox" onchange="toggleSelectAll()">
           </th>
           <th>UID</th>
           <th>用户名</th>
@@ -446,7 +484,7 @@
         {% for user in users %}
         <tr>
           <td>
-            <input type="checkbox" class="checkbox user-checkbox" value="{{ user._id }}" onchange="updateBatchActions()">
+            <input type="checkbox" class="userbind-checkbox userbind-user-checkbox" value="{{ user._id }}" onchange="updateBatchActions()">
           </td>
           <td><strong>{{ user._id }}</strong></td>
           <td>{{ user.uname or '未设置' }}</td>
@@ -454,9 +492,9 @@
           <td>{{ user.studentId or '未绑定' }}</td>
           <td>
             {% if user.schoolGroupBypass %}
-              <span class="status-badge status-badge--enabled">已启用</span>
+              <span class="userbind-status-badge userbind-status-badge--enabled">已启用</span>
             {% else %}
-              <span class="status-badge status-badge--disabled">已禁用</span>
+              <span class="userbind-status-badge userbind-status-badge--disabled">已禁用</span>
             {% endif %}
           </td>
           <td>{{ user.bypassSetAt.toISOString().substring(0, 19).replace('T', ' ') if user.bypassSetAt else '未知' }}</td>
@@ -465,7 +503,7 @@
               <form method="post" style="display: inline;">
                 <input type="hidden" name="action" value="disable_bypass">
                 <input type="hidden" name="userId" value="{{ user._id }}">
-                <button type="submit" class="button button--small button--danger" 
+                <button type="submit" class="userbind-button userbind-button--small userbind-button--danger" 
                         onclick="return confirm('确定要禁用用户「{{ user.uname or user._id }}」的绕过权限吗？')">
                   禁用权限
                 </button>
@@ -474,7 +512,7 @@
               <form method="post" style="display: inline;">
                 <input type="hidden" name="action" value="enable_bypass">
                 <input type="hidden" name="userId" value="{{ user._id }}">
-                <button type="submit" class="button button--small button--success" 
+                <button type="submit" class="userbind-button userbind-button--small userbind-button--success" 
                         onclick="return confirm('确定要启用用户「{{ user.uname or user._id }}」的绕过权限吗？')">
                   启用权限
                 </button>
@@ -484,7 +522,7 @@
             <form method="post" style="display: inline; margin-left: 8px;">
               <input type="hidden" name="action" value="remove_bypass">
               <input type="hidden" name="userId" value="{{ user._id }}">
-              <button type="submit" class="button button--small button--danger" 
+              <button type="submit" class="userbind-button userbind-button--small userbind-button--danger" 
                       onclick="return confirm('确定要完全移除用户「{{ user.uname or user._id }}」的绕过权限记录吗？\n\n此操作不可撤销！')">
                 移除记录
               </button>
@@ -496,25 +534,25 @@
     </table>
     
     {% if pageCount > 1 %}
-    <div class="pagination">
+    <div class="userbind-pagination">
       {% for i in range(1, pageCount + 1) %}
         {% if i == page %}
-          <span class="pagination__item pagination__item--current">{{ i }}</span>
+          <span class="userbind-pagination__item userbind-pagination__item--current">{{ i }}</span>
         {% else %}
-          <a href="?page={{ i }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}" class="pagination__item">{{ i }}</a>
+          <a href="?page={{ i }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}" class="userbind-pagination__item">{{ i }}</a>
         {% endif %}
       {% endfor %}
     </div>
     {% endif %}
     
     {% else %}
-    <div class="empty">
-      <div class="empty__icon">
+    <div class="userbind-empty">
+      <div class="userbind-empty__icon">
         🔐
       </div>
-      <div class="empty__text">
+      <div class="userbind-empty__text">
         <p>暂无绕过权限用户</p>
-        <p><button onclick="toggleAddForm()" class="button button--primary">点击添加第一个绕过权限用户</button></p>
+        <p><button onclick="toggleAddForm()" class="userbind-button userbind-button--primary">点击添加第一个绕过权限用户</button></p>
       </div>
     </div>
     {% endif %}
@@ -559,7 +597,7 @@ function toggleAddMethod() {
 // 全选/取消全选
 function toggleSelectAll() {
   const selectAll = document.getElementById('selectAll');
-  const checkboxes = document.querySelectorAll('.user-checkbox');
+  const checkboxes = document.querySelectorAll('.userbind-user-checkbox');
   
   checkboxes.forEach(checkbox => {
     checkbox.checked = selectAll.checked;
@@ -570,7 +608,7 @@ function toggleSelectAll() {
 
 // 更新批量操作显示
 function updateBatchActions() {
-  const checkboxes = document.querySelectorAll('.user-checkbox:checked');
+  const checkboxes = document.querySelectorAll('.userbind-user-checkbox:checked');
   const batchActions = document.getElementById('batchActions');
   const selectedCount = document.getElementById('selectedCount');
   
@@ -583,7 +621,7 @@ function updateBatchActions() {
   }
   
   // 更新全选框状态
-  const allCheckboxes = document.querySelectorAll('.user-checkbox');
+  const allCheckboxes = document.querySelectorAll('.userbind-user-checkbox');
   const selectAll = document.getElementById('selectAll');
   
   if (checkboxes.length === 0) {
@@ -600,7 +638,7 @@ function updateBatchActions() {
 
 // 批量操作
 function batchOperation(action) {
-  const checkboxes = document.querySelectorAll('.user-checkbox:checked');
+  const checkboxes = document.querySelectorAll('.userbind-user-checkbox:checked');
   
   if (checkboxes.length === 0) {
     alert('请先选择要操作的用户');
