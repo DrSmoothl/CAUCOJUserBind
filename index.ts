@@ -901,6 +901,11 @@ const userBindModel = {
                 return { allowed: false, reason: '用户不存在' };
             }
 
+            // 检查用户是否拥有学校组绕过权限
+            if (dbUser.schoolGroupBypass === true) {
+                return { allowed: true };
+            }
+
             if (permission.mode === 'school') {
                 // 学校组模式
                 if (!dbUser.parentSchoolId || dbUser.parentSchoolId.length === 0) {
@@ -942,6 +947,305 @@ const userBindModel = {
         } catch (error) {
             return { allowed: false, reason: '权限检查失败' };
         }
+    },
+
+    // 获取拥有绕过权限的用户列表
+    async getBypassUsers(page: number = 1, limit: number = 20, search?: string, status?: string): Promise<{
+        users: any[];
+        total: number;
+        pageCount: number;
+    }> {
+        const userColl = db.collection('user');
+        const skip = (page - 1) * limit;
+        
+        // 构建查询条件
+        let query: any = {};
+        
+        // 如果指定了状态筛选
+        if (status === 'enabled') {
+            query.schoolGroupBypass = true;
+        } else if (status === 'disabled') {
+            query.schoolGroupBypass = { $ne: true };
+        }
+        
+        // 如果有搜索条件
+        if (search && search.trim()) {
+            const searchTerm = search.trim();
+            const searchQuery: any = { $or: [] };
+            
+            // 如果搜索词是数字，按UID搜索
+            if (/^\d+$/.test(searchTerm)) {
+                searchQuery.$or.push({ _id: parseInt(searchTerm) });
+            }
+            
+            // 按用户名搜索
+            searchQuery.$or.push({ 
+                uname: { $regex: searchTerm, $options: 'i' } 
+            });
+            
+            // 合并搜索条件
+            if (Object.keys(query).length > 0) {
+                query = { $and: [query, searchQuery] };
+            } else {
+                query = searchQuery;
+            }
+        }
+        
+        // 只查询有绕过权限设置的用户（包括已启用和已禁用）
+        if (!search && !status) {
+            query.$or = [
+                { schoolGroupBypass: true },
+                { schoolGroupBypass: false },
+                { schoolGroupBypass: { $exists: true } }
+            ];
+        }
+        
+        const total = await userColl.countDocuments(query);
+        const users = await userColl.find(query)
+            .sort({ bypassSetAt: -1, _id: 1 })
+            .skip(skip)
+            .limit(limit)
+            .toArray();
+        
+        return {
+            users,
+            total,
+            pageCount: Math.ceil(total / limit)
+        };
+    },
+
+    // 添加绕过权限（单个用户）
+    async addBypassPermission(userId: number): Promise<void> {
+        const userColl = db.collection('user');
+        
+        const user = await userColl.findOne({ _id: userId });
+        if (!user) {
+            throw new Error('用户不存在');
+        }
+        
+        await userColl.updateOne(
+            { _id: userId },
+            { 
+                $set: { 
+                    schoolGroupBypass: true,
+                    bypassSetAt: new Date()
+                }
+            }
+        );
+    },
+
+    // 批量添加绕过权限（通过用户名）
+    async addBypassPermissionByUsernames(usernames: string[]): Promise<{ success: number; failed: string[] }> {
+        const userColl = db.collection('user');
+        let success = 0;
+        const failed: string[] = [];
+        
+        for (const username of usernames) {
+            if (!username.trim()) continue;
+            
+            try {
+                const result = await userColl.updateOne(
+                    { uname: username.trim() },
+                    { 
+                        $set: { 
+                            schoolGroupBypass: true,
+                            bypassSetAt: new Date()
+                        }
+                    }
+                );
+                
+                if (result.matchedCount > 0) {
+                    success++;
+                } else {
+                    failed.push(username);
+                }
+            } catch (error) {
+                failed.push(username);
+            }
+        }
+        
+        return { success, failed };
+    },
+
+    // 批量添加绕过权限（通过UID）
+    async addBypassPermissionByUids(uids: number[]): Promise<{ success: number; failed: number[] }> {
+        const userColl = db.collection('user');
+        let success = 0;
+        const failed: number[] = [];
+        
+        for (const uid of uids) {
+            try {
+                const result = await userColl.updateOne(
+                    { _id: uid },
+                    { 
+                        $set: { 
+                            schoolGroupBypass: true,
+                            bypassSetAt: new Date()
+                        }
+                    }
+                );
+                
+                if (result.matchedCount > 0) {
+                    success++;
+                } else {
+                    failed.push(uid);
+                }
+            } catch (error) {
+                failed.push(uid);
+            }
+        }
+        
+        return { success, failed };
+    },
+
+    // 启用绕过权限
+    async enableBypassPermission(userId: number): Promise<void> {
+        const userColl = db.collection('user');
+        
+        const result = await userColl.updateOne(
+            { _id: userId },
+            { 
+                $set: { 
+                    schoolGroupBypass: true,
+                    bypassSetAt: new Date()
+                }
+            }
+        );
+        
+        if (result.matchedCount === 0) {
+            throw new Error('用户不存在');
+        }
+    },
+
+    // 禁用绕过权限
+    async disableBypassPermission(userId: number): Promise<void> {
+        const userColl = db.collection('user');
+        
+        const result = await userColl.updateOne(
+            { _id: userId },
+            { 
+                $set: { 
+                    schoolGroupBypass: false,
+                    bypassSetAt: new Date()
+                }
+            }
+        );
+        
+        if (result.matchedCount === 0) {
+            throw new Error('用户不存在');
+        }
+    },
+
+    // 移除绕过权限记录
+    async removeBypassPermission(userId: number): Promise<void> {
+        const userColl = db.collection('user');
+        
+        const result = await userColl.updateOne(
+            { _id: userId },
+            { 
+                $unset: { 
+                    schoolGroupBypass: '',
+                    bypassSetAt: ''
+                }
+            }
+        );
+        
+        if (result.matchedCount === 0) {
+            throw new Error('用户不存在');
+        }
+    },
+
+    // 批量启用绕过权限
+    async batchEnableBypassPermission(userIds: number[]): Promise<{ success: number; failed: number[] }> {
+        const userColl = db.collection('user');
+        let success = 0;
+        const failed: number[] = [];
+        
+        for (const userId of userIds) {
+            try {
+                const result = await userColl.updateOne(
+                    { _id: userId },
+                    { 
+                        $set: { 
+                            schoolGroupBypass: true,
+                            bypassSetAt: new Date()
+                        }
+                    }
+                );
+                
+                if (result.matchedCount > 0) {
+                    success++;
+                } else {
+                    failed.push(userId);
+                }
+            } catch (error) {
+                failed.push(userId);
+            }
+        }
+        
+        return { success, failed };
+    },
+
+    // 批量禁用绕过权限
+    async batchDisableBypassPermission(userIds: number[]): Promise<{ success: number; failed: number[] }> {
+        const userColl = db.collection('user');
+        let success = 0;
+        const failed: number[] = [];
+        
+        for (const userId of userIds) {
+            try {
+                const result = await userColl.updateOne(
+                    { _id: userId },
+                    { 
+                        $set: { 
+                            schoolGroupBypass: false,
+                            bypassSetAt: new Date()
+                        }
+                    }
+                );
+                
+                if (result.matchedCount > 0) {
+                    success++;
+                } else {
+                    failed.push(userId);
+                }
+            } catch (error) {
+                failed.push(userId);
+            }
+        }
+        
+        return { success, failed };
+    },
+
+    // 批量移除绕过权限记录
+    async batchRemoveBypassPermission(userIds: number[]): Promise<{ success: number; failed: number[] }> {
+        const userColl = db.collection('user');
+        let success = 0;
+        const failed: number[] = [];
+        
+        for (const userId of userIds) {
+            try {
+                const result = await userColl.updateOne(
+                    { _id: userId },
+                    { 
+                        $unset: { 
+                            schoolGroupBypass: '',
+                            bypassSetAt: ''
+                        }
+                    }
+                );
+                
+                if (result.matchedCount > 0) {
+                    success++;
+                } else {
+                    failed.push(userId);
+                }
+            } catch (error) {
+                failed.push(userId);
+            }
+        }
+        
+        return { success, failed };
     }
 };
 
@@ -1585,6 +1889,231 @@ class NicknameHandler extends Handler {
     }
 }
 
+// 管理主页界面
+class ManagementDashboardHandler extends Handler {
+    async get(domainId: string) {
+        this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
+        
+        // 获取统计信息
+        const userColl = db.collection('user');
+        
+        // 学校组数量
+        const schoolCount = await schoolGroupsColl.countDocuments();
+        
+        // 用户组数量
+        const userGroupCount = await userGroupsColl.countDocuments();
+        
+        // 已绑定用户数量（有学号和姓名的用户）
+        const boundUserCount = await userColl.countDocuments({
+            studentId: { $exists: true, $nin: [null, ''] },
+            realName: { $exists: true, $nin: [null, ''] }
+        });
+        
+        // 拥有绕过权限的用户数量
+        const bypassUserCount = await userColl.countDocuments({
+            schoolGroupBypass: true
+        });
+        
+        this.response.template = 'management_dashboard.html';
+        this.response.body = {
+            schoolCount,
+            userGroupCount,
+            boundUserCount,
+            bypassUserCount
+        };
+    }
+}
+
+// 学校组绕过权限管理界面
+class SchoolGroupBypassManageHandler extends Handler {
+    async get(domainId: string) {
+        this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
+        
+        const page = +(this.request.query.page || '1');
+        const search = this.request.query.search as string;
+        const status = this.request.query.status as string;
+        
+        const { users, total, pageCount } = await userBindModel.getBypassUsers(page, 20, search, status);
+        
+        // 检查是否有成功消息
+        const { success, message } = this.request.query;
+        
+        this.response.template = 'school_group_bypass_manage.html';
+        this.response.body = { 
+            users, 
+            total, 
+            pageCount, 
+            page,
+            search,
+            status,
+            success: success === '1',
+            message: message ? decodeURIComponent(message as string) : null
+        };
+    }
+
+    async post(domainId: string) {
+        this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
+        const { action } = this.request.body;
+        
+        try {
+            if (action === 'add_bypass') {
+                const { addMethod, username, usernames, uids } = this.request.body;
+                
+                if (addMethod === 'single') {
+                    if (!username) {
+                        throw new Error('请输入用户名');
+                    }
+                    
+                    const userColl = db.collection('user');
+                    const user = await userColl.findOne({ uname: username });
+                    if (!user) {
+                        throw new Error(`用户「${username}」不存在`);
+                    }
+                    
+                    await userBindModel.addBypassPermission(user._id);
+                    this.response.redirect = `/school-group-bypass/manage?success=1&message=${encodeURIComponent(`成功为用户「${username}」添加绕过权限`)}`;
+                    
+                } else if (addMethod === 'batch_username') {
+                    if (!usernames) {
+                        throw new Error('请输入用户名列表');
+                    }
+                    
+                    const usernameList = usernames.trim().split('\n').map((u: string) => u.trim()).filter((u: string) => u);
+                    if (usernameList.length === 0) {
+                        throw new Error('请输入有效的用户名列表');
+                    }
+                    
+                    const result = await userBindModel.addBypassPermissionByUsernames(usernameList);
+                    let message = `批量添加完成：成功 ${result.success} 个`;
+                    if (result.failed.length > 0) {
+                        message += `，失败 ${result.failed.length} 个（${result.failed.join(', ')}）`;
+                    }
+                    
+                    this.response.redirect = `/school-group-bypass/manage?success=1&message=${encodeURIComponent(message)}`;
+                    
+                } else if (addMethod === 'batch_uid') {
+                    if (!uids) {
+                        throw new Error('请输入UID列表');
+                    }
+                    
+                    const uidList = uids.trim().split('\n').map((u: string) => {
+                        const uid = parseInt(u.trim());
+                        return isNaN(uid) ? null : uid;
+                    }).filter((u: number | null) => u !== null) as number[];
+                    
+                    if (uidList.length === 0) {
+                        throw new Error('请输入有效的UID列表');
+                    }
+                    
+                    const result = await userBindModel.addBypassPermissionByUids(uidList);
+                    let message = `批量添加完成：成功 ${result.success} 个`;
+                    if (result.failed.length > 0) {
+                        message += `，失败 ${result.failed.length} 个（${result.failed.join(', ')}）`;
+                    }
+                    
+                    this.response.redirect = `/school-group-bypass/manage?success=1&message=${encodeURIComponent(message)}`;
+                } else {
+                    throw new Error('请选择添加方式');
+                }
+                
+            } else if (action === 'enable_bypass') {
+                const { userId } = this.request.body;
+                if (!userId) {
+                    throw new Error('用户ID无效');
+                }
+                
+                await userBindModel.enableBypassPermission(parseInt(userId));
+                this.response.redirect = `/school-group-bypass/manage?success=1&message=${encodeURIComponent('权限启用成功')}`;
+                
+            } else if (action === 'disable_bypass') {
+                const { userId } = this.request.body;
+                if (!userId) {
+                    throw new Error('用户ID无效');
+                }
+                
+                await userBindModel.disableBypassPermission(parseInt(userId));
+                this.response.redirect = `/school-group-bypass/manage?success=1&message=${encodeURIComponent('权限禁用成功')}`;
+                
+            } else if (action === 'remove_bypass') {
+                const { userId } = this.request.body;
+                if (!userId) {
+                    throw new Error('用户ID无效');
+                }
+                
+                await userBindModel.removeBypassPermission(parseInt(userId));
+                this.response.redirect = `/school-group-bypass/manage?success=1&message=${encodeURIComponent('权限记录移除成功')}`;
+                
+            } else if (action === 'batch_enable') {
+                const { userIds } = this.request.body;
+                if (!userIds) {
+                    throw new Error('请选择要操作的用户');
+                }
+                
+                const userIdList = userIds.split(',').map((id: string) => parseInt(id.trim()));
+                const result = await userBindModel.batchEnableBypassPermission(userIdList);
+                
+                let message = `批量启用完成：成功 ${result.success} 个`;
+                if (result.failed.length > 0) {
+                    message += `，失败 ${result.failed.length} 个`;
+                }
+                
+                this.response.redirect = `/school-group-bypass/manage?success=1&message=${encodeURIComponent(message)}`;
+                
+            } else if (action === 'batch_disable') {
+                const { userIds } = this.request.body;
+                if (!userIds) {
+                    throw new Error('请选择要操作的用户');
+                }
+                
+                const userIdList = userIds.split(',').map((id: string) => parseInt(id.trim()));
+                const result = await userBindModel.batchDisableBypassPermission(userIdList);
+                
+                let message = `批量禁用完成：成功 ${result.success} 个`;
+                if (result.failed.length > 0) {
+                    message += `，失败 ${result.failed.length} 个`;
+                }
+                
+                this.response.redirect = `/school-group-bypass/manage?success=1&message=${encodeURIComponent(message)}`;
+                
+            } else if (action === 'batch_remove') {
+                const { userIds } = this.request.body;
+                if (!userIds) {
+                    throw new Error('请选择要操作的用户');
+                }
+                
+                const userIdList = userIds.split(',').map((id: string) => parseInt(id.trim()));
+                const result = await userBindModel.batchRemoveBypassPermission(userIdList);
+                
+                let message = `批量移除完成：成功 ${result.success} 个`;
+                if (result.failed.length > 0) {
+                    message += `，失败 ${result.failed.length} 个`;
+                }
+                
+                this.response.redirect = `/school-group-bypass/manage?success=1&message=${encodeURIComponent(message)}`;
+            } else {
+                throw new Error('未知操作');
+            }
+        } catch (error: any) {
+            const page = +(this.request.query.page || '1');
+            const search = this.request.query.search as string;
+            const status = this.request.query.status as string;
+            
+            const { users, total, pageCount } = await userBindModel.getBypassUsers(page, 20, search, status);
+            
+            this.response.template = 'school_group_bypass_manage.html';
+            this.response.body = { 
+                users, 
+                total, 
+                pageCount, 
+                page,
+                search,
+                status,
+                error: error.message 
+            };
+        }
+    }
+}
+
 // 绑定界面 - 处理令牌绑定
 class BindHandler extends Handler {
     async get() {
@@ -1756,82 +2285,8 @@ export async function apply(ctx: Context) {
     ctx.Route('contest_permission', '/contest/:contestId/permission', ContestPermissionHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('bind', '/bind/:token', BindHandler);
     ctx.Route('nickname', '/nickname', NicknameHandler); // 昵称修改页面
-    
-    // 调试路由 - 检查绑定令牌
-    ctx.Route('debug_tokens', '/debug/tokens', class extends Handler {
-        async get() {
-            this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
-            
-            const allTokens = await bindTokensColl.find().toArray();
-            const allSchools = await schoolGroupsColl.find().toArray();
-            const allUserGroups = await userGroupsColl.find().toArray();
-            
-            this.response.body = {
-                bindTokens: allTokens,
-                schoolGroups: allSchools,
-                userGroups: allUserGroups,
-                collectionsInfo: {
-                    bindTokensCount: allTokens.length,
-                    schoolGroupsCount: allSchools.length,
-                    userGroupsCount: allUserGroups.length
-                }
-            };
-            this.response.type = 'application/json';
-        }
-    }, PRIV.PRIV_EDIT_SYSTEM);
-
-    // 调试路由 - 检查比赛查询
-    ctx.Route('debug_contest', '/debug/contest/:contestId', class extends Handler {
-        async get() {
-            this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
-            const { contestId } = this.request.params;
-            
-            const documentColl = db.collection('document');
-            
-            // 尝试多种查询方式
-            let directQuery, stringQuery, allContests;
-            
-            try {
-                // 直接查询
-                directQuery = await documentColl.findOne({ 
-                    _id: contestId,
-                    docType: 30 
-                });
-            } catch (error) {
-                directQuery = { error: error.message };
-            }
-            
-            try {
-                // 字符串转ObjectId查询
-                const { ObjectId } = require('mongodb');
-                const objectId = new ObjectId(contestId);
-                stringQuery = await documentColl.findOne({ 
-                    _id: objectId,
-                    docType: 30 
-                });
-            } catch (error) {
-                stringQuery = { error: error.message };
-            }
-            
-            try {
-                // 获取所有比赛文档
-                allContests = await documentColl.find({ docType: 30 }).limit(10).toArray();
-            } catch (error) {
-                allContests = { error: error.message };
-            }
-            
-            this.response.body = {
-                contestId: contestId,
-                contestIdType: typeof contestId,
-                directQuery: directQuery,
-                stringQuery: stringQuery,
-                allContests: allContests,
-                timestamp: new Date().toISOString()
-            };
-            this.response.type = 'application/json';
-        }
-    }, PRIV.PRIV_EDIT_SYSTEM);
-    
+    ctx.Route('school_group_bypass_manage', '/school-group-bypass/manage', SchoolGroupBypassManageHandler, PRIV.PRIV_EDIT_SYSTEM);
+    ctx.Route('management_dashboard', '/management', ManagementDashboardHandler, PRIV.PRIV_EDIT_SYSTEM);
     // 使用 hook 在所有路由处理前检查用户绑定状态和访问权限
     ctx.on('handler/before-prepare', async (h) => {
         // 确保用户已登录且有用户信息
@@ -1844,6 +2299,13 @@ export async function apply(ctx: Context) {
             
             // 超级管理员 root（uid=2）可以访问所有页面，无需检查
             if (h.user._id === 2) {
+                return;
+            }
+            
+            // 检查用户是否拥有学校组绕过权限
+            const userColl = db.collection('user');
+            const dbUser = await userColl.findOne({ _id: h.user._id });
+            if (dbUser && dbUser.schoolGroupBypass === true) {
                 return;
             }
             
@@ -1929,6 +2391,13 @@ export async function apply(ctx: Context) {
         try {
             // 超级管理员 root（uid=2）无需检查绑定状态
             if (h.user._id === 2) {
+                return;
+            }
+            
+            // 检查用户是否拥有学校组绕过权限
+            const userColl = db.collection('user');
+            const dbUser = await userColl.findOne({ _id: h.user._id });
+            if (dbUser && dbUser.schoolGroupBypass === true) {
                 return;
             }
             
@@ -2128,6 +2597,13 @@ export async function apply(ctx: Context) {
                 return;
             }
 
+            // 检查用户是否拥有学校组绕过权限
+            const userColl = db.collection('user');
+            const dbUser = await userColl.findOne({ _id: h.user._id });
+            if (dbUser && dbUser.schoolGroupBypass === true) {
+                return;
+            }
+
             const permissionCheck = await userBindModel.checkContestPermission(h.user._id, contestId);
             
             if (!permissionCheck.allowed) {
@@ -2155,6 +2631,13 @@ export async function apply(ctx: Context) {
 
             // 超级管理员跳过权限检查
             if (h.user._id === 2 || h.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)) {
+                return;
+            }
+
+            // 检查用户是否拥有学校组绕过权限
+            const userColl = db.collection('user');
+            const dbUser = await userColl.findOne({ _id: h.user._id });
+            if (dbUser && dbUser.schoolGroupBypass === true) {
                 return;
             }
 

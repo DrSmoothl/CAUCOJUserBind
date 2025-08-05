@@ -1,0 +1,653 @@
+{% extends "layout/basic.html" %}
+{% block title %}学校组绕过权限管理{% endblock %}
+
+{% block content %}
+<style>
+/* 美化提示框样式 */
+.alert {
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border: 1px solid;
+  font-size: 14px;
+}
+
+.alert--error {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.alert--success {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #16a34a;
+}
+
+.alert--info {
+  background-color: #eff6ff;
+  border-color: #93c5fd;
+  color: #2563eb;
+}
+
+/* 美化空状态 */
+.empty {
+  text-align: center;
+  padding: 48px 24px;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 2px dashed #d1d5db;
+}
+
+.empty__icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.empty__text {
+  color: #6b7280;
+  font-size: 16px;
+}
+
+/* 按钮样式 */
+.button {
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: 500;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.button--primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.button--primary:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+.button--secondary {
+  background: #6b7280;
+  color: white;
+}
+
+.button--secondary:hover {
+  background: #4b5563;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+.button--danger {
+  background: #ef4444;
+  color: white;
+}
+
+.button--danger:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+.button--success {
+  background: #10b981;
+  color: white;
+}
+
+.button--success:hover {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+.button--small {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+/* 美化表格 */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+}
+
+.data-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #374151;
+  padding: 12px 16px;
+  text-align: left;
+}
+
+.data-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.data-table tr:hover {
+  background: #f9fafb;
+}
+
+/* 美化分页 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.pagination__item {
+  padding: 8px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.pagination__item:hover {
+  background: #f3f4f6;
+  text-decoration: none;
+}
+
+.pagination__item--current {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+/* 搜索和筛选区域 */
+.filter-section {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.filter-row {
+  display: flex;
+  gap: 16px;
+  align-items: end;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.filter-group label {
+  font-weight: 500;
+  color: #374151;
+  font-size: 14px;
+}
+
+.filter-group input,
+.filter-group select {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* 批量操作区域 */
+.batch-actions {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid #e2e8f0;
+  display: none;
+}
+
+.batch-actions.show {
+  display: block;
+}
+
+.batch-info {
+  margin-bottom: 12px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.batch-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* 复选框样式 */
+.checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* 状态徽章 */
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-badge--enabled {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.status-badge--disabled {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+/* 添加用户表单 */
+.add-user-form {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 2px solid #e2e8f0;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-help {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+</style>
+
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">学校组绕过权限管理</h1>
+    <div class="section__tools">
+      <button onclick="toggleAddForm()" class="button button--primary">
+        <span class="icon icon-add"></span> 添加绕过权限
+      </button>
+    </div>
+  </div>
+  
+  <div class="section__body">
+    {% if error %}
+    <div class="alert alert--error">{{ error }}</div>
+    {% endif %}
+    
+    {% if success %}
+    <div class="alert alert--success">{{ message }}</div>
+    {% endif %}
+    
+    <!-- 添加用户表单 -->
+    <div id="addUserForm" class="add-user-form" style="display: none;">
+      <h3 style="margin-top: 0; color: #374151;">添加绕过权限用户</h3>
+      <form method="post">
+        <input type="hidden" name="action" value="add_bypass">
+        
+        <div class="form-group">
+          <label for="addMethod">添加方式</label>
+          <select id="addMethod" name="addMethod" onchange="toggleAddMethod()" required>
+            <option value="">请选择添加方式</option>
+            <option value="single">单个用户（用户名）</option>
+            <option value="batch_username">批量用户（用户名列表）</option>
+            <option value="batch_uid">批量用户（UID列表）</option>
+          </select>
+        </div>
+        
+        <!-- 单个用户添加 -->
+        <div id="singleUserSection" style="display: none;">
+          <div class="form-group">
+            <label for="username">用户名</label>
+            <input type="text" id="username" name="username" placeholder="请输入用户名">
+            <div class="form-help">请输入要添加绕过权限的用户名</div>
+          </div>
+        </div>
+        
+        <!-- 批量用户名添加 -->
+        <div id="batchUsernameSection" style="display: none;">
+          <div class="form-group">
+            <label for="usernames">用户名列表</label>
+            <textarea id="usernames" name="usernames" rows="6" placeholder="请输入用户名列表，每行一个用户名"></textarea>
+            <div class="form-help">每行输入一个用户名，支持批量添加</div>
+          </div>
+        </div>
+        
+        <!-- 批量UID添加 -->
+        <div id="batchUidSection" style="display: none;">
+          <div class="form-group">
+            <label for="uids">UID列表</label>
+            <textarea id="uids" name="uids" rows="6" placeholder="请输入UID列表，每行一个UID"></textarea>
+            <div class="form-help">每行输入一个UID（数字），支持批量添加</div>
+          </div>
+        </div>
+        
+        <div style="display: flex; gap: 8px; justify-content: flex-end;">
+          <button type="button" onclick="toggleAddForm()" class="button button--secondary">取消</button>
+          <button type="submit" class="button button--success">添加权限</button>
+        </div>
+      </form>
+    </div>
+    
+    <!-- 搜索筛选区域 -->
+    <div class="filter-section">
+      <form method="get">
+        <div class="filter-row">
+          <div class="filter-group">
+            <label for="search">搜索用户</label>
+            <input type="text" id="search" name="search" value="{{ search or '' }}" placeholder="输入用户名或UID搜索">
+          </div>
+          <div class="filter-group">
+            <label for="status">权限状态</label>
+            <select id="status" name="status">
+              <option value="">全部状态</option>
+              <option value="enabled" {% if status == 'enabled' %}selected{% endif %}>已启用</option>
+              <option value="disabled" {% if status == 'disabled' %}selected{% endif %}>已禁用</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>&nbsp;</label>
+            <button type="submit" class="button button--primary">搜索</button>
+          </div>
+        </div>
+      </form>
+    </div>
+    
+    <!-- 批量操作区域 -->
+    <div id="batchActions" class="batch-actions">
+      <div class="batch-info">
+        已选择 <span id="selectedCount">0</span> 个用户
+      </div>
+      <div class="batch-buttons">
+        <button onclick="batchOperation('enable')" class="button button--success button--small">
+          <span class="icon icon-check"></span> 批量启用
+        </button>
+        <button onclick="batchOperation('disable')" class="button button--danger button--small">
+          <span class="icon icon-close"></span> 批量禁用
+        </button>
+        <button onclick="batchOperation('remove')" class="button button--danger button--small">
+          <span class="icon icon-delete"></span> 批量移除
+        </button>
+      </div>
+    </div>
+    
+    {% if users|length > 0 %}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width: 50px;">
+            <input type="checkbox" id="selectAll" class="checkbox" onchange="toggleSelectAll()">
+          </th>
+          <th>UID</th>
+          <th>用户名</th>
+          <th>真实姓名</th>
+          <th>学号</th>
+          <th>权限状态</th>
+          <th>设置时间</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td>
+            <input type="checkbox" class="checkbox user-checkbox" value="{{ user._id }}" onchange="updateBatchActions()">
+          </td>
+          <td><strong>{{ user._id }}</strong></td>
+          <td>{{ user.uname or '未设置' }}</td>
+          <td>{{ user.realName or '未绑定' }}</td>
+          <td>{{ user.studentId or '未绑定' }}</td>
+          <td>
+            {% if user.schoolGroupBypass %}
+              <span class="status-badge status-badge--enabled">已启用</span>
+            {% else %}
+              <span class="status-badge status-badge--disabled">已禁用</span>
+            {% endif %}
+          </td>
+          <td>{{ user.bypassSetAt.toISOString().substring(0, 19).replace('T', ' ') if user.bypassSetAt else '未知' }}</td>
+          <td>
+            {% if user.schoolGroupBypass %}
+              <form method="post" style="display: inline;">
+                <input type="hidden" name="action" value="disable_bypass">
+                <input type="hidden" name="userId" value="{{ user._id }}">
+                <button type="submit" class="button button--small button--danger" 
+                        onclick="return confirm('确定要禁用用户「{{ user.uname or user._id }}」的绕过权限吗？')">
+                  禁用权限
+                </button>
+              </form>
+            {% else %}
+              <form method="post" style="display: inline;">
+                <input type="hidden" name="action" value="enable_bypass">
+                <input type="hidden" name="userId" value="{{ user._id }}">
+                <button type="submit" class="button button--small button--success" 
+                        onclick="return confirm('确定要启用用户「{{ user.uname or user._id }}」的绕过权限吗？')">
+                  启用权限
+                </button>
+              </form>
+            {% endif %}
+            
+            <form method="post" style="display: inline; margin-left: 8px;">
+              <input type="hidden" name="action" value="remove_bypass">
+              <input type="hidden" name="userId" value="{{ user._id }}">
+              <button type="submit" class="button button--small button--danger" 
+                      onclick="return confirm('确定要完全移除用户「{{ user.uname or user._id }}」的绕过权限记录吗？\n\n此操作不可撤销！')">
+                移除记录
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    
+    {% if pageCount > 1 %}
+    <div class="pagination">
+      {% for i in range(1, pageCount + 1) %}
+        {% if i == page %}
+          <span class="pagination__item pagination__item--current">{{ i }}</span>
+        {% else %}
+          <a href="?page={{ i }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}" class="pagination__item">{{ i }}</a>
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="empty">
+      <div class="empty__icon">
+        🔐
+      </div>
+      <div class="empty__text">
+        <p>暂无绕过权限用户</p>
+        <p><button onclick="toggleAddForm()" class="button button--primary">点击添加第一个绕过权限用户</button></p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+// 切换添加表单显示
+function toggleAddForm() {
+  const form = document.getElementById('addUserForm');
+  if (form.style.display === 'none') {
+    form.style.display = 'block';
+    form.scrollIntoView({ behavior: 'smooth' });
+  } else {
+    form.style.display = 'none';
+    // 重置表单
+    form.querySelector('form').reset();
+    document.getElementById('addMethod').value = '';
+    toggleAddMethod();
+  }
+}
+
+// 切换添加方式
+function toggleAddMethod() {
+  const method = document.getElementById('addMethod').value;
+  
+  // 隐藏所有方式
+  document.getElementById('singleUserSection').style.display = 'none';
+  document.getElementById('batchUsernameSection').style.display = 'none';
+  document.getElementById('batchUidSection').style.display = 'none';
+  
+  // 显示选中的方式
+  if (method === 'single') {
+    document.getElementById('singleUserSection').style.display = 'block';
+  } else if (method === 'batch_username') {
+    document.getElementById('batchUsernameSection').style.display = 'block';
+  } else if (method === 'batch_uid') {
+    document.getElementById('batchUidSection').style.display = 'block';
+  }
+}
+
+// 全选/取消全选
+function toggleSelectAll() {
+  const selectAll = document.getElementById('selectAll');
+  const checkboxes = document.querySelectorAll('.user-checkbox');
+  
+  checkboxes.forEach(checkbox => {
+    checkbox.checked = selectAll.checked;
+  });
+  
+  updateBatchActions();
+}
+
+// 更新批量操作显示
+function updateBatchActions() {
+  const checkboxes = document.querySelectorAll('.user-checkbox:checked');
+  const batchActions = document.getElementById('batchActions');
+  const selectedCount = document.getElementById('selectedCount');
+  
+  selectedCount.textContent = checkboxes.length;
+  
+  if (checkboxes.length > 0) {
+    batchActions.classList.add('show');
+  } else {
+    batchActions.classList.remove('show');
+  }
+  
+  // 更新全选框状态
+  const allCheckboxes = document.querySelectorAll('.user-checkbox');
+  const selectAll = document.getElementById('selectAll');
+  
+  if (checkboxes.length === 0) {
+    selectAll.indeterminate = false;
+    selectAll.checked = false;
+  } else if (checkboxes.length === allCheckboxes.length) {
+    selectAll.indeterminate = false;
+    selectAll.checked = true;
+  } else {
+    selectAll.indeterminate = true;
+    selectAll.checked = false;
+  }
+}
+
+// 批量操作
+function batchOperation(action) {
+  const checkboxes = document.querySelectorAll('.user-checkbox:checked');
+  
+  if (checkboxes.length === 0) {
+    alert('请先选择要操作的用户');
+    return;
+  }
+  
+  const userIds = Array.from(checkboxes).map(cb => cb.value);
+  let message = '';
+  
+  switch (action) {
+    case 'enable':
+      message = `确定要批量启用 ${userIds.length} 个用户的绕过权限吗？`;
+      break;
+    case 'disable':
+      message = `确定要批量禁用 ${userIds.length} 个用户的绕过权限吗？`;
+      break;
+    case 'remove':
+      message = `确定要批量移除 ${userIds.length} 个用户的绕过权限记录吗？\n\n此操作不可撤销！`;
+      break;
+  }
+  
+  if (confirm(message)) {
+    // 创建隐藏表单提交批量操作
+    const form = document.createElement('form');
+    form.method = 'post';
+    form.style.display = 'none';
+    
+    const actionInput = document.createElement('input');
+    actionInput.type = 'hidden';
+    actionInput.name = 'action';
+    actionInput.value = 'batch_' + action;
+    form.appendChild(actionInput);
+    
+    const userIdsInput = document.createElement('input');
+    userIdsInput.type = 'hidden';
+    userIdsInput.name = 'userIds';
+    userIdsInput.value = userIds.join(',');
+    form.appendChild(userIdsInput);
+    
+    document.body.appendChild(form);
+    form.submit();
+  }
+}
+
+// 页面加载时初始化
+document.addEventListener('DOMContentLoaded', function() {
+  updateBatchActions();
+});
+</script>
+{% endblock %}
