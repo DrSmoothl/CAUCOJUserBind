@@ -21,7 +21,7 @@
       <ol class="menu collapsed">
         {{ sidemenu.render_item('school', 'user_bind', label='学校绑定') }}
         {{ sidemenu.render_item('edit', 'nickname', label='修改昵称') }}
-        {% if handler.user.hasPriv('PERM_EDIT_DOMAIN') %}
+        {% if handler.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM) %}
           {{ sidemenu.render_item('wrench', 'management_dashboard', label='系统管理') }}
         {% endif %}
       </ol>

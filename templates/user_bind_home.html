@@ -160,7 +160,7 @@
     </div>
 
     <!-- 系统管理（仅管理员可见） -->
-    {% if handler.user.hasPriv('PERM_EDIT_DOMAIN') %}
+    {% if handler.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM) %}
     <div class="userbind-user-card">
       <div class="userbind-user-card-header" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
         <div class="userbind-user-card-icon">⚙️</div>
@@ -168,7 +168,7 @@
       </div>
       <div class="userbind-user-card-body">
         <p class="userbind-user-card-description">管理学校组、用户组和系统权限（管理员功能）</p>
-        <a href="/management/dashboard" class="userbind-user-btn" style="background: #f59e0b;">
+        <a href="/management" class="userbind-user-btn" style="background: #f59e0b;">
           <span>🛠️</span> 进入管理
         </a>
       </div>

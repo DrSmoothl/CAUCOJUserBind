@@ -2247,6 +2247,30 @@ class BindHandler extends Handler {
     }
 }
 
+// 用户绑定主页
+class UserBindHomeHandler extends Handler {
+    async get(domainId: string) {
+        // 获取用户的绑定状态
+        const user = this.user;
+        const isSchoolStudent = user.isSchoolStudent || false;
+        const studentId = user.studentId || '';
+        const realName = user.realName || '';
+        const nickname = user.nickname || '';
+        
+        // 检查是否是管理员
+        const isAdmin = user.hasPriv(PRIV.PRIV_EDIT_SYSTEM);
+        
+        this.response.template = 'user_bind_home.html';
+        this.response.body = {
+            isSchoolStudent,
+            studentId,
+            realName,
+            nickname,
+            isAdmin
+        };
+    }
+}
+
 // // // 调试接口 - 检查当前用户状态
 // class UserBindDebugHandler extends Handler {
 //     async get(domainId: string) {
@@ -2284,6 +2308,7 @@ export async function apply(ctx: Context) {
     ctx.Route('user_group_create', '/user-group/create', UserGroupCreateHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('contest_permission', '/contest/:contestId/permission', ContestPermissionHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('bind', '/bind/:token', BindHandler);
+    ctx.Route('user_bind', '/user-bind', UserBindHomeHandler); // 用户绑定主页
     ctx.Route('nickname', '/nickname', NicknameHandler); // 昵称修改页面
     ctx.Route('school_group_bypass_manage', '/school-group-bypass/manage', SchoolGroupBypassManageHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('management_dashboard', '/management', ManagementDashboardHandler, PRIV.PRIV_EDIT_SYSTEM);
