@@ -1,0 +1,36 @@
+{% import "components/sidemenu.html" as sidemenu with context %}
+{% macro render_sidebar() %}
+<div class="section side">
+  <ol class="menu">
+    {{ sidemenu.render_item('account--circle', 'user_detail', {uid:handler.user._id}, label='My Profile') }}
+    {{ sidemenu.render_item('comment--multiple', 'home_messages') }}
+    <li class="menu__seperator"></li>
+    {{ sidemenu.render_item('web', 'home_settings', {category:'domain'}, label='Domain Settings', menu_item='home_domain') }}
+    {{ sidemenu.render_item('web', 'home_domain', label='My Domains', memu_item='home_domains') }}
+    {% if handler.user.hasPriv(PRIV.PRIV_CREATE_FILE) %}
+      <li class="menu__seperator"></li>
+      {{ sidemenu.render_item('file', 'home_files', label='My Files') }}
+    {% endif %}
+    
+    <!-- 用户绑定系统菜单 -->
+    <li class="menu__seperator"></li>
+    <li class="menu__item">
+      <div class="menu__link expandable">
+        <span class="icon icon-people"></span> 用户绑定系统
+      </div>
+      <ol class="menu collapsed">
+        {{ sidemenu.render_item('school', 'user_bind', label='学校绑定') }}
+        {{ sidemenu.render_item('edit', 'nickname', label='修改昵称') }}
+        {% if handler.user.hasPriv('PERM_EDIT_DOMAIN') %}
+          {{ sidemenu.render_item('wrench', 'management_dashboard', label='系统管理') }}
+        {% endif %}
+      </ol>
+    </li>
+    
+    <li class="menu__seperator"></li>
+    {{ sidemenu.render_item('wrench', 'home_settings', {category:'account'}, label='Account Settings', menu_item='home_account') }}
+    {{ sidemenu.render_item('sliders', 'home_settings', {category:'preference'}, label='Preference Settings', menu_item='home_preference')}}
+    {{ sidemenu.render_item('security', 'home_security') }}
+  </ol>
+</div>
+{% endmacro %}

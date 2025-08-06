@@ -1,0 +1,33 @@
+{% import "components/sidemenu.html" as sidemenu with context %}
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row" data-sticky-parent>
+  <div class="medium-9 columns">
+  {% block manage_content %}{% endblock %}
+  </div>
+  <div class="medium-3 columns"><div data-sticky="large">
+    <div class="section side">
+      <ol class="menu">
+        <li class="menu__item">
+          <div class="menu__link expandable">
+            <span class="icon icon-people"></span> 用户绑定系统管理
+          </div>
+          <ol class="menu collapsed">
+            {{ sidemenu.render_item('wrench', 'management_dashboard', label='管理总览') }}
+            <li class="menu__seperator"></li>
+            {{ sidemenu.render_item('school', 'school_group_manage', label='学校组管理') }}
+            {{ sidemenu.render_item('plus', 'school_group_create', label='创建学校组') }}
+            <li class="menu__seperator"></li>
+            {{ sidemenu.render_item('people', 'user_group_manage', label='用户组管理') }}
+            {{ sidemenu.render_item('plus', 'user_group_create', label='创建用户组') }}
+            <li class="menu__seperator"></li>
+            {{ sidemenu.render_item('security', 'school_group_bypass_manage', label='绕过权限管理') }}
+            <li class="menu__seperator"></li>
+            {{ sidemenu.render_item('edit', 'nickname_edit', label='昵称管理') }}
+          </ol>
+        </li>
+      </ol>
+    </div>
+  </div></div>
+</div>
+{% endblock %}
