@@ -1474,15 +1474,6 @@ const userBindModel = {
 
     // 审核绑定申请
     async reviewBindingRequest(requestId: any, action: 'approve' | 'reject', reviewerId: number, reviewComment?: string): Promise<void> {
-        // 调试日志：输出接收到的 requestId
-        console.log('reviewBindingRequest 接收到的参数:', {
-            requestId: requestId,
-            requestIdType: typeof requestId,
-            requestIdString: String(requestId),
-            isObjectId: requestId && requestId.constructor && requestId.constructor.name === 'ObjectId',
-            action: action
-        });
-        
         // 使用灵活的查询方式
         let request: any = null;
         
@@ -1545,33 +1536,69 @@ const userBindModel = {
                 }
             );
 
-            // 更新学校组中对应成员的绑定状态（如果存在）
+            // 处理学校组成员信息 - 重新获取最新的学校组数据
             const school = await this.getSchoolGroupById(request.schoolGroupId);
-            if (school && school.members) {
-                const member = school.members.find(m => 
-                    m.studentId === request.studentId && m.realName === request.realName
-                );
-                
-                if (member && !member.bound) {
+            if (school) {
+                // 确保学校组有members数组
+                if (!school.members || !Array.isArray(school.members)) {
+                    // 如果学校组没有members数组，初始化并添加新成员
+                    const newMember = {
+                        studentId: request.studentId,
+                        realName: request.realName,
+                        bound: true,
+                        boundBy: request.userId,
+                        boundAt: new Date()
+                    };
+                    
                     await schoolGroupsColl.updateOne(
-                        { 
-                            _id: school._id, 
-                            'members': {
-                                $elemMatch: {
-                                    'studentId': request.studentId,
-                                    'realName': request.realName,
-                                    'bound': false
-                                }
-                            }
-                        },
-                        {
-                            $set: {
-                                'members.$.bound': true,
-                                'members.$.boundBy': request.userId,
-                                'members.$.boundAt': new Date()
-                            }
-                        }
+                        { _id: school._id },
+                        { $set: { members: [newMember] } }
                     );
+                } else {
+                    // 重新检查是否已有对应成员记录（可能在申请期间已导入）
+                    const existingMember = school.members.find((m: { studentId: any; realName: any; }) => 
+                        m.studentId === request.studentId && m.realName === request.realName
+                    );
+                    
+                    if (existingMember) {
+                        // 情况1：在申请期间已经导入了该学号姓名，更新现有记录的绑定状态
+                        if (!existingMember.bound) {
+                            await schoolGroupsColl.updateOne(
+                                { 
+                                    _id: school._id, 
+                                    'members': {
+                                        $elemMatch: {
+                                            'studentId': request.studentId,
+                                            'realName': request.realName,
+                                            'bound': false
+                                        }
+                                    }
+                                },
+                                {
+                                    $set: {
+                                        'members.$.bound': true,
+                                        'members.$.boundBy': request.userId,
+                                        'members.$.boundAt': new Date()
+                                    }
+                                }
+                            );
+                        }
+                        // 如果已经绑定，说明可能有并发操作，但用户信息已更新，可以忽略
+                    } else {
+                        // 情况2：学校组中没有该成员，添加新成员
+                        const newMember = {
+                            studentId: request.studentId,
+                            realName: request.realName,
+                            bound: true,
+                            boundBy: request.userId,
+                            boundAt: new Date()
+                        };
+                        
+                        await schoolGroupsColl.updateOne(
+                            { _id: school._id },
+                            { $push: { members: newMember } }
+                        );
+                    }
                 }
             }
         }
@@ -2730,14 +2757,6 @@ class BindingRequestManageHandler extends Handler {
         }
 
         try {
-            // 调试日志：输出接收到的 requestId 的类型和值
-            console.log('BindingRequestManageHandler 接收到的参数:', {
-                requestId: requestId,
-                requestIdType: typeof requestId,
-                requestIdString: String(requestId),
-                action: action
-            });
-            
             await userBindModel.reviewBindingRequest(requestId, action, this.user._id, reviewComment);
             
             const actionText = action === 'approve' ? '同意' : '拒绝';
