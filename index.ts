@@ -2732,13 +2732,8 @@ export async function apply(ctx: Context) {
             );
             
             if (isSchoolGroupRequiredPath) {
-                // 非学校组成员禁止访问
-                if (!isInSchool) {
-                    throw new ForbiddenError('此功能仅限学校组成员使用，请联系管理员');
-                }
-                
-                // 学校组成员但未绑定，重定向到绑定申请页面
-                if (!isBound) {
+                // 非学校组成员或未绑定用户都重定向到绑定申请页面
+                if (!isInSchool || !isBound) {
                     h.response.redirect = '/binding-request';
                     return;
                 }
