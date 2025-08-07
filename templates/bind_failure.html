@@ -195,6 +195,131 @@
   margin-top: 2px;
 }
 
+/* 推荐操作样式 */
+.bind-failure-recommended-action {
+  background: linear-gradient(135deg, #dcfdf4, #a7f3d0);
+  border: 3px solid #10b981;
+  border-radius: 20px;
+  padding: 32px;
+  margin-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.bind-failure-recommended-action::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle,
+    rgba(16, 185, 129, 0.1) 0%,
+    transparent 50%
+  );
+  animation: bind-failure-recommended-float 8s ease-in-out infinite;
+}
+
+@keyframes bind-failure-recommended-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(180deg); }
+}
+
+.bind-failure-recommended-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #065f46;
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.bind-failure-recommended-desc {
+  color: #047857;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.bind-failure-btn-large {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px 32px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border-radius: 16px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+  position: relative;
+  z-index: 1;
+  border: 2px solid #10b981;
+}
+
+.bind-failure-btn-large:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(16, 185, 129, 0.4);
+  text-decoration: none;
+  color: white;
+}
+
+.bind-failure-btn-large-icon {
+  font-size: 2.5rem;
+  flex-shrink: 0;
+  animation: bind-failure-pulse 2s ease-in-out infinite;
+}
+
+@keyframes bind-failure-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.bind-failure-btn-large-content {
+  flex: 1;
+}
+
+.bind-failure-btn-large-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.bind-failure-btn-large-subtitle {
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+.bind-failure-btn-large-arrow {
+  font-size: 1.5rem;
+  font-weight: bold;
+  transition: transform 0.3s ease;
+}
+
+.bind-failure-btn-large:hover .bind-failure-btn-large-arrow {
+  transform: translateX(5px);
+}
+
+/* 其他操作样式 */
+.bind-failure-other-actions {
+  margin-top: 24px;
+}
+
+.bind-failure-other-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
 .bind-failure-actions {
   display: flex;
   gap: 16px;
@@ -314,6 +439,29 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
+  }
+  
+  .bind-failure-recommended-action {
+    padding: 24px 20px;
+  }
+  
+  .bind-failure-btn-large {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+    padding: 20px;
+  }
+  
+  .bind-failure-btn-large-icon {
+    font-size: 2rem;
+  }
+  
+  .bind-failure-btn-large-title {
+    font-size: 1.2rem;
+  }
+  
+  .bind-failure-btn-large-arrow {
+    transform: rotate(90deg);
   }
 }
 
@@ -464,33 +612,42 @@
                         </ul>
                     </div>
                     
-                    <!-- 操作按钮 -->
-                    <div class="bind-failure-actions">
-                        {% if token and errorType == 'mismatch' %}
-                        <a href="/bind/{{ token }}" class="bind-failure-btn bind-failure-btn--primary">
-                            <span>🔄</span> 重新绑定
+                    <!-- 推荐操作 -->
+                    <div class="bind-failure-recommended-action">
+                        <div class="bind-failure-recommended-title">
+                            <span>⭐</span> 推荐操作
+                        </div>
+                        <div class="bind-failure-recommended-desc">
+                            大部分绑定失败是因为信息输入错误或尚未导入系统，建议检查学号姓名有没有输错，如果确定没有输错，可以尝试提交绑定申请
+                        </div>
+                        <a href="/binding-request" class="bind-failure-btn-large bind-failure-btn-large--primary">
+                            <div class="bind-failure-btn-large-icon">📝</div>
+                            <div class="bind-failure-btn-large-content">
+                                <div class="bind-failure-btn-large-title">提交绑定申请</div>
+                                <div class="bind-failure-btn-large-subtitle">让管理员审核您的身份信息</div>
+                            </div>
+                            <div class="bind-failure-btn-large-arrow">→</div>
                         </a>
-                        {% endif %}
-                        
-                        {% if errorType == 'mismatch' %}
-                        <a href="/binding-request" class="bind-failure-btn bind-failure-btn--warning">
-                            <span>📝</span> 提交绑定申请
-                        </a>
-                        {% endif %}
-                        
-                        {% if errorType == 'invalid_token' %}
-                        <a href="/binding-request" class="bind-failure-btn bind-failure-btn--warning">
-                            <span>📝</span> 提交绑定申请
-                        </a>
-                        {% endif %}
-                        
-                        <a href="/user-bind" class="bind-failure-btn bind-failure-btn--secondary">
-                            <span>🏠</span> 返回首页
-                        </a>
-                        
-                        <a href="mailto:admin@example.com" class="bind-failure-btn bind-failure-btn--secondary">
-                            <span>📧</span> 联系管理员
-                        </a>
+                    </div>
+                    
+                    <!-- 其他操作 -->
+                    <div class="bind-failure-other-actions">
+                        <div class="bind-failure-other-title">其他操作</div>
+                        <div class="bind-failure-actions">
+                            {% if token and errorType == 'mismatch' %}
+                            <a href="/bind/{{ token }}" class="bind-failure-btn bind-failure-btn--secondary">
+                                <span>🔄</span> 重新绑定
+                            </a>
+                            {% endif %}
+                            
+                            <a href="/user-bind" class="bind-failure-btn bind-failure-btn--secondary">
+                                <span>🏠</span> 返回首页
+                            </a>
+                            
+                            <a href="mailto:admin@example.com" class="bind-failure-btn bind-failure-btn--secondary">
+                                <span>📧</span> 联系管理员
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
