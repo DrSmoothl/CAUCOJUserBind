@@ -1,0 +1,500 @@
+{% set page_name = '绑定失败' %}
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<style>
+/* 绑定失败页面样式 */
+.bind-failure-container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.bind-failure-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: 2px solid #fee2e2;
+}
+
+.bind-failure-header {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  padding: 40px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.bind-failure-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle,
+    rgba(255,255,255,0.1) 0%,
+    transparent 50%
+  );
+  animation: bind-failure-float 12s ease-in-out infinite;
+}
+
+@keyframes bind-failure-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(180deg); }
+}
+
+.bind-failure-icon {
+  font-size: 5rem;
+  margin-bottom: 20px;
+  display: block;
+  position: relative;
+  z-index: 1;
+  animation: bind-failure-shake 0.5s ease-in-out;
+}
+
+@keyframes bind-failure-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.bind-failure-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.bind-failure-subtitle {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.bind-failure-body {
+  padding: 40px;
+}
+
+.bind-failure-info {
+  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+  border: 2px solid #fca5a5;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+.bind-failure-info-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #dc2626;
+  margin-bottom: 16px;
+}
+
+.bind-failure-reason {
+  color: #7f1d1d;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.bind-failure-details {
+  background: white;
+  border: 1px solid #fca5a5;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 16px;
+}
+
+.bind-failure-details-title {
+  font-weight: 600;
+  color: #991b1b;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bind-failure-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #fee2e2;
+}
+
+.bind-failure-detail-item:last-child {
+  border-bottom: none;
+}
+
+.bind-failure-detail-label {
+  font-weight: 500;
+  color: #7f1d1d;
+}
+
+.bind-failure-detail-value {
+  font-weight: 600;
+  color: #991b1b;
+  font-family: 'Courier New', monospace;
+}
+
+.bind-failure-suggestions {
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border: 2px solid #38bdf8;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+.bind-failure-suggestions-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #0369a1;
+  margin-bottom: 16px;
+}
+
+.bind-failure-suggestion-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.bind-failure-suggestion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  color: #0c4a6e;
+  line-height: 1.6;
+}
+
+.bind-failure-suggestion-number {
+  background: #38bdf8;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.bind-failure-actions {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.bind-failure-btn {
+  padding: 14px 32px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  border: 2px solid;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.bind-failure-btn--primary {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border-color: #3b82f6;
+}
+
+.bind-failure-btn--primary:hover {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+  text-decoration: none;
+  color: white;
+}
+
+.bind-failure-btn--secondary {
+  background: white;
+  color: #6b7280;
+  border-color: #d1d5db;
+}
+
+.bind-failure-btn--secondary:hover {
+  background: #f9fafb;
+  color: #374151;
+  border-color: #9ca3af;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  text-decoration: none;
+}
+
+.bind-failure-btn--warning {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  border-color: #f59e0b;
+}
+
+.bind-failure-btn--warning:hover {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+  text-decoration: none;
+  color: white;
+}
+
+/* section重置 */
+.section {
+  background: transparent;
+  box-shadow: none;
+}
+
+.section__header {
+  display: none;
+}
+
+.section__body {
+  padding: 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .bind-failure-container {
+    margin: 20px auto;
+    padding: 0 16px;
+  }
+  
+  .bind-failure-header {
+    padding: 30px 20px;
+  }
+  
+  .bind-failure-icon {
+    font-size: 4rem;
+  }
+  
+  .bind-failure-title {
+    font-size: 2rem;
+  }
+  
+  .bind-failure-subtitle {
+    font-size: 1.1rem;
+  }
+  
+  .bind-failure-body {
+    padding: 30px 20px;
+  }
+  
+  .bind-failure-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .bind-failure-btn {
+    justify-content: center;
+  }
+  
+  .bind-failure-detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
+
+/* 特殊错误类型样式 */
+.bind-failure-mismatch {
+  border-left: 4px solid #ef4444;
+  background: linear-gradient(to right, #fef2f2, transparent);
+}
+
+.bind-failure-already-bound {
+  border-left: 4px solid #f59e0b;
+  background: linear-gradient(to right, #fefbf2, transparent);
+}
+
+.bind-failure-invalid-token {
+  border-left: 4px solid #6b7280;
+  background: linear-gradient(to right, #f9fafb, transparent);
+}
+</style>
+
+<div class="section">
+    <div class="section__body">
+        <div class="bind-failure-container">
+            <div class="bind-failure-card">
+                <div class="bind-failure-header">
+                    <div class="bind-failure-icon">❌</div>
+                    <h1 class="bind-failure-title">绑定失败</h1>
+                    <p class="bind-failure-subtitle">很抱歉，无法完成身份绑定</p>
+                </div>
+                
+                <div class="bind-failure-body">
+                    <!-- 失败信息 -->
+                    <div class="bind-failure-info 
+                        {% if errorType == 'mismatch' %}bind-failure-mismatch
+                        {% elif errorType == 'already_bound' %}bind-failure-already-bound  
+                        {% elif errorType == 'invalid_token' %}bind-failure-invalid-token
+                        {% endif %}">
+                        <div class="bind-failure-info-title">
+                            <span>
+                            {% if errorType == 'mismatch' %}⚠️
+                            {% elif errorType == 'already_bound' %}🔒
+                            {% elif errorType == 'invalid_token' %}🔗
+                            {% else %}❗
+                            {% endif %}
+                            </span>
+                            失败原因
+                        </div>
+                        <div class="bind-failure-reason">{{ error }}</div>
+                        
+                        {% if studentId or realName or groupName %}
+                        <div class="bind-failure-details">
+                            <div class="bind-failure-details-title">
+                                <span>📋</span> 提交的信息
+                            </div>
+                            {% if studentId %}
+                            <div class="bind-failure-detail-item">
+                                <span class="bind-failure-detail-label">学号</span>
+                                <span class="bind-failure-detail-value">{{ studentId }}</span>
+                            </div>
+                            {% endif %}
+                            {% if realName %}
+                            <div class="bind-failure-detail-item">
+                                <span class="bind-failure-detail-label">姓名</span>
+                                <span class="bind-failure-detail-value">{{ realName }}</span>
+                            </div>
+                            {% endif %}
+                            {% if groupName %}
+                            <div class="bind-failure-detail-item">
+                                <span class="bind-failure-detail-label">目标组织</span>
+                                <span class="bind-failure-detail-value">{{ groupName }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 解决建议 -->
+                    <div class="bind-failure-suggestions">
+                        <div class="bind-failure-suggestions-title">
+                            <span>💡</span> 解决方案
+                        </div>
+                        <ul class="bind-failure-suggestion-list">
+                            {% if errorType == 'mismatch' %}
+                            <li class="bind-failure-suggestion-item">
+                                <span class="bind-failure-suggestion-number">1</span>
+                                <div>
+                                    <strong>检查信息准确性：</strong>请仔细核对您的学号和姓名是否与学校系统中的信息完全一致，包括大小写、空格等细节。
+                                </div>
+                            </li>
+                            <li class="bind-failure-suggestion-item">
+                                <span class="bind-failure-suggestion-number">2</span>
+                                <div>
+                                    <strong>联系管理员：</strong>如果信息确认无误，可能您的信息尚未导入系统，请联系组织管理员核实并添加您的信息。
+                                </div>
+                            </li>
+                            <li class="bind-failure-suggestion-item">
+                                <span class="bind-failure-suggestion-number">3</span>
+                                <div>
+                                    <strong>提交绑定申请：</strong>如果您的学号姓名尚未在系统中，您可以提交绑定申请让管理员审核您的身份信息。
+                                </div>
+                            </li>
+                            {% elif errorType == 'already_bound' %}
+                            <li class="bind-failure-suggestion-item">
+                                <span class="bind-failure-suggestion-number">1</span>
+                                <div>
+                                    <strong>信息已被使用：</strong>该学号和姓名已被其他用户绑定，每个身份信息只能绑定一次。
+                                </div>
+                            </li>
+                            <li class="bind-failure-suggestion-item">
+                                <span class="bind-failure-suggestion-number">2</span>
+                                <div>
+                                    <strong>联系管理员：</strong>如果您确认这是您的身份信息，请联系管理员处理重复绑定问题。
+                                </div>
+                            </li>
+                            {% elif errorType == 'invalid_token' %}
+                            <li class="bind-failure-suggestion-item">
+                                <span class="bind-failure-suggestion-number">1</span>
+                                <div>
+                                    <strong>链接已失效：</strong>绑定链接可能已过期或无效，请获取新的绑定链接。
+                                </div>
+                            </li>
+                            <li class="bind-failure-suggestion-item">
+                                <span class="bind-failure-suggestion-number">2</span>
+                                <div>
+                                    <strong>联系管理员：</strong>请联系组织管理员重新生成绑定链接。
+                                </div>
+                            </li>
+                            <li class="bind-failure-suggestion-item">
+                                <span class="bind-failure-suggestion-number">3</span>
+                                <div>
+                                    <strong>提交绑定申请：</strong>您也可以通过提交绑定申请的方式来完成身份绑定。
+                                </div>
+                            </li>
+                            {% else %}
+                            <li class="bind-failure-suggestion-item">
+                                <span class="bind-failure-suggestion-number">1</span>
+                                <div>
+                                    <strong>重新尝试：</strong>请检查输入的信息是否正确，然后重新尝试绑定。
+                                </div>
+                            </li>
+                            <li class="bind-failure-suggestion-item">
+                                <span class="bind-failure-suggestion-number">2</span>
+                                <div>
+                                    <strong>联系管理员：</strong>如果问题持续存在，请联系系统管理员获取帮助。
+                                </div>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    
+                    <!-- 操作按钮 -->
+                    <div class="bind-failure-actions">
+                        {% if token and errorType == 'mismatch' %}
+                        <a href="/bind/{{ token }}" class="bind-failure-btn bind-failure-btn--primary">
+                            <span>🔄</span> 重新绑定
+                        </a>
+                        {% endif %}
+                        
+                        {% if errorType == 'mismatch' %}
+                        <a href="/binding-request" class="bind-failure-btn bind-failure-btn--warning">
+                            <span>📝</span> 提交绑定申请
+                        </a>
+                        {% endif %}
+                        
+                        {% if errorType == 'invalid_token' %}
+                        <a href="/binding-request" class="bind-failure-btn bind-failure-btn--warning">
+                            <span>📝</span> 提交绑定申请
+                        </a>
+                        {% endif %}
+                        
+                        <a href="/user-bind" class="bind-failure-btn bind-failure-btn--secondary">
+                            <span>🏠</span> 返回首页
+                        </a>
+                        
+                        <a href="mailto:admin@example.com" class="bind-failure-btn bind-failure-btn--secondary">
+                            <span>📧</span> 联系管理员
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

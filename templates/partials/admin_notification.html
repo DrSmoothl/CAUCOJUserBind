@@ -1,0 +1,357 @@
+{% if rootNotification and rootNotification.showNotification %}
+<!-- 管理员通知弹窗 -->
+<div id="adminNotificationModal" class="admin-notification-overlay">
+    <div class="admin-notification-container">
+        <div class="admin-notification-header">
+            <div class="admin-notification-icon">
+                🔔
+            </div>
+            <div class="admin-notification-title">
+                <h3>管理员通知</h3>
+                <p class="admin-notification-subtitle">有待处理的事项需要您的关注</p>
+            </div>
+            <button class="admin-notification-close" onclick="closeAdminNotification()">
+                ×
+            </button>
+        </div>
+        
+        <div class="admin-notification-body">
+            <div class="admin-notification-item">
+                <div class="admin-notification-item-icon">📋</div>
+                <div class="admin-notification-item-content">
+                    <h4>绑定申请待审核</h4>
+                    <p>当前有 <strong>{{ rootNotification.pendingBindingRequests }}</strong> 个绑定申请等待您的审核</p>
+                </div>
+                <div class="admin-notification-item-badge">{{ rootNotification.pendingBindingRequests }}</div>
+            </div>
+        </div>
+        
+        <div class="admin-notification-actions">
+            <button class="admin-notification-btn admin-notification-btn-primary" onclick="window.location.href='{{ rootNotification.manageUrl }}'">
+                <span>🔍</span> 立即处理
+            </button>
+            <button class="admin-notification-btn admin-notification-btn-secondary" onclick="closeAdminNotification()">
+                <span>⏰</span> 稍后处理
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.admin-notification-overlay {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 9999;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    animation: slideInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.admin-notification-container {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    width: 380px;
+    max-width: calc(100vw - 40px);
+    overflow: hidden;
+    border: 1px solid rgba(229, 231, 235, 0.8);
+}
+
+.admin-notification-header {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    position: relative;
+}
+
+.admin-notification-icon {
+    font-size: 28px;
+    animation: bounce 2s infinite;
+}
+
+.admin-notification-title h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.admin-notification-subtitle {
+    margin: 4px 0 0 0;
+    font-size: 14px;
+    opacity: 0.9;
+    line-height: 1.3;
+}
+
+.admin-notification-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 20px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.admin-notification-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.admin-notification-body {
+    padding: 20px;
+}
+
+.admin-notification-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.admin-notification-item-icon {
+    font-size: 24px;
+    background: white;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.admin-notification-item-content {
+    flex: 1;
+}
+
+.admin-notification-item-content h4 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.admin-notification-item-content p {
+    margin: 0;
+    font-size: 14px;
+    color: #6b7280;
+    line-height: 1.4;
+}
+
+.admin-notification-item-badge {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 20px;
+    min-width: 24px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.admin-notification-actions {
+    padding: 20px;
+    display: flex;
+    gap: 12px;
+    border-top: 1px solid #f1f5f9;
+    background: #fafbfc;
+}
+
+.admin-notification-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.admin-notification-btn-primary {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.admin-notification-btn-primary:hover {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+.admin-notification-btn-secondary {
+    background: white;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+}
+
+.admin-notification-btn-secondary:hover {
+    background: #f9fafb;
+    color: #374151;
+    border-color: #9ca3af;
+    transform: translateY(-1px);
+}
+
+/* 动画效果 */
+@keyframes slideInUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutDown {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+}
+
+@keyframes bounce {
+    0%, 20%, 53%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40%, 43% {
+        transform: translateY(-8px);
+    }
+    70% {
+        transform: translateY(-4px);
+    }
+    90% {
+        transform: translateY(-2px);
+    }
+}
+
+/* 响应式设计 */
+@media (max-width: 480px) {
+    .admin-notification-overlay {
+        left: 10px;
+        bottom: 10px;
+    }
+    
+    .admin-notification-container {
+        width: calc(100vw - 20px);
+    }
+    
+    .admin-notification-header {
+        padding: 16px;
+    }
+    
+    .admin-notification-body {
+        padding: 16px;
+    }
+    
+    .admin-notification-actions {
+        padding: 16px;
+        flex-direction: column;
+    }
+    
+    .admin-notification-item {
+        padding: 12px;
+    }
+    
+    .admin-notification-item-content h4 {
+        font-size: 15px;
+    }
+    
+    .admin-notification-item-content p {
+        font-size: 13px;
+    }
+}
+
+/* 关闭动画类 */
+.admin-notification-closing {
+    animation: slideOutDown 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+</style>
+
+<script>
+// 管理员通知弹窗控制
+function closeAdminNotification() {
+    const modal = document.getElementById('adminNotificationModal');
+    if (modal) {
+        modal.classList.add('admin-notification-closing');
+        setTimeout(() => {
+            modal.remove();
+        }, 300);
+    }
+    
+    // 将关闭状态保存到 sessionStorage，这个会话期间不再显示
+    sessionStorage.setItem('adminNotificationClosed', 'true');
+}
+
+// 检查是否应该显示通知
+function shouldShowAdminNotification() {
+    return sessionStorage.getItem('adminNotificationClosed') !== 'true';
+}
+
+// 页面加载时检查是否显示通知
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('adminNotificationModal');
+    if (modal && !shouldShowAdminNotification()) {
+        modal.remove();
+    }
+});
+
+// 自动关闭功能（10秒后自动关闭，除非用户鼠标悬停）
+let autoCloseTimer;
+let isHovering = false;
+
+function startAutoCloseTimer() {
+    autoCloseTimer = setTimeout(() => {
+        if (!isHovering) {
+            closeAdminNotification();
+        }
+    }, 10000); // 10秒后自动关闭
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('adminNotificationModal');
+    if (modal && shouldShowAdminNotification()) {
+        // 开始自动关闭计时器
+        startAutoCloseTimer();
+        
+        // 鼠标悬停时暂停自动关闭
+        modal.addEventListener('mouseenter', () => {
+            isHovering = true;
+            clearTimeout(autoCloseTimer);
+        });
+        
+        // 鼠标离开时重新开始计时器
+        modal.addEventListener('mouseleave', () => {
+            isHovering = false;
+            startAutoCloseTimer();
+        });
+    }
+});
+</script>
+{% endif %}

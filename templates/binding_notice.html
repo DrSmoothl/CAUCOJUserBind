@@ -1,0 +1,103 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="section">
+    <div class="ui container">
+        <div class="ui icon message">
+            <i class="exclamation triangle icon"></i>
+            <div class="content">
+                <div class="header">
+                    您尚未完成身份绑定
+                </div>
+                <p>由于您的账户尚未绑定学号和真实姓名，您将无法访问训练、作业、比赛等大部分功能。</p>
+            </div>
+        </div>
+
+        <div class="ui raised segment">
+            <h3 class="ui header">
+                <i class="link icon"></i>
+                绑定方式说明
+            </h3>
+            
+            <div class="ui info message">
+                <div class="header">方式一：使用绑定链接（推荐）</div>
+                <p>请联系您的老师或管理员获取专用的绑定链接，通过绑定链接可以快速完成身份认证。</p>
+            </div>
+
+            <div class="ui warning message">
+                <div class="header">方式二：申请手动绑定</div>
+                <p>如果您确认自己的学号和姓名信息正确，但可能尚未被导入到学校组中，您可以提交绑定申请，等待管理员审核。</p>
+            </div>
+        </div>
+
+        <div class="ui segment">
+            <h4 class="ui header">请选择您的操作：</h4>
+            
+            <div class="ui two column stackable grid">
+                <div class="column">
+                    <div class="ui fluid card">
+                        <div class="content">
+                            <div class="header">
+                                <i class="external alternate icon"></i>
+                                返回首页
+                            </div>
+                            <div class="description">
+                                返回首页，联系老师获取绑定链接
+                            </div>
+                        </div>
+                        <div class="extra content">
+                            <a href="/" class="ui primary fluid button">
+                                <i class="home icon"></i>
+                                返回首页
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="column">
+                    <div class="ui fluid card">
+                        <div class="content">
+                            <div class="header">
+                                <i class="paper plane icon"></i>
+                                提交绑定申请
+                            </div>
+                            <div class="description">
+                                如果确认信息无误但可能未导入，可申请手动绑定
+                            </div>
+                        </div>
+                        <div class="extra content">
+                            <a href="/binding-request" class="ui orange fluid button">
+                                <i class="edit icon"></i>
+                                进入申请页面
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ui message">
+            <div class="header">需要帮助？</div>
+            <p>如果您对绑定流程有疑问，请联系系统管理员或您的老师获取帮助。</p>
+        </div>
+    </div>
+</div>
+
+<style>
+.ui.card .content .header {
+    color: #2185d0;
+}
+
+.ui.card {
+    box-shadow: 0 2px 4px 0 rgba(34,36,38,.15);
+    transition: box-shadow 0.3s ease;
+}
+
+.ui.card:hover {
+    box-shadow: 0 4px 8px 0 rgba(34,36,38,.25);
+}
+
+.ui.icon.message .icon {
+    font-size: 2em;
+}
+</style>
+{% endblock %}

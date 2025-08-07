@@ -2498,7 +2498,17 @@ class BindHandler extends Handler {
         const bindInfo = await userBindModel.getBindInfo(token);
         
         if (!bindInfo) {
-            throw new NotFoundError('绑定链接无效或已过期');
+            // 使用专门的绑定失败页面
+            this.response.template = 'bind_failure.html';
+            this.response.body = { 
+                error: '绑定链接无效或已过期',
+                errorType: 'invalid_token',
+                token: token,
+                studentId: null,
+                realName: null,
+                groupName: null
+            };
+            return;
         }
 
         // 检查用户是否已经绑定
@@ -2601,14 +2611,27 @@ class BindHandler extends Handler {
                 groupName: bindInfo.target.name
             };
         } catch (error: any) {
+            // 根据错误类型确定错误分类
+            let errorType = 'general';
+            if (error.message.includes('学号或姓名不匹配') || error.message.includes('不匹配')) {
+                errorType = 'mismatch';
+            } else if (error.message.includes('已被绑定') || error.message.includes('已绑定')) {
+                errorType = 'already_bound';
+            } else if (error.message.includes('无效') || error.message.includes('过期')) {
+                errorType = 'invalid_token';
+            }
+            
             const bindInfo = await userBindModel.getBindInfo(token);
-            this.response.template = 'bind_form.html';
+            
+            // 使用专门的绑定失败页面
+            this.response.template = 'bind_failure.html';
             this.response.body = { 
                 error: error.message,
-                bindInfo,
-                token,
-                studentId,
-                realName
+                errorType: errorType,
+                token: token,
+                studentId: studentId,
+                realName: realName,
+                groupName: bindInfo ? bindInfo.target.name : null
             };
         }
     }
@@ -2631,6 +2654,19 @@ class UserBindHomeHandler extends Handler {
             nickname,
             isAdmin
         };
+    }
+}
+
+// 绑定说明界面
+class BindingNoticeHandler extends Handler {
+    async get(domainId: string) {
+        if (!this.user._id) {
+            this.response.redirect = `/login?redirect=${encodeURIComponent(this.request.path)}`;
+            return;
+        }
+
+        this.response.template = 'binding_notice.html';
+        this.response.body = {};
     }
 }
 
@@ -2822,6 +2858,7 @@ export async function apply(ctx: Context) {
     ctx.Route('school_group_bypass_manage', '/school-group-bypass/manage', SchoolGroupBypassManageHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('management_dashboard', '/management', ManagementDashboardHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('binding_request', '/binding-request', BindingRequestHandler); // 绑定申请页面
+    ctx.Route('binding_notice', '/binding-notice', BindingNoticeHandler); // 绑定说明页面
     ctx.Route('binding_request_manage', '/binding-request/manage', BindingRequestManageHandler, PRIV.PRIV_EDIT_SYSTEM); // 管理员审核页面
     // 使用 hook 在所有路由处理前检查用户绑定状态和访问权限
     ctx.on('handler/before-prepare', async (h) => {
@@ -2833,8 +2870,20 @@ export async function apply(ctx: Context) {
         try {
             const currentPath = h.request.path;
             
-            // 超级管理员 root（uid=2）可以访问所有页面，无需检查
+            // 超级管理员 root（uid=2）可以访问所有页面，无需检查，但需要检查待处理申请
             if (h.user._id === 2) {
+                // 为root用户注入待处理申请通知信息
+                const pendingRequestCount = await bindingRequestsColl.countDocuments({
+                    status: 'pending'
+                });
+                
+                // 注入到页面模板变量中
+                h.response.body = h.response.body || {};
+                h.response.body.rootNotification = {
+                    pendingBindingRequests: pendingRequestCount,
+                    showNotification: pendingRequestCount > 0,
+                    manageUrl: '/binding-request/manage'
+                };
                 return;
             }
             
@@ -2856,6 +2905,7 @@ export async function apply(ctx: Context) {
             const excludePaths = [
                 '/bind',
                 '/binding-request', // 添加绑定申请路径
+                '/binding-notice', // 添加绑定说明页面路径
                 '/school-group',
                 '/user-group',
                 '/logout', 
@@ -2893,17 +2943,21 @@ export async function apply(ctx: Context) {
             const isInSchool = await userBindModel.isUserInSchool(h.user._id);
             const isBound = await userBindModel.isUserBound(h.user._id);
             
+            // 学校组成员未绑定时，强制重定向到绑定说明页面（无论访问什么页面）
+            if (isInSchool && !isBound) {
+                h.response.redirect = '/binding-notice';
+                return;
+            }
+            
             // 检查是否访问需要学校组权限的路径
             const isSchoolGroupRequiredPath = schoolGroupRequiredPaths.some(path => 
                 currentPath === path || currentPath.startsWith(path + '/')
             );
             
-            if (isSchoolGroupRequiredPath) {
-                // 非学校组成员或未绑定用户都重定向到绑定申请页面
-                if (!isInSchool || !isBound) {
-                    h.response.redirect = '/binding-request';
-                    return;
-                }
+            // 非学校组成员访问需要学校组权限的路径时，也重定向到绑定说明页面
+            if (isSchoolGroupRequiredPath && !isInSchool) {
+                h.response.redirect = '/binding-notice';
+                return;
             }
         } catch (error) {
             // 如果是权限错误，直接抛出
@@ -2921,7 +2975,7 @@ export async function apply(ctx: Context) {
         }
 
         try {
-            // 超级管理员 root（uid=2）无需检查绑定状态
+            // 超级管理员 root（uid=2）的处理已在 before-prepare 中完成
             if (h.user._id === 2) {
                 return;
             }
@@ -2936,9 +2990,10 @@ export async function apply(ctx: Context) {
             const user = await UserModel.getById('system', h.user._id);
             // 检查用户是否属于学校组
             const isInSchool = await userBindModel.isUserInSchool(h.user._id);
-            // 只有学校组成员才需要强制绑定
+            // 学校组成员必须完成绑定，强制重定向到绑定说明页面
             if (isInSchool && !await userBindModel.isUserBound(h.user._id)) {
-                // 这里可以添加提示信息，但不强制重定向
+                h.response.redirect = '/binding-notice';
+                return;
             }
         } catch (error) {
             // 处理错误但不记录日志
