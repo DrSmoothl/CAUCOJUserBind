@@ -721,10 +721,13 @@
                             <td>
                                 {% if request.status == 'pending' %}
                                 <div class="bindreq-action-group">
-                                    <form method="post" style="display: inline;" onsubmit="return confirm('确定要同意这个申请吗？');">
+                                    <form method="post" style="display: inline;" id="approve-form-{{ request._id }}">
                                         <input type="hidden" name="requestId" value="{{ request._id }}">
                                         <input type="hidden" name="action" value="approve">
-                                        <button type="submit" class="bindreq-action-btn bindreq-action-btn--approve">
+                                        <button type="button" class="bindreq-action-btn bindreq-action-btn--approve" 
+                                                data-request-id="{{ request._id }}" 
+                                                data-user-name="{{ request.user.uname if request.user else '未知用户' }}"
+                                                onclick="showApproveConfirmModal(this)">
                                             <span>✓</span> 同意
                                         </button>
                                     </form>
@@ -904,6 +907,137 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // 弹窗相关函数
+function showCaucojModal(type, title, message) {
+    // 创建临时模态框，因为页面已有自定义弹窗
+    const existingModal = document.getElementById('caucojTempModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    const modal = document.createElement('div');
+    modal.id = 'caucojTempModal';
+    modal.className = 'bindreq-modal';
+    modal.style.display = 'flex';
+    
+    let iconColor = '#3b82f6';
+    let iconBg = '#dbeafe';
+    let icon = 'ℹ️';
+    
+    if (type === 'error') {
+        iconColor = '#ef4444';
+        iconBg = '#fee2e2';
+        icon = '❌';
+    } else if (type === 'success') {
+        iconColor = '#10b981';
+        iconBg = '#dcfce7';
+        icon = '✅';
+    } else if (type === 'warning') {
+        iconColor = '#f59e0b';
+        iconBg = '#fef3c7';
+        icon = '⚠️';
+    }
+    
+    modal.innerHTML = `
+        <div class="bindreq-modal-overlay" onclick="hideCaucojModal()"></div>
+        <div class="bindreq-modal-content">
+            <div class="bindreq-modal-header">
+                <h3 style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 24px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: ${iconBg};">${icon}</span>
+                    ${title}
+                </h3>
+                <button type="button" class="bindreq-modal-close" onclick="hideCaucojModal()">×</button>
+            </div>
+            <div class="bindreq-modal-body">
+                <p style="white-space: pre-line;">${message}</p>
+            </div>
+            <div class="bindreq-modal-footer">
+                <button type="button" class="bindreq-modal-btn bindreq-modal-btn--cancel" onclick="hideCaucojModal()">确定</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+}
+
+function hideCaucojModal() {
+    const modal = document.getElementById('caucojTempModal');
+    if (modal) {
+        modal.remove();
+        document.body.style.overflow = '';
+    }
+}
+
+function showCaucojConfirmModal(title, message, callback) {
+    const existingModal = document.getElementById('caucojConfirmTempModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    const modal = document.createElement('div');
+    modal.id = 'caucojConfirmTempModal';
+    modal.className = 'bindreq-modal';
+    modal.style.display = 'flex';
+    
+    modal.innerHTML = `
+        <div class="bindreq-modal-overlay" onclick="hideCaucojConfirmModal()"></div>
+        <div class="bindreq-modal-content">
+            <div class="bindreq-modal-header">
+                <h3 style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 24px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #fef3c7;">⚠️</span>
+                    ${title}
+                </h3>
+                <button type="button" class="bindreq-modal-close" onclick="hideCaucojConfirmModal()">×</button>
+            </div>
+            <div class="bindreq-modal-body">
+                <p style="white-space: pre-line;">${message}</p>
+            </div>
+            <div class="bindreq-modal-footer">
+                <button type="button" class="bindreq-modal-btn bindreq-modal-btn--cancel" onclick="hideCaucojConfirmModal()">取消</button>
+                <button type="button" class="bindreq-modal-btn bindreq-modal-btn--danger" onclick="confirmCaucojModal()">确定</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+    
+    // 设置回调
+    window.caucojConfirmCallback = callback;
+}
+
+function hideCaucojConfirmModal() {
+    const modal = document.getElementById('caucojConfirmTempModal');
+    if (modal) {
+        modal.remove();
+        document.body.style.overflow = '';
+    }
+    window.caucojConfirmCallback = null;
+}
+
+function confirmCaucojModal() {
+    if (window.caucojConfirmCallback) {
+        window.caucojConfirmCallback(true);
+    }
+    hideCaucojConfirmModal();
+}
+
+function showApproveConfirmModal(button) {
+    const requestId = button.getAttribute('data-request-id');
+    const userName = button.getAttribute('data-user-name');
+    
+    showCaucojConfirmModal(
+        '确认同意', 
+        `确定要同意用户「${userName}」的绑定申请吗？`, 
+        function(confirmed) {
+            if (confirmed) {
+                const form = document.getElementById('approve-form-' + requestId);
+                form.submit();
+            }
+        }
+    );
+}
+
 function showRejectModal(requestId, userName) {
     document.getElementById('rejectRequestId').value = requestId;
     document.getElementById('rejectUserName').textContent = userName;
@@ -929,23 +1063,38 @@ function confirmReject() {
     
     // 可以选择是否必须填写拒绝理由
     if (!reason) {
-        if (!confirm('您没有填写拒绝理由，确定要继续拒绝吗？')) {
-            return;
-        }
+        showCaucojConfirmModal('确认拒绝', '您没有填写拒绝理由，确定要继续拒绝吗？', function(confirmed) {
+            if (confirmed) {
+                document.getElementById('rejectForm').submit();
+            }
+        });
+    } else {
+        // 有理由的话直接提交
+        document.getElementById('rejectForm').submit();
     }
-    
-    // 提交表单
-    document.getElementById('rejectForm').submit();
 }
 
 // 键盘事件处理
 document.addEventListener('keydown', function(e) {
     const modal = document.getElementById('rejectModal');
-    if (modal.style.display === 'flex') {
+    const caucojModal = document.getElementById('caucojTempModal');
+    const caucojConfirmModal = document.getElementById('caucojConfirmTempModal');
+    
+    if (modal && modal.style.display === 'flex') {
         if (e.key === 'Escape') {
             hideRejectModal();
         } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
             confirmReject();
+        }
+    } else if (caucojModal) {
+        if (e.key === 'Escape') {
+            hideCaucojModal();
+        }
+    } else if (caucojConfirmModal) {
+        if (e.key === 'Escape') {
+            hideCaucojConfirmModal();
+        } else if (e.key === 'Enter') {
+            confirmCaucojModal();
         }
     }
 });
