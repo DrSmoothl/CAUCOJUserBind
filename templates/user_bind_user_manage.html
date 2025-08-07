@@ -1,6 +1,144 @@
 {% extends "layout/basic.html" %}
 
 {% block content %}
+<style>
+/* CAUCOJ模态框样式 */
+.caucoj-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.caucoj-modal-container {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 450px;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: caucojModalAppear 0.3s ease-out;
+}
+
+@keyframes caucojModalAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.caucoj-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px 16px 24px;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.caucoj-modal-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.caucoj-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.caucoj-modal-close:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.caucoj-modal-body {
+  padding: 16px 24px;
+}
+
+.caucoj-modal-message {
+  margin: 0;
+  color: #374151;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.caucoj-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px 24px 24px;
+  border-top: 2px solid #f3f4f6;
+}
+
+.caucoj-modal-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 2px solid;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.caucoj-modal-btn-primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  border-color: #3b82f6;
+}
+
+.caucoj-modal-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+.caucoj-modal-btn-secondary {
+  background: white;
+  color: #6b7280;
+  border-color: #d1d5db;
+}
+
+.caucoj-modal-btn-secondary:hover {
+  background: #f9fafb;
+  color: #374151;
+  border-color: #9ca3af;
+}
+
+.caucoj-modal-btn-danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  border-color: #ef4444;
+}
+
+.caucoj-modal-btn-danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+</style>
+
 <div class="row">
   <div class="medium-12 columns">
     <div class="section">
@@ -140,13 +278,40 @@
   </div>
 </div>
 
+<!-- CAUCOJ模态框 -->
+<div id="caucojModal" class="caucoj-modal-overlay" style="display: none;">
+    <div class="caucoj-modal-container">
+        <div class="caucoj-modal-header">
+            <h3 id="caucojModalTitle" class="caucoj-modal-title"></h3>
+            <button type="button" class="caucoj-modal-close" onclick="hideCaucojModal()">×</button>
+        </div>
+        <div class="caucoj-modal-body">
+            <p id="caucojModalMessage" class="caucoj-modal-message"></p>
+        </div>
+        <div class="caucoj-modal-footer">
+            <button type="button" class="caucoj-modal-btn caucoj-modal-btn-secondary" id="caucojModalCancel" onclick="hideCaucojModal()" style="display: none;">
+                取消
+            </button>
+            <button type="button" class="caucoj-modal-btn caucoj-modal-btn-primary" id="caucojModalConfirm" onclick="hideCaucojModal()">
+                确定
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 // 单个用户操作
 async function setSchoolStudent(userId, isSchoolStudent) {
     const action = isSchoolStudent ? '设为本校学生' : '取消本校学生';
-    if (!confirm(`确认要${action}吗？`)) {
-        return;
-    }
+    showCaucojConfirmModal(
+        'confirm',
+        '确认操作',
+        `确认要${action}吗？`,
+        () => executeSetSchoolStudent(userId, isSchoolStudent)
+    );
+}
+
+async function executeSetSchoolStudent(userId, isSchoolStudent) {
     
     try {
         const response = await fetch('/user-bind/set-school-student', {
@@ -161,10 +326,10 @@ async function setSchoolStudent(userId, isSchoolStudent) {
         if (result.success) {
             location.reload();
         } else {
-            alert('操作失败：' + (result.error || '未知错误'));
+            showCaucojModal('error', '操作失败', result.error || '未知错误');
         }
     } catch (error) {
-        alert('操作失败：' + error.message);
+        showCaucojModal('error', '操作失败', error.message);
     }
 }
 
@@ -218,14 +383,20 @@ function updateBatchButtons() {
 async function batchSetSchoolStudent(isSchoolStudent) {
     const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
     if (checkedBoxes.length === 0) {
-        alert('请选择要操作的用户');
+        showCaucojModal('warning', '提示', '请选择要操作的用户');
         return;
     }
     
     const action = isSchoolStudent ? '设为本校学生' : '取消本校学生';
-    if (!confirm(`确认要将选中的 ${checkedBoxes.length} 个用户${action}吗？`)) {
-        return;
-    }
+    showCaucojConfirmModal(
+        'confirm', 
+        '确认操作', 
+        `确认要将选中的 ${checkedBoxes.length} 个用户${action}吗？`,
+        () => executeBatchOperation(isSchoolStudent, checkedBoxes)
+    );
+}
+
+async function executeBatchOperation(isSchoolStudent, checkedBoxes) {
     
     // 收集选中的用户ID
     const userIds = Array.from(checkedBoxes).map(checkbox => checkbox.value);
@@ -252,13 +423,12 @@ async function batchSetSchoolStudent(isSchoolStudent) {
         
         const result = await response.json();
         if (result.success) {
-            alert(result.message);
-            location.reload();
+            showCaucojModal('success', '操作成功', result.message, () => location.reload());
         } else {
-            alert('批量操作失败：' + (result.error || '未知错误'));
+            showCaucojModal('error', '批量操作失败', result.error || '未知错误');
         }
     } catch (error) {
-        alert('批量操作失败：' + error.message);
+        showCaucojModal('error', '批量操作失败', error.message);
     } finally {
         // 恢复按钮状态
         batchSetBtn.textContent = originalSetText;
@@ -270,6 +440,95 @@ async function batchSetSchoolStudent(isSchoolStudent) {
 // 页面加载时初始化
 document.addEventListener('DOMContentLoaded', function() {
     updateBatchButtons();
+});
+
+// CAUCOJ模态框控制函数
+function showCaucojModal(type, title, message, callback) {
+    const modal = document.getElementById('caucojModal');
+    const titleElement = document.getElementById('caucojModalTitle');
+    const messageElement = document.getElementById('caucojModalMessage');
+    const confirmBtn = document.getElementById('caucojModalConfirm');
+    const cancelBtn = document.getElementById('caucojModalCancel');
+    
+    titleElement.textContent = title || '提示';
+    messageElement.textContent = message || '';
+    
+    // 根据类型设置样式
+    const container = modal.querySelector('.caucoj-modal-container');
+    container.className = 'caucoj-modal-container';
+    
+    // 重置按钮
+    confirmBtn.className = 'caucoj-modal-btn caucoj-modal-btn-primary';
+    confirmBtn.style.display = 'inline-block';
+    cancelBtn.style.display = 'none';
+    
+    if (type === 'error') {
+        container.classList.add('caucoj-modal-error');
+    } else if (type === 'warning') {
+        container.classList.add('caucoj-modal-warning');
+    } else if (type === 'success') {
+        container.classList.add('caucoj-modal-success');
+    }
+    
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    window.caucojModalCallback = callback;
+    
+    // 确定按钮事件
+    confirmBtn.onclick = function() {
+        hideCaucojModal();
+        if (callback) callback();
+    };
+}
+
+function showCaucojConfirmModal(type, title, message, onConfirm, onCancel) {
+    const modal = document.getElementById('caucojModal');
+    const titleElement = document.getElementById('caucojModalTitle');
+    const messageElement = document.getElementById('caucojModalMessage');
+    const confirmBtn = document.getElementById('caucojModalConfirm');
+    const cancelBtn = document.getElementById('caucojModalCancel');
+    
+    titleElement.textContent = title || '确认';
+    messageElement.textContent = message || '';
+    
+    // 显示取消按钮
+    cancelBtn.style.display = 'inline-block';
+    confirmBtn.className = 'caucoj-modal-btn caucoj-modal-btn-danger';
+    confirmBtn.textContent = '确认';
+    
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    // 确认按钮事件
+    confirmBtn.onclick = function() {
+        hideCaucojModal();
+        if (onConfirm) onConfirm();
+    };
+    
+    // 取消按钮事件
+    cancelBtn.onclick = function() {
+        hideCaucojModal();
+        if (onCancel) onCancel();
+    };
+}
+
+function hideCaucojModal() {
+    const modal = document.getElementById('caucojModal');
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+    
+    // 重置按钮文本
+    const confirmBtn = document.getElementById('caucojModalConfirm');
+    confirmBtn.textContent = '确定';
+}
+
+// 键盘事件
+document.addEventListener('keydown', function(e) {
+    const modal = document.getElementById('caucojModal');
+    if (modal.style.display === 'flex' && e.key === 'Escape') {
+        hideCaucojModal();
+    }
 });
 </script>
 {% endblock %}

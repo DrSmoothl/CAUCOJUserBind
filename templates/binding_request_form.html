@@ -289,6 +289,131 @@
     font-size: 1.8rem;
   }
 }
+
+/* CAUCOJ模态框样式 */
+.caucoj-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.caucoj-modal-container {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 450px;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: caucojModalAppear 0.3s ease-out;
+}
+
+@keyframes caucojModalAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.caucoj-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px 16px 24px;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.caucoj-modal-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.caucoj-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.caucoj-modal-close:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.caucoj-modal-body {
+  padding: 16px 24px;
+}
+
+.caucoj-modal-message {
+  margin: 0;
+  color: #374151;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.caucoj-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px 24px 24px;
+  border-top: 2px solid #f3f4f6;
+}
+
+.caucoj-modal-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 2px solid;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.caucoj-modal-btn-primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  border-color: #3b82f6;
+}
+
+.caucoj-modal-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+.caucoj-modal-btn-secondary {
+  background: white;
+  color: #6b7280;
+  border-color: #d1d5db;
+}
+
+.caucoj-modal-btn-secondary:hover {
+  background: #f9fafb;
+  color: #374151;
+  border-color: #9ca3af;
+}
 </style>
 
 <div class="section">
@@ -366,6 +491,24 @@
     </div>
 </div>
 
+<!-- CAUCOJ模态框 -->
+<div id="caucojModal" class="caucoj-modal-overlay" style="display: none;">
+    <div class="caucoj-modal-container">
+        <div class="caucoj-modal-header">
+            <h3 id="caucojModalTitle" class="caucoj-modal-title"></h3>
+            <button type="button" class="caucoj-modal-close" onclick="hideCaucojModal()">×</button>
+        </div>
+        <div class="caucoj-modal-body">
+            <p id="caucojModalMessage" class="caucoj-modal-message"></p>
+        </div>
+        <div class="caucoj-modal-footer">
+            <button type="button" class="caucoj-modal-btn caucoj-modal-btn-primary" onclick="hideCaucojModal()">
+                确定
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('bindreqForm');
@@ -379,7 +522,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // 验证输入
         if (!schoolSelect.value || !studentIdInput.value.trim() || !realNameInput.value.trim()) {
             e.preventDefault();
-            alert('请完整填写所有信息');
+            showCaucojModal('error', '表单验证失败', '请完整填写所有信息');
             return;
         }
         
@@ -423,6 +566,53 @@ document.addEventListener('DOMContentLoaded', function() {
         container.style.opacity = '1';
         container.style.transform = 'translateY(0)';
     }, 100);
+});
+
+// CAUCOJ模态框控制函数
+function showCaucojModal(type, title, message, callback) {
+    const modal = document.getElementById('caucojModal');
+    const titleElement = document.getElementById('caucojModalTitle');
+    const messageElement = document.getElementById('caucojModalMessage');
+    
+    titleElement.textContent = title || '提示';
+    messageElement.textContent = message || '';
+    
+    // 根据类型设置样式
+    const container = modal.querySelector('.caucoj-modal-container');
+    container.className = 'caucoj-modal-container';
+    if (type === 'error') {
+        container.classList.add('caucoj-modal-error');
+    } else if (type === 'warning') {
+        container.classList.add('caucoj-modal-warning');
+    } else if (type === 'success') {
+        container.classList.add('caucoj-modal-success');
+    }
+    
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    // 存储回调函数
+    window.caucojModalCallback = callback;
+}
+
+function hideCaucojModal() {
+    const modal = document.getElementById('caucojModal');
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+    
+    // 执行回调函数
+    if (window.caucojModalCallback) {
+        window.caucojModalCallback();
+        window.caucojModalCallback = null;
+    }
+}
+
+// 键盘事件
+document.addEventListener('keydown', function(e) {
+    const modal = document.getElementById('caucojModal');
+    if (modal.style.display === 'flex' && e.key === 'Escape') {
+        hideCaucojModal();
+    }
 });
 </script>
 {% endblock %}
