@@ -312,21 +312,36 @@
 .bindreq-success-container {
   animation: bindreq-success-fadeIn 0.8s ease-out;
 }
+
+/* 直接绑定成功的特殊样式 */
+.bindreq-success-card.direct-bind {
+  border-color: #fbbf24;
+}
+
+.bindreq-success-card.direct-bind .bindreq-success-header {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.bindreq-success-card.direct-bind .bindreq-success-message {
+  background: linear-gradient(135deg, #fef3c7, #fed7aa);
+  border-color: #f59e0b;
+  color: #92400e;
+}
 </style>
 
 <div class="section">
     <div class="section__body">
         <div class="bindreq-success-container">
-            <div class="bindreq-success-card">
+            <div class="bindreq-success-card{% if directBind %} direct-bind{% endif %}">
                 <div class="bindreq-success-header">
-                    <span class="bindreq-success-icon">✅</span>
-                    <h1 class="bindreq-success-title">申请提交成功</h1>
-                    <p class="bindreq-success-subtitle">您的绑定申请已成功提交</p>
+                    <span class="bindreq-success-icon">{% if directBind %}🎉{% else %}✅{% endif %}</span>
+                    <h1 class="bindreq-success-title">{% if directBind %}绑定成功{% else %}申请提交成功{% endif %}</h1>
+                    <p class="bindreq-success-subtitle">{% if directBind %}您已成功完成账号绑定{% else %}您的绑定申请已成功提交{% endif %}</p>
                 </div>
                 
                 <div class="bindreq-success-body">
                     <div class="bindreq-success-message">
-                        您的绑定申请已经成功提交！我们已将您的申请信息发送给管理员进行审核。请耐心等待审核结果，我们会尽快为您处理。
+                        {{ message or (directBind and '恭喜！您的学号姓名已在学校组中找到，系统已自动为您完成绑定。您现在可以正常使用所有功能了！' or '您的绑定申请已经成功提交！我们已将您的申请信息发送给管理员进行审核。请耐心等待审核结果，我们会尽快为您处理。') }}
                     </div>
                     
                     <div class="bindreq-success-info-grid">
@@ -344,6 +359,7 @@
                         </div>
                     </div>
                     
+                    {% if not directBind %}
                     <div class="bindreq-success-timeline">
                         <div class="bindreq-timeline-title">
                             <span>⏳</span> 审核流程
@@ -365,10 +381,29 @@
                             账号绑定完成
                         </div>
                     </div>
+                    {% else %}
+                    <div class="bindreq-success-timeline">
+                        <div class="bindreq-timeline-title">
+                            <span>🎯</span> 绑定完成
+                        </div>
+                        <div class="bindreq-timeline-step active">
+                            <div class="bindreq-timeline-dot"></div>
+                            验证学号姓名 - 已完成
+                        </div>
+                        <div class="bindreq-timeline-step active">
+                            <div class="bindreq-timeline-dot"></div>
+                            自动绑定账号 - 已完成
+                        </div>
+                        <div class="bindreq-timeline-step active">
+                            <div class="bindreq-timeline-dot"></div>
+                            权限激活 - 已完成
+                        </div>
+                    </div>
+                    {% endif %}
                     
                     <div class="bindreq-success-actions">
                         <a href="/user-bind" class="bindreq-action-btn bindreq-action-btn--primary">
-                            <span>🏠</span> 查看绑定状态
+                            <span>{% if directBind %}�{% else %}👀{% endif %}</span> {% if directBind %}查看绑定信息{% else %}查看申请状态{% endif %}
                         </a>
                         <a href="/" class="bindreq-action-btn bindreq-action-btn--secondary">
                             <span>🏠</span> 返回首页

@@ -1289,17 +1289,91 @@ const userBindModel = {
             throw new Error('选择的学校组不存在');
         }
 
-        const result = await bindingRequestsColl.insertOne({
-            userId: userId,
-            schoolGroupId: schoolGroupId,
-            studentId: studentId,
-            realName: realName,
-            status: 'pending',
-            createdAt: new Date(),
-            updatedAt: new Date()
-        });
+        // 检查学校组是否有成员数据结构
+        if (!school.members || !Array.isArray(school.members)) {
+            // 如果学校组没有成员信息，需要申请审核
+            const result = await bindingRequestsColl.insertOne({
+                userId: userId,
+                schoolGroupId: schoolGroupId,
+                studentId: studentId,
+                realName: realName,
+                status: 'pending',
+                createdAt: new Date(),
+                updatedAt: new Date()
+            });
+            
+            return { type: 'request', id: result.insertedId };
+        }
+
+        // 检查学号姓名是否在学校组中存在
+        const member = school.members.find(m => m.studentId === studentId && m.realName === realName);
         
-        return result.insertedId;
+        if (member) {
+            // 存在匹配的成员
+            if (member.bound) {
+                throw new Error('该学生信息已被绑定');
+            }
+            
+            // 直接绑定成功
+            const userColl = db.collection('user');
+            
+            // 检查用户是否已有学校组
+            const dbUser = await userColl.findOne({ _id: userId });
+            
+            if (dbUser?.parentSchoolId && dbUser.parentSchoolId.length > 0) {
+                throw new Error('您已属于其他学校组');
+            }
+
+            // 更新用户信息
+            await userColl.updateOne(
+                { _id: userId },
+                {
+                    $set: {
+                        realName,
+                        studentId
+                    },
+                    $addToSet: {
+                        parentSchoolId: schoolGroupId
+                    }
+                }
+            );
+
+            // 更新学校组中的成员状态
+            await schoolGroupsColl.updateOne(
+                { 
+                    _id: school._id, 
+                    'members': {
+                        $elemMatch: {
+                            'studentId': studentId,
+                            'realName': realName,
+                            'bound': false
+                        }
+                    }
+                },
+                {
+                    $set: {
+                        'members.$.bound': true,
+                        'members.$.boundBy': userId,
+                        'members.$.boundAt': new Date()
+                    }
+                }
+            );
+            
+            return { type: 'direct_bind', success: true };
+        } else {
+            // 不存在匹配的成员，需要申请审核
+            const result = await bindingRequestsColl.insertOne({
+                userId: userId,
+                schoolGroupId: schoolGroupId,
+                studentId: studentId,
+                realName: realName,
+                status: 'pending',
+                createdAt: new Date(),
+                updatedAt: new Date()
+            });
+            
+            return { type: 'request', id: result.insertedId };
+        }
     },
 
     // 获取绑定申请列表（管理员用）
@@ -2569,13 +2643,27 @@ class BindingRequestHandler extends Handler {
         }
 
         try {
-            await userBindModel.createBindingRequest(this.user._id, schoolGroupId, studentId.trim(), realName.trim());
+            const result = await userBindModel.createBindingRequest(this.user._id, schoolGroupId, studentId.trim(), realName.trim());
             
-            this.response.template = 'binding_request_success.html';
-            this.response.body = {
-                studentId: studentId.trim(),
-                realName: realName.trim()
-            };
+            if (result.type === 'direct_bind') {
+                // 直接绑定成功
+                this.response.template = 'binding_request_success.html';
+                this.response.body = {
+                    studentId: studentId.trim(),
+                    realName: realName.trim(),
+                    directBind: true,
+                    message: '绑定成功！您的学号姓名已在学校组中找到，已直接完成绑定。'
+                };
+            } else if (result.type === 'request') {
+                // 提交申请成功
+                this.response.template = 'binding_request_success.html';
+                this.response.body = {
+                    studentId: studentId.trim(),
+                    realName: realName.trim(),
+                    directBind: false,
+                    message: '申请已提交！请等待管理员审核您的绑定申请。'
+                };
+            }
         } catch (error: any) {
             const schools = await userBindModel.getAvailableSchoolGroups();
             this.response.template = 'binding_request_form.html';
