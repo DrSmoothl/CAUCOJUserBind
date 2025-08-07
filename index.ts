@@ -1334,10 +1334,32 @@ const userBindModel = {
             const school = await this.getSchoolGroupById(request.schoolGroupId);
             (request as any).school = school ? { _id: school._id, name: school.name } : null;
             
+            // 格式化日期
+            if (request.createdAt) {
+                (request as any).createdAtFormatted = new Date(request.createdAt).toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+            
             // 获取审核者信息
             if (request.reviewedBy) {
                 const reviewer = await userColl.findOne({ _id: request.reviewedBy });
                 (request as any).reviewer = reviewer ? { _id: reviewer._id, uname: reviewer.uname } : null;
+            }
+            
+            // 格式化审核时间
+            if (request.reviewedAt) {
+                (request as any).reviewedAtFormatted = new Date(request.reviewedAt).toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
             }
         }
         
@@ -1359,6 +1381,18 @@ const userBindModel = {
             // 补充学校组信息
             const school = await this.getSchoolGroupById(request.schoolGroupId);
             (request as any).school = school ? { _id: school._id, name: school.name } : null;
+            
+            // 格式化日期
+            if (request.createdAt) {
+                (request as any).createdAtFormatted = new Date(request.createdAt).toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+            }
         }
         
         return request;

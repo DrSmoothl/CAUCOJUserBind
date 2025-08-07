@@ -467,7 +467,7 @@
                                     <span>📅</span> 申请时间
                                 </div>
                                 <div class="bindreq-pending-info-value">
-                                    {{ request.createdAt.strftime('%Y-%m-%d %H:%M:%S') }}
+                                    {{ request.createdAtFormatted || '未知时间' }}
                                 </div>
                             </div>
                         </div>
