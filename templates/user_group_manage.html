@@ -336,6 +336,45 @@
 </div>
 
 <script>
+// 模态框函数
+function showCaucojModal(type, title, message) {
+  const modal = document.getElementById('caucojModal');
+  const modalTitle = document.getElementById('caucojModalTitle');
+  const modalMessage = document.getElementById('caucojModalMessage');
+  const modalIcon = document.getElementById('caucojModalIcon');
+  
+  modalTitle.textContent = title;
+  modalMessage.textContent = message;
+  
+  // 设置图标
+  if (type === 'error') {
+    modalIcon.textContent = '❌';
+    modalIcon.className = 'caucoj-modal-icon caucoj-modal-icon-error';
+  } else if (type === 'success') {
+    modalIcon.textContent = '✅';
+    modalIcon.className = 'caucoj-modal-icon caucoj-modal-icon-success';
+  } else if (type === 'warning') {
+    modalIcon.textContent = '⚠️';
+    modalIcon.className = 'caucoj-modal-icon caucoj-modal-icon-warning';
+  } else {
+    modalIcon.textContent = 'ℹ️';
+    modalIcon.className = 'caucoj-modal-icon caucoj-modal-icon-info';
+  }
+  
+  modal.style.display = 'flex';
+  setTimeout(() => {
+    modal.classList.add('caucoj-modal-show');
+  }, 10);
+}
+
+function hideCaucojModal() {
+  const modal = document.getElementById('caucojModal');
+  modal.classList.remove('caucoj-modal-show');
+  setTimeout(() => {
+    modal.style.display = 'none';
+  }, 300);
+}
+
 function showGroupDetails(groupId) {
   // TODO: 实现显示用户组详情的功能
   showCaucojModal('info', '功能开发中', '显示用户组详情功能待实现');
@@ -393,5 +432,163 @@ function copyToClipboard(text) {
     showCaucojModal('success', '复制成功', '链接已复制到剪贴板');
   }
 }
+
+// 键盘事件处理
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    hideCaucojModal();
+  }
+});
 </script>
+
+<!-- 模态框 HTML -->
+<div id="caucojModal" class="caucoj-modal-overlay" onclick="hideCaucojModal()">
+  <div class="caucoj-modal-container" onclick="event.stopPropagation()">
+    <div class="caucoj-modal-header">
+      <span id="caucojModalIcon" class="caucoj-modal-icon"></span>
+      <h3 id="caucojModalTitle" class="caucoj-modal-title"></h3>
+    </div>
+    <div class="caucoj-modal-body">
+      <p id="caucojModalMessage" class="caucoj-modal-message"></p>
+    </div>
+    <div class="caucoj-modal-footer">
+      <button type="button" class="caucoj-modal-btn caucoj-modal-btn-primary" onclick="hideCaucojModal()">确定</button>
+    </div>
+  </div>
+</div>
+
+<style>
+/* 模态框样式 */
+.caucoj-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.caucoj-modal-show {
+  opacity: 1 !important;
+}
+
+.caucoj-modal-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  transform: scale(0.7) translateY(-20px);
+  transition: transform 0.3s ease;
+}
+
+.caucoj-modal-show .caucoj-modal-container {
+  transform: scale(1) translateY(0);
+}
+
+.caucoj-modal-header {
+  padding: 24px 24px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.caucoj-modal-icon {
+  font-size: 24px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.caucoj-modal-icon-error {
+  background: #fee2e2;
+}
+
+.caucoj-modal-icon-success {
+  background: #dcfce7;
+}
+
+.caucoj-modal-icon-warning {
+  background: #fef3c7;
+}
+
+.caucoj-modal-icon-info {
+  background: #dbeafe;
+}
+
+.caucoj-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.caucoj-modal-body {
+  padding: 16px 24px 24px;
+}
+
+.caucoj-modal-message {
+  color: #4b5563;
+  line-height: 1.5;
+  margin: 0;
+  white-space: pre-line;
+}
+
+.caucoj-modal-footer {
+  padding: 16px 24px 24px;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.caucoj-modal-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 80px;
+}
+
+.caucoj-modal-btn-primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.caucoj-modal-btn-primary:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 640px) {
+  .caucoj-modal-container {
+    width: 95%;
+    margin: 20px;
+  }
+  
+  .caucoj-modal-footer {
+    flex-direction: column;
+  }
+  
+  .caucoj-modal-btn {
+    width: 100%;
+  }
+}
+</style>
 {% endblock %}
