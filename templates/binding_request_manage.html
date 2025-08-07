@@ -549,7 +549,7 @@
                             </td>
                             <td><strong>{{ request.studentId }}</strong></td>
                             <td><strong>{{ request.realName }}</strong></td>
-                            <td style="color: #6b7280;">{{ request.createdAtFormatted || '未知时间' }}</td>
+                            <td style="color: #6b7280;">{{ request.createdAtFormatted or '未知时间' }}</td>
                             <td>
                                 {% if request.status == 'pending' %}
                                 <span class="bindreq-status-badge bindreq-status-badge--pending">
@@ -590,7 +590,7 @@
                                     <div><strong>审核者：</strong>{{ request.reviewer.uname }}</div>
                                     {% endif %}
                                     {% if request.reviewedAt %}
-                                    <div><strong>审核时间：</strong>{{ request.reviewedAtFormatted || '未知时间' }}</div>
+                                    <div><strong>审核时间：</strong>{{ request.reviewedAtFormatted or '未知时间' }}</div>
                                     {% endif %}
                                     {% if request.reviewComment %}
                                     <div><strong>备注：</strong>{{ request.reviewComment }}</div>
