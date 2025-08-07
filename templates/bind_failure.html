@@ -261,6 +261,7 @@
   position: relative;
   z-index: 1;
   border: 2px solid #10b981;
+  margin-bottom: 16px;
 }
 
 .bind-failure-btn-large:hover {
@@ -269,6 +270,23 @@
   box-shadow: 0 12px 32px rgba(16, 185, 129, 0.4);
   text-decoration: none;
   color: white;
+}
+
+.bind-failure-btn-large--secondary {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-color: #3b82f6;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+}
+
+.bind-failure-btn-large--secondary:hover {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  box-shadow: 0 12px 32px rgba(59, 130, 246, 0.4);
+  text-decoration: none;
+  color: white;
+}
+
+.bind-failure-btn-large:last-child {
+  margin-bottom: 0;
 }
 
 .bind-failure-btn-large-icon {
@@ -618,8 +636,22 @@
                             <span>⭐</span> 推荐操作
                         </div>
                         <div class="bind-failure-recommended-desc">
-                            大部分绑定失败是因为信息输入错误或尚未导入系统，建议检查学号姓名有没有输错，如果确定没有输错，可以尝试提交绑定申请
+                            大部分绑定失败是因为信息输入错误或尚未导入系统，建议先重新检查信息并重新绑定，如果确定信息无误，再提交绑定申请
                         </div>
+                        
+                        <!-- 重新绑定按钮 -->
+                        {% if token and errorType == 'mismatch' %}
+                        <a href="/bind/{{ token }}" class="bind-failure-btn-large bind-failure-btn-large--secondary">
+                            <div class="bind-failure-btn-large-icon">🔄</div>
+                            <div class="bind-failure-btn-large-content">
+                                <div class="bind-failure-btn-large-title">重新绑定</div>
+                                <div class="bind-failure-btn-large-subtitle">检查信息后重新尝试绑定</div>
+                            </div>
+                            <div class="bind-failure-btn-large-arrow">→</div>
+                        </a>
+                        {% endif %}
+                        
+                        <!-- 提交申请按钮 -->
                         <a href="/binding-request" class="bind-failure-btn-large bind-failure-btn-large--primary">
                             <div class="bind-failure-btn-large-icon">📝</div>
                             <div class="bind-failure-btn-large-content">
@@ -634,12 +666,6 @@
                     <div class="bind-failure-other-actions">
                         <div class="bind-failure-other-title">其他操作</div>
                         <div class="bind-failure-actions">
-                            {% if token and errorType == 'mismatch' %}
-                            <a href="/bind/{{ token }}" class="bind-failure-btn bind-failure-btn--secondary">
-                                <span>🔄</span> 重新绑定
-                            </a>
-                            {% endif %}
-                            
                             <a href="/user-bind" class="bind-failure-btn bind-failure-btn--secondary">
                                 <span>🏠</span> 返回首页
                             </a>
