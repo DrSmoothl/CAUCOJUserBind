@@ -303,21 +303,6 @@
   box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
 }
 
-.bindreq-reject-input {
-  padding: 6px 10px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 12px;
-  width: 120px;
-  margin-left: 8px;
-}
-
-.bindreq-reject-input:focus {
-  outline: none;
-  border-color: #ef4444;
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
-}
-
 /* 审核信息 */
 .bindreq-review-info {
   font-size: 12px;
@@ -467,6 +452,174 @@
     gap: 12px;
   }
 }
+
+/* 弹窗样式 */
+.bindreq-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bindreq-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.bindreq-modal-content {
+  position: relative;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: bindreq-modal-appear 0.3s ease-out;
+}
+
+@keyframes bindreq-modal-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.bindreq-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 24px 16px 24px;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.bindreq-modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.bindreq-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bindreq-modal-close:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.bindreq-modal-body {
+  padding: 16px 24px 24px 24px;
+}
+
+.bindreq-modal-body p {
+  margin: 0 0 20px 0;
+  color: #374151;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.bindreq-modal-form-group {
+  margin-bottom: 16px;
+}
+
+.bindreq-modal-form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+}
+
+.bindreq-modal-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  transition: all 0.3s ease;
+}
+
+.bindreq-modal-textarea:focus {
+  outline: none;
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.bindreq-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px 24px 24px;
+  border-top: 2px solid #f3f4f6;
+}
+
+.bindreq-modal-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 2px solid;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bindreq-modal-btn--cancel {
+  background: white;
+  color: #6b7280;
+  border-color: #d1d5db;
+}
+
+.bindreq-modal-btn--cancel:hover {
+  background: #f9fafb;
+  color: #374151;
+  border-color: #9ca3af;
+}
+
+.bindreq-modal-btn--danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  border-color: #ef4444;
+}
+
+.bindreq-modal-btn--danger:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
 </style>
 
 <div class="section">
@@ -575,14 +728,10 @@
                                             <span>✓</span> 同意
                                         </button>
                                     </form>
-                                    <form method="post" style="display: inline;" onsubmit="return confirm('确定要拒绝这个申请吗？');">
-                                        <input type="hidden" name="requestId" value="{{ request._id }}">
-                                        <input type="hidden" name="action" value="reject">
-                                        <button type="submit" class="bindreq-action-btn bindreq-action-btn--reject">
-                                            <span>✗</span> 拒绝
-                                        </button>
-                                        <input type="text" name="reviewComment" placeholder="拒绝理由" class="bindreq-reject-input">
-                                    </form>
+                                    <button type="button" class="bindreq-action-btn bindreq-action-btn--reject" 
+                                            onclick="showRejectModal('{{ request._id }}', '{{ request.user.uname }}')">
+                                        <span>✗</span> 拒绝
+                                    </button>
                                 </div>
                                 {% else %}
                                 <div class="bindreq-review-info">
@@ -633,6 +782,39 @@
                 <div class="bindreq-empty-desc">当前没有需要审核的绑定申请</div>
             </div>
             {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 拒绝申请弹窗 -->
+<div id="rejectModal" class="bindreq-modal" style="display: none;">
+    <div class="bindreq-modal-overlay" onclick="hideRejectModal()"></div>
+    <div class="bindreq-modal-content">
+        <div class="bindreq-modal-header">
+            <h3>拒绝绑定申请</h3>
+            <button type="button" class="bindreq-modal-close" onclick="hideRejectModal()">×</button>
+        </div>
+        <div class="bindreq-modal-body">
+            <p>您确定要拒绝用户 <strong id="rejectUserName"></strong> 的绑定申请吗？</p>
+            <form id="rejectForm" method="post">
+                <input type="hidden" name="requestId" id="rejectRequestId">
+                <input type="hidden" name="action" value="reject">
+                <div class="bindreq-modal-form-group">
+                    <label for="rejectReason">拒绝理由：</label>
+                    <textarea name="reviewComment" id="rejectReason" 
+                              class="bindreq-modal-textarea" 
+                              placeholder="请输入拒绝理由（选填）"
+                              rows="4"></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="bindreq-modal-footer">
+            <button type="button" class="bindreq-modal-btn bindreq-modal-btn--cancel" onclick="hideRejectModal()">
+                取消
+            </button>
+            <button type="button" class="bindreq-modal-btn bindreq-modal-btn--danger" onclick="confirmReject()">
+                确认拒绝
+            </button>
         </div>
     </div>
 </div>
@@ -689,7 +871,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 批量操作功能（可扩展）
     const approveButtons = document.querySelectorAll('.bindreq-action-btn--approve');
-    const rejectButtons = document.querySelectorAll('.bindreq-action-btn--reject');
     
     approveButtons.forEach(btn => {
         btn.addEventListener('click', function(e) {
@@ -697,19 +878,6 @@ document.addEventListener('DOMContentLoaded', function() {
             icon.style.animation = 'none';
             icon.offsetHeight;
             icon.style.animation = 'bindreq-pending-pulse 0.5s ease-in-out';
-        });
-    });
-    
-    rejectButtons.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            const form = this.closest('form');
-            const commentInput = form.querySelector('.bindreq-reject-input');
-            if (commentInput && !commentInput.value.trim()) {
-                if (!confirm('您没有填写拒绝理由，确定要继续吗？')) {
-                    e.preventDefault();
-                    return false;
-                }
-            }
         });
     });
     
@@ -733,6 +901,53 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+});
+
+// 弹窗相关函数
+function showRejectModal(requestId, userName) {
+    document.getElementById('rejectRequestId').value = requestId;
+    document.getElementById('rejectUserName').textContent = userName;
+    document.getElementById('rejectReason').value = '';
+    document.getElementById('rejectModal').style.display = 'flex';
+    
+    // 聚焦到文本框
+    setTimeout(() => {
+        document.getElementById('rejectReason').focus();
+    }, 100);
+    
+    // 防止页面滚动
+    document.body.style.overflow = 'hidden';
+}
+
+function hideRejectModal() {
+    document.getElementById('rejectModal').style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+function confirmReject() {
+    const reason = document.getElementById('rejectReason').value.trim();
+    
+    // 可以选择是否必须填写拒绝理由
+    if (!reason) {
+        if (!confirm('您没有填写拒绝理由，确定要继续拒绝吗？')) {
+            return;
+        }
+    }
+    
+    // 提交表单
+    document.getElementById('rejectForm').submit();
+}
+
+// 键盘事件处理
+document.addEventListener('keydown', function(e) {
+    const modal = document.getElementById('rejectModal');
+    if (modal.style.display === 'flex') {
+        if (e.key === 'Escape') {
+            hideRejectModal();
+        } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            confirmReject();
+        }
+    }
 });
 </script>
 {% endblock %}
