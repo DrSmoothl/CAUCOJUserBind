@@ -1,0 +1,428 @@
+{% set page_name = '绑定申请' %}
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<style>
+/* 绑定申请页面专用样式 */
+.bindreq-container {
+  max-width: 700px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.bindreq-header {
+  text-align: center;
+  margin-bottom: 32px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  padding: 40px 20px;
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.bindreq-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 20px,
+    rgba(255,255,255,0.1) 20px,
+    rgba(255,255,255,0.1) 40px
+  );
+  animation: bindreq-float 20s ease-in-out infinite;
+}
+
+@keyframes bindreq-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(3deg); }
+}
+
+.bindreq-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+
+.bindreq-title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.bindreq-subtitle {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* 表单容器 */
+.bindreq-form-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: 2px solid #e2e8f0;
+}
+
+.bindreq-form-header {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 20px 24px;
+  font-weight: 600;
+  font-size: 1.125rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bindreq-form-body {
+  padding: 32px;
+}
+
+/* 表单组 */
+.bindreq-form-group {
+  margin-bottom: 24px;
+}
+
+.bindreq-form-label {
+  display: block;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bindreq-form-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+  background: #fafbfc;
+}
+
+.bindreq-form-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  background: white;
+  transform: translateY(-1px);
+}
+
+.bindreq-form-input:hover {
+  border-color: #9ca3af;
+  background: white;
+}
+
+.bindreq-form-select {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+  background: #fafbfc;
+  cursor: pointer;
+}
+
+.bindreq-form-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  background: white;
+}
+
+/* 按钮样式 */
+.bindreq-submit-btn {
+  width: 100%;
+  padding: 16px 24px;
+  border-radius: 12px;
+  font-size: 17px;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+}
+
+.bindreq-submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+.bindreq-submit-btn:active {
+  transform: translateY(0);
+}
+
+/* 提示信息样式 */
+.bindreq-alert {
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+  border: 2px solid;
+  font-size: 15px;
+}
+
+.bindreq-alert--error {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.bindreq-alert--error::before {
+  content: '⚠️';
+  flex-shrink: 0;
+  font-size: 18px;
+}
+
+.bindreq-alert--info {
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border-color: #0ea5e9;
+  color: #0369a1;
+  position: relative;
+}
+
+.bindreq-notice-title {
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bindreq-notice-list {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.6;
+}
+
+.bindreq-notice-list li {
+  margin-bottom: 8px;
+  color: #0369a1;
+}
+
+/* 加载状态 */
+.bindreq-loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.bindreq-loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: bindreq-spin 1s linear infinite;
+}
+
+@keyframes bindreq-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* section重置 */
+.section {
+  background: transparent;
+  box-shadow: none;
+}
+
+.section__header {
+  display: none;
+}
+
+.section__body {
+  padding: 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .bindreq-container {
+    margin: 20px auto;
+    padding: 0 16px;
+  }
+  
+  .bindreq-form-body {
+    padding: 24px 20px;
+  }
+  
+  .bindreq-header {
+    padding: 32px 16px;
+  }
+  
+  .bindreq-title {
+    font-size: 1.8rem;
+  }
+}
+</style>
+
+<div class="section">
+    <div class="section__body">
+        <div class="bindreq-container">
+            <div class="bindreq-header">
+                <span class="bindreq-icon">📝</span>
+                <h1 class="bindreq-title">申请绑定学号</h1>
+                <p class="bindreq-subtitle">请选择您所属的学校组并填写学号姓名信息</p>
+            </div>
+            
+            <div class="bindreq-form-card">
+                <div class="bindreq-form-header">
+                    <span>🎓</span> 绑定申请表
+                </div>
+                <div class="bindreq-form-body">
+                    {% if error %}
+                    <div class="bindreq-alert bindreq-alert--error">
+                        {{ error }}
+                    </div>
+                    {% endif %}
+
+                    <form method="post" id="bindreqForm">
+                        <div class="bindreq-form-group">
+                            <label for="schoolGroupId" class="bindreq-form-label">
+                                <span>🏫</span> 选择学校组
+                            </label>
+                            <select class="bindreq-form-select" name="schoolGroupId" id="schoolGroupId" required>
+                                <option value="">请选择您所属的学校组</option>
+                                {% for school in schools %}
+                                <option value="{{ school._id }}" {% if schoolGroupId == school._id %}selected{% endif %}>
+                                    {{ school.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="bindreq-form-group">
+                            <label for="studentId" class="bindreq-form-label">
+                                <span>🆔</span> 学号
+                            </label>
+                            <input class="bindreq-form-input" type="text" name="studentId" id="studentId" 
+                                   value="{{ studentId or '' }}" placeholder="请输入您的学号" required>
+                        </div>
+                        
+                        <div class="bindreq-form-group">
+                            <label for="realName" class="bindreq-form-label">
+                                <span>👤</span> 真实姓名
+                            </label>
+                            <input class="bindreq-form-input" type="text" name="realName" id="realName" 
+                                   value="{{ realName or '' }}" placeholder="请输入您的真实姓名" required>
+                        </div>
+                        
+                        <div class="bindreq-alert bindreq-alert--info">
+                            <div class="bindreq-notice-title">
+                                <span>📋</span> 申请须知
+                            </div>
+                            <ul class="bindreq-notice-list">
+                                <li>请确保填写的学号和姓名信息准确无误</li>
+                                <li>提交后请耐心等待管理员审核</li>
+                                <li>审核通过后您将可以使用需要绑定身份的功能</li>
+                                <li>如有疑问请联系相关管理员</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="bindreq-form-group">
+                            <button type="submit" class="bindreq-submit-btn" id="submitBtn">
+                                <span>📤</span> 提交申请
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('bindreqForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const schoolSelect = document.getElementById('schoolGroupId');
+    const studentIdInput = document.getElementById('studentId');
+    const realNameInput = document.getElementById('realName');
+    
+    // 表单提交处理
+    form.addEventListener('submit', function(e) {
+        // 验证输入
+        if (!schoolSelect.value || !studentIdInput.value.trim() || !realNameInput.value.trim()) {
+            e.preventDefault();
+            alert('请完整填写所有信息');
+            return;
+        }
+        
+        // 显示加载状态
+        submitBtn.disabled = true;
+        submitBtn.className = 'bindreq-submit-btn bindreq-loading';
+        submitBtn.innerHTML = '<span>⏳</span> 提交中...';
+    });
+    
+    // 输入验证和美化
+    function validateInput(input) {
+        if (input.value.trim()) {
+            input.style.borderColor = '#10b981';
+            input.style.backgroundColor = '#f0fdf4';
+        } else {
+            input.style.borderColor = '#e5e7eb';
+            input.style.backgroundColor = '#fafbfc';
+        }
+    }
+    
+    studentIdInput.addEventListener('input', () => validateInput(studentIdInput));
+    realNameInput.addEventListener('input', () => validateInput(realNameInput));
+    
+    schoolSelect.addEventListener('change', function() {
+        if (this.value) {
+            this.style.borderColor = '#10b981';
+            this.style.backgroundColor = '#f0fdf4';
+        } else {
+            this.style.borderColor = '#e5e7eb';
+            this.style.backgroundColor = '#fafbfc';
+        }
+    });
+    
+    // 页面加载动画
+    const container = document.querySelector('.bindreq-container');
+    container.style.opacity = '0';
+    container.style.transform = 'translateY(30px)';
+    container.style.transition = 'all 0.8s ease';
+    
+    setTimeout(() => {
+        container.style.opacity = '1';
+        container.style.transform = 'translateY(0)';
+    }, 100);
+});
+</script>
+{% endblock %}

@@ -407,6 +407,10 @@
         <div class="userbind-stat-number">{{ bypassUserCount or 0 }}</div>
         <div class="userbind-stat-label">绕过权限用户</div>
       </div>
+      <div class="userbind-stat-item">
+        <div class="userbind-stat-number">{{ pendingRequestCount or 0 }}</div>
+        <div class="userbind-stat-label">待审核申请</div>
+      </div>
     </div>
   </div>
 
@@ -505,6 +509,33 @@
         </div>
       </div>
     </div>
+
+    <!-- 绑定申请管理 -->
+    <div class="userbind-management-card">
+      <div class="userbind-card-header">
+        <div class="userbind-card-icon">📝</div>
+        <h3 class="userbind-card-title">绑定申请管理</h3>
+      </div>
+      <div class="userbind-card-body">
+        <p class="userbind-card-description">审核用户的绑定申请，管理绑定流程</p>
+        <ul class="userbind-card-features">
+          <li>查看待审核申请</li>
+          <li>同意/拒绝申请</li>
+          <li>申请历史记录</li>
+          <li>批量审核操作</li>
+        </ul>
+        <div class="userbind-card-actions">
+          <a href="/binding-request/manage" class="userbind-btn userbind-btn-primary">
+            <span>📋</span> 管理申请
+          </a>
+          {% if pendingRequestCount > 0 %}
+          <span class="userbind-btn" style="background: #ef4444; color: white;">
+            <span>⚠️</span> {{ pendingRequestCount }} 待审核
+          </span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- 快速操作 -->
@@ -532,6 +563,14 @@
         <div class="userbind-quick-action-content">
           <div class="userbind-quick-action-title">权限绕过</div>
           <div class="userbind-quick-action-desc">管理特殊用户权限</div>
+        </div>
+      </a>
+      
+      <a href="/binding-request/manage" class="userbind-quick-action-btn userbind-manage">
+        <div class="userbind-quick-action-icon">📝</div>
+        <div class="userbind-quick-action-content">
+          <div class="userbind-quick-action-title">审核申请</div>
+          <div class="userbind-quick-action-desc">处理用户绑定申请</div>
         </div>
       </a>
       

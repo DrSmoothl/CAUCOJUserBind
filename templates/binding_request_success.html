@@ -1,0 +1,426 @@
+{% set page_name = '申请提交成功' %}
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<style>
+/* 申请成功页面样式 */
+.bindreq-success-container {
+  max-width: 600px;
+  margin: 60px auto;
+  padding: 0 20px;
+  text-align: center;
+}
+
+.bindreq-success-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  position: relative;
+  border: 2px solid #d1fae5;
+}
+
+.bindreq-success-header {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 60px 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.bindreq-success-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    transparent 0deg 15deg,
+    rgba(255,255,255,0.1) 15deg 30deg
+  );
+  animation: bindreq-success-rotate 30s linear infinite;
+}
+
+@keyframes bindreq-success-rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.bindreq-success-icon {
+  font-size: 5rem;
+  margin-bottom: 20px;
+  display: block;
+  animation: bindreq-success-bounce 2s ease-in-out;
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes bindreq-success-bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+.bindreq-success-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.bindreq-success-subtitle {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.bindreq-success-body {
+  padding: 40px;
+}
+
+.bindreq-success-message {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 2px solid #22c55e;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 32px;
+  color: #15803d;
+  font-size: 16px;
+  line-height: 1.6;
+  position: relative;
+}
+
+.bindreq-success-message::before {
+  content: '🎉';
+  position: absolute;
+  top: -10px;
+  left: 24px;
+  background: white;
+  padding: 0 8px;
+  font-size: 20px;
+}
+
+.bindreq-success-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.bindreq-success-info-item {
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s ease;
+}
+
+.bindreq-success-info-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border-color: #10b981;
+}
+
+.bindreq-success-info-label {
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 8px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bindreq-success-info-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.bindreq-success-timeline {
+  background: #fafbfc;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 32px;
+  border: 2px solid #e2e8f0;
+}
+
+.bindreq-timeline-title {
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+}
+
+.bindreq-timeline-step {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.bindreq-timeline-step.active {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.bindreq-timeline-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #d1d5db;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.bindreq-timeline-step.active .bindreq-timeline-dot {
+  background: #10b981;
+  animation: bindreq-pulse 2s ease-in-out infinite;
+}
+
+@keyframes bindreq-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.bindreq-success-actions {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.bindreq-action-btn {
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  border: 2px solid;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 160px;
+  justify-content: center;
+}
+
+.bindreq-action-btn--primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  border-color: #3b82f6;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+}
+
+.bindreq-action-btn--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+.bindreq-action-btn--secondary {
+  background: white;
+  color: #6b7280;
+  border-color: #d1d5db;
+}
+
+.bindreq-action-btn--secondary:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #374151;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+/* section重置 */
+.section {
+  background: transparent;
+  box-shadow: none;
+}
+
+.section__header {
+  display: none;
+}
+
+.section__body {
+  padding: 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .bindreq-success-container {
+    margin: 30px auto;
+    padding: 0 16px;
+  }
+  
+  .bindreq-success-header {
+    padding: 40px 20px;
+  }
+  
+  .bindreq-success-body {
+    padding: 24px 20px;
+  }
+  
+  .bindreq-success-title {
+    font-size: 2rem;
+  }
+  
+  .bindreq-success-info-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .bindreq-success-actions {
+    flex-direction: column;
+  }
+  
+  .bindreq-action-btn {
+    width: 100%;
+  }
+}
+
+/* 页面加载动画 */
+@keyframes bindreq-success-fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bindreq-success-container {
+  animation: bindreq-success-fadeIn 0.8s ease-out;
+}
+</style>
+
+<div class="section">
+    <div class="section__body">
+        <div class="bindreq-success-container">
+            <div class="bindreq-success-card">
+                <div class="bindreq-success-header">
+                    <span class="bindreq-success-icon">✅</span>
+                    <h1 class="bindreq-success-title">申请提交成功</h1>
+                    <p class="bindreq-success-subtitle">您的绑定申请已成功提交</p>
+                </div>
+                
+                <div class="bindreq-success-body">
+                    <div class="bindreq-success-message">
+                        您的绑定申请已经成功提交！我们已将您的申请信息发送给管理员进行审核。请耐心等待审核结果，我们会尽快为您处理。
+                    </div>
+                    
+                    <div class="bindreq-success-info-grid">
+                        <div class="bindreq-success-info-item">
+                            <div class="bindreq-success-info-label">
+                                <span>🆔</span> 学号
+                            </div>
+                            <div class="bindreq-success-info-value">{{ studentId }}</div>
+                        </div>
+                        <div class="bindreq-success-info-item">
+                            <div class="bindreq-success-info-label">
+                                <span>👤</span> 姓名
+                            </div>
+                            <div class="bindreq-success-info-value">{{ realName }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="bindreq-success-timeline">
+                        <div class="bindreq-timeline-title">
+                            <span>⏳</span> 审核流程
+                        </div>
+                        <div class="bindreq-timeline-step active">
+                            <div class="bindreq-timeline-dot"></div>
+                            提交申请 - 已完成
+                        </div>
+                        <div class="bindreq-timeline-step">
+                            <div class="bindreq-timeline-dot"></div>
+                            等待管理员审核
+                        </div>
+                        <div class="bindreq-timeline-step">
+                            <div class="bindreq-timeline-dot"></div>
+                            审核完成，通知结果
+                        </div>
+                        <div class="bindreq-timeline-step">
+                            <div class="bindreq-timeline-dot"></div>
+                            账号绑定完成
+                        </div>
+                    </div>
+                    
+                    <div class="bindreq-success-actions">
+                        <a href="/user-bind" class="bindreq-action-btn bindreq-action-btn--primary">
+                            <span>🏠</span> 查看绑定状态
+                        </a>
+                        <a href="/" class="bindreq-action-btn bindreq-action-btn--secondary">
+                            <span>🏠</span> 返回首页
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 添加成功音效提示（如果浏览器支持）
+    if ('AudioContext' in window || 'webkitAudioContext' in window) {
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
+            oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
+            oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
+            
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+        } catch (e) {
+            // 忽略音频错误
+        }
+    }
+    
+    // 自动刷新绑定状态（每30秒检查一次）
+    let refreshCount = 0;
+    const maxRefresh = 10; // 最多刷新10次
+    
+    function checkBindingStatus() {
+        if (refreshCount < maxRefresh) {
+            refreshCount++;
+            // 这里可以添加Ajax请求来检查绑定状态
+            // 如果绑定状态发生变化，可以显示通知或重定向
+        }
+    }
+    
+    // 每30秒检查一次状态
+    setInterval(checkBindingStatus, 30000);
+});
+</script>
+{% endblock %}

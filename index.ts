@@ -8,6 +8,7 @@ import * as crypto from 'crypto';
 const userGroupsColl = db.collection('user_groups');
 const schoolGroupsColl = db.collection('school_groups');
 const bindTokensColl = db.collection('bind_tokens');
+const bindingRequestsColl = db.collection('binding_requests');
 
 // 接口定义
 interface UserGroup {
@@ -49,6 +50,20 @@ interface BindToken {
     expiresAt?: Date;
 }
 
+interface BindingRequest {
+    _id?: any;
+    userId: number; // 申请用户ID
+    schoolGroupId: any; // 选择的学校组ID
+    studentId: string; // 学号
+    realName: string; // 姓名
+    status: 'pending' | 'approved' | 'rejected'; // 申请状态
+    createdAt: Date; // 创建时间
+    updatedAt: Date; // 更新时间
+    reviewedBy?: number; // 审核者ID
+    reviewedAt?: Date; // 审核时间
+    reviewComment?: string; // 审核备注
+}
+
 declare module 'hydrooj' {
     interface Model {
         userBind: typeof userBindModel;
@@ -57,6 +72,7 @@ declare module 'hydrooj' {
         user_groups: UserGroup;
         school_groups: SchoolGroup;
         bind_tokens: BindToken;
+        binding_requests: BindingRequest;
         document: any; // 添加document集合类型
     }
     interface UserDocument {
@@ -1246,6 +1262,198 @@ const userBindModel = {
         }
         
         return { success, failed };
+    },
+
+    // ========== 绑定申请相关方法 ==========
+
+    // 创建绑定申请
+    async createBindingRequest(userId: number, schoolGroupId: any, studentId: string, realName: string): Promise<any> {
+        // 检查用户是否已有待审核的申请
+        const existingRequest = await bindingRequestsColl.findOne({
+            userId: userId,
+            status: 'pending'
+        });
+        
+        if (existingRequest) {
+            throw new Error('您已有待审核的绑定申请，请耐心等待');
+        }
+
+        // 检查用户是否已绑定
+        if (await this.isUserBound(userId)) {
+            throw new Error('您已经绑定过了');
+        }
+
+        // 验证学校组是否存在
+        const school = await this.getSchoolGroupById(schoolGroupId);
+        if (!school) {
+            throw new Error('选择的学校组不存在');
+        }
+
+        const result = await bindingRequestsColl.insertOne({
+            userId: userId,
+            schoolGroupId: schoolGroupId,
+            studentId: studentId,
+            realName: realName,
+            status: 'pending',
+            createdAt: new Date(),
+            updatedAt: new Date()
+        });
+        
+        return result.insertedId;
+    },
+
+    // 获取绑定申请列表（管理员用）
+    async getBindingRequests(page: number = 1, limit: number = 20, status?: string): Promise<{
+        requests: any[];
+        total: number;
+        pageCount: number;
+    }> {
+        const skip = (page - 1) * limit;
+        let query: any = {};
+        
+        if (status && ['pending', 'approved', 'rejected'].includes(status)) {
+            query.status = status;
+        }
+        
+        const total = await bindingRequestsColl.countDocuments(query);
+        const requests = await bindingRequestsColl
+            .find(query)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .toArray();
+        
+        // 补充用户信息和学校组信息
+        const userColl = db.collection('user');
+        for (const request of requests) {
+            // 获取申请用户信息
+            const user = await userColl.findOne({ _id: request.userId });
+            (request as any).user = user ? { _id: user._id, uname: user.uname } : null;
+            
+            // 获取学校组信息
+            const school = await this.getSchoolGroupById(request.schoolGroupId);
+            (request as any).school = school ? { _id: school._id, name: school.name } : null;
+            
+            // 获取审核者信息
+            if (request.reviewedBy) {
+                const reviewer = await userColl.findOne({ _id: request.reviewedBy });
+                (request as any).reviewer = reviewer ? { _id: reviewer._id, uname: reviewer.uname } : null;
+            }
+        }
+        
+        return {
+            requests,
+            total,
+            pageCount: Math.ceil(total / limit)
+        };
+    },
+
+    // 获取用户的绑定申请
+    async getUserBindingRequest(userId: number): Promise<any> {
+        const request = await bindingRequestsColl.findOne({
+            userId: userId,
+            status: 'pending'
+        });
+        
+        if (request) {
+            // 补充学校组信息
+            const school = await this.getSchoolGroupById(request.schoolGroupId);
+            (request as any).school = school ? { _id: school._id, name: school.name } : null;
+        }
+        
+        return request;
+    },
+
+    // 审核绑定申请
+    async reviewBindingRequest(requestId: any, action: 'approve' | 'reject', reviewerId: number, reviewComment?: string): Promise<void> {
+        // 使用灵活的查询方式
+        let request: any = null;
+        
+        try {
+            request = await bindingRequestsColl.findOne({ _id: requestId });
+        } catch (error) {
+            // 查询失败，尝试字符串匹配
+            const allRequests = await bindingRequestsColl.find().toArray();
+            request = allRequests.find(r => r._id.toString() === requestId.toString()) || null;
+        }
+        
+        if (!request) {
+            throw new Error('绑定申请不存在');
+        }
+        
+        if (request.status !== 'pending') {
+            throw new Error('该申请已被处理');
+        }
+
+        const updateData: any = {
+            status: action === 'approve' ? 'approved' : 'rejected',
+            reviewedBy: reviewerId,
+            reviewedAt: new Date(),
+            updatedAt: new Date()
+        };
+        
+        if (reviewComment) {
+            updateData.reviewComment = reviewComment;
+        }
+
+        // 更新申请状态
+        await bindingRequestsColl.updateOne(
+            { _id: request._id },
+            { $set: updateData }
+        );
+
+        // 如果是同意，更新用户信息
+        if (action === 'approve') {
+            const userColl = db.collection('user');
+            
+            await userColl.updateOne(
+                { _id: request.userId },
+                {
+                    $set: {
+                        realName: request.realName,
+                        studentId: request.studentId
+                    },
+                    $addToSet: {
+                        parentSchoolId: request.schoolGroupId
+                    }
+                }
+            );
+
+            // 更新学校组中对应成员的绑定状态（如果存在）
+            const school = await this.getSchoolGroupById(request.schoolGroupId);
+            if (school && school.members) {
+                const member = school.members.find(m => 
+                    m.studentId === request.studentId && m.realName === request.realName
+                );
+                
+                if (member && !member.bound) {
+                    await schoolGroupsColl.updateOne(
+                        { 
+                            _id: school._id, 
+                            'members': {
+                                $elemMatch: {
+                                    'studentId': request.studentId,
+                                    'realName': request.realName,
+                                    'bound': false
+                                }
+                            }
+                        },
+                        {
+                            $set: {
+                                'members.$.bound': true,
+                                'members.$.boundBy': request.userId,
+                                'members.$.boundAt': new Date()
+                            }
+                        }
+                    );
+                }
+            }
+        }
+    },
+
+    // 获取所有可申请的学校组
+    async getAvailableSchoolGroups(): Promise<SchoolGroup[]> {
+        return await schoolGroupsColl.find().sort({ name: 1 }).toArray();
     }
 };
 
@@ -1914,12 +2122,18 @@ class ManagementDashboardHandler extends Handler {
             schoolGroupBypass: true
         });
         
+        // 待审核绑定申请数量
+        const pendingRequestCount = await bindingRequestsColl.countDocuments({
+            status: 'pending'
+        });
+        
         this.response.template = 'management_dashboard.html';
         this.response.body = {
             schoolCount,
             userGroupCount,
             boundUserCount,
-            bypassUserCount
+            bypassUserCount,
+            pendingRequestCount
         };
     }
 }
@@ -2251,14 +2465,10 @@ class BindHandler extends Handler {
 class UserBindHomeHandler extends Handler {
     async get(domainId: string) {
         // 获取用户的绑定状态
-        const user = this.user;
-        const isSchoolStudent = user.isSchoolStudent || false;
-        const studentId = user.studentId || '';
-        const realName = user.realName || '';
-        const nickname = user.nickname || '';
+        const { isSchoolStudent = false, studentId = '', realName = '', nickname = '' } = this.user;
         
         // 检查是否是管理员
-        const isAdmin = user.hasPriv(PRIV.PRIV_EDIT_SYSTEM);
+        const isAdmin = this.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM);
         
         this.response.template = 'user_bind_home.html';
         this.response.body = {
@@ -2268,6 +2478,138 @@ class UserBindHomeHandler extends Handler {
             nickname,
             isAdmin
         };
+    }
+}
+
+// 绑定申请界面
+class BindingRequestHandler extends Handler {
+    async get(domainId: string) {
+        if (!this.user._id) {
+            this.response.redirect = `/login?redirect=${encodeURIComponent(this.request.path)}`;
+            return;
+        }
+
+        // 检查用户是否已绑定
+        if (await userBindModel.isUserBound(this.user._id)) {
+            this.response.redirect = '/user-bind';
+            return;
+        }
+
+        // 检查是否已有待审核申请
+        const existingRequest = await userBindModel.getUserBindingRequest(this.user._id);
+        if (existingRequest) {
+            this.response.template = 'binding_request_pending.html';
+            this.response.body = {
+                request: existingRequest
+            };
+            return;
+        }
+
+        // 获取所有可申请的学校组
+        const schools = await userBindModel.getAvailableSchoolGroups();
+        
+        this.response.template = 'binding_request_form.html';
+        this.response.body = {
+            schools
+        };
+    }
+
+    async post(domainId: string) {
+        if (!this.user._id) {
+            throw new ForbiddenError('请先登录');
+        }
+
+        const { schoolGroupId, studentId, realName } = this.request.body;
+
+        if (!schoolGroupId || !studentId || !realName) {
+            const schools = await userBindModel.getAvailableSchoolGroups();
+            this.response.template = 'binding_request_form.html';
+            this.response.body = {
+                schools,
+                error: '请填写完整信息',
+                schoolGroupId,
+                studentId,
+                realName
+            };
+            return;
+        }
+
+        try {
+            await userBindModel.createBindingRequest(this.user._id, schoolGroupId, studentId.trim(), realName.trim());
+            
+            this.response.template = 'binding_request_success.html';
+            this.response.body = {
+                studentId: studentId.trim(),
+                realName: realName.trim()
+            };
+        } catch (error: any) {
+            const schools = await userBindModel.getAvailableSchoolGroups();
+            this.response.template = 'binding_request_form.html';
+            this.response.body = {
+                schools,
+                error: error.message,
+                schoolGroupId,
+                studentId,
+                realName
+            };
+        }
+    }
+}
+
+// 管理员审核绑定申请界面
+class BindingRequestManageHandler extends Handler {
+    async get(domainId: string) {
+        this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
+        
+        const page = +(this.request.query.page || '1');
+        const status = this.request.query.status as string;
+        
+        const { requests, total, pageCount } = await userBindModel.getBindingRequests(page, 20, status);
+        
+        // 检查是否有成功消息
+        const { success, message } = this.request.query;
+        
+        this.response.template = 'binding_request_manage.html';
+        this.response.body = {
+            requests,
+            total,
+            pageCount,
+            page,
+            status,
+            success: success === '1',
+            message: message ? decodeURIComponent(message as string) : null
+        };
+    }
+
+    async post(domainId: string) {
+        this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
+        const { action, requestId, reviewComment } = this.request.body;
+
+        if (!requestId || !['approve', 'reject'].includes(action)) {
+            throw new Error('无效的操作参数');
+        }
+
+        try {
+            await userBindModel.reviewBindingRequest(requestId, action, this.user._id, reviewComment);
+            
+            const actionText = action === 'approve' ? '同意' : '拒绝';
+            this.response.redirect = `/binding-request/manage?success=1&message=${encodeURIComponent(`申请${actionText}成功`)}`;
+        } catch (error: any) {
+            const page = +(this.request.query.page || '1');
+            const status = this.request.query.status as string;
+            
+            const { requests, total, pageCount } = await userBindModel.getBindingRequests(page, 20, status);
+            
+            this.response.template = 'binding_request_manage.html';
+            this.response.body = {
+                requests,
+                total,
+                pageCount,
+                page,
+                status,
+                error: error.message
+            };
+        }
     }
 }
 
@@ -2312,6 +2654,8 @@ export async function apply(ctx: Context) {
     ctx.Route('nickname', '/nickname', NicknameHandler); // 昵称修改页面
     ctx.Route('school_group_bypass_manage', '/school-group-bypass/manage', SchoolGroupBypassManageHandler, PRIV.PRIV_EDIT_SYSTEM);
     ctx.Route('management_dashboard', '/management', ManagementDashboardHandler, PRIV.PRIV_EDIT_SYSTEM);
+    ctx.Route('binding_request', '/binding-request', BindingRequestHandler); // 绑定申请页面
+    ctx.Route('binding_request_manage', '/binding-request/manage', BindingRequestManageHandler, PRIV.PRIV_EDIT_SYSTEM); // 管理员审核页面
     // 使用 hook 在所有路由处理前检查用户绑定状态和访问权限
     ctx.on('handler/before-prepare', async (h) => {
         // 确保用户已登录且有用户信息
@@ -2344,6 +2688,7 @@ export async function apply(ctx: Context) {
             // 需要排除的路径（不进行任何检查）
             const excludePaths = [
                 '/bind',
+                '/binding-request', // 添加绑定申请路径
                 '/school-group',
                 '/user-group',
                 '/logout', 
@@ -2392,9 +2737,9 @@ export async function apply(ctx: Context) {
                     throw new ForbiddenError('此功能仅限学校组成员使用，请联系管理员');
                 }
                 
-                // 学校组成员但未绑定，重定向到首页
+                // 学校组成员但未绑定，重定向到绑定申请页面
                 if (!isBound) {
-                    h.response.redirect = '/';
+                    h.response.redirect = '/binding-request';
                     return;
                 }
             }

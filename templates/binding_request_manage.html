@@ -1,0 +1,738 @@
+{% set page_name = '绑定申请管理' %}
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<style>
+/* 管理页面样式 */
+.bindreq-manage-container {
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 0 20px;
+}
+
+.bindreq-manage-header {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: white;
+  padding: 32px 40px;
+  border-radius: 16px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.bindreq-manage-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle,
+    rgba(255,255,255,0.1) 0%,
+    transparent 50%
+  );
+  animation: bindreq-manage-float 15s ease-in-out infinite;
+}
+
+@keyframes bindreq-manage-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-30px) rotate(180deg); }
+}
+
+.bindreq-manage-header-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.bindreq-manage-title-group h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bindreq-manage-title-group p {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.bindreq-manage-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.bindreq-manage-btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  border: 2px solid;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.bindreq-manage-btn--white {
+  background: white;
+  color: #6366f1;
+  border-color: white;
+}
+
+.bindreq-manage-btn--white:hover {
+  background: #f8fafc;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  text-decoration: none;
+  color: #4f46e5;
+}
+
+/* 通知消息 */
+.bindreq-manage-notice {
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  border: 2px solid;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 15px;
+}
+
+.bindreq-manage-notice--success {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border-color: #22c55e;
+  color: #15803d;
+}
+
+.bindreq-manage-notice--error {
+  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+  border-color: #f87171;
+  color: #dc2626;
+}
+
+/* 筛选区域 */
+.bindreq-manage-filters {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.bindreq-manage-filters-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bindreq-manage-filter-form {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.bindreq-manage-filter-select {
+  padding: 10px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 15px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.bindreq-manage-filter-select:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* 数据表格 */
+.bindreq-manage-table-container {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  margin-bottom: 24px;
+}
+
+.bindreq-manage-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.bindreq-manage-table thead {
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+}
+
+.bindreq-manage-table th {
+  padding: 16px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 2px solid #e5e7eb;
+  font-size: 14px;
+}
+
+.bindreq-manage-table td {
+  padding: 16px 12px;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+  font-size: 14px;
+}
+
+.bindreq-manage-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.bindreq-manage-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* 状态徽章 */
+.bindreq-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.bindreq-status-badge--pending {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #92400e;
+  border: 1px solid #f59e0b;
+}
+
+.bindreq-status-badge--approved {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  color: #166534;
+  border: 1px solid #22c55e;
+}
+
+.bindreq-status-badge--rejected {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  color: #991b1b;
+  border: 1px solid #f87171;
+}
+
+/* 用户链接 */
+.bindreq-user-link {
+  color: #6366f1;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.bindreq-user-link:hover {
+  background: #f0f4ff;
+  color: #4f46e5;
+  text-decoration: none;
+}
+
+/* 操作按钮组 */
+.bindreq-action-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.bindreq-action-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  border: 2px solid;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.bindreq-action-btn--approve {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border-color: #10b981;
+}
+
+.bindreq-action-btn--approve:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.bindreq-action-btn--reject {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  border-color: #ef4444;
+}
+
+.bindreq-action-btn--reject:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+
+.bindreq-reject-input {
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 12px;
+  width: 120px;
+  margin-left: 8px;
+}
+
+.bindreq-reject-input:focus {
+  outline: none;
+  border-color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
+}
+
+/* 审核信息 */
+.bindreq-review-info {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.bindreq-review-info strong {
+  color: #374151;
+}
+
+/* 分页器 */
+.bindreq-paginator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.bindreq-paginator-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  border: 2px solid #e5e7eb;
+  background: white;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.bindreq-paginator-btn:hover {
+  border-color: #6366f1;
+  color: #6366f1;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.bindreq-paginator-info {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* 空状态 */
+.bindreq-empty-state {
+  text-align: center;
+  padding: 60px 40px;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.bindreq-empty-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.bindreq-empty-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.bindreq-empty-desc {
+  color: #6b7280;
+  font-size: 15px;
+}
+
+/* section重置 */
+.section {
+  background: transparent;
+  box-shadow: none;
+}
+
+.section__header {
+  display: none;
+}
+
+.section__body {
+  padding: 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+  .bindreq-manage-table {
+    font-size: 13px;
+  }
+  
+  .bindreq-manage-table th,
+  .bindreq-manage-table td {
+    padding: 12px 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .bindreq-manage-container {
+    padding: 0 16px;
+  }
+  
+  .bindreq-manage-header {
+    padding: 24px 20px;
+  }
+  
+  .bindreq-manage-header-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .bindreq-manage-title-group h1 {
+    font-size: 2rem;
+  }
+  
+  .bindreq-manage-filters {
+    padding: 20px 16px;
+  }
+  
+  .bindreq-manage-filter-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .bindreq-manage-filter-select {
+    width: 100%;
+  }
+  
+  /* 移动端表格优化 */
+  .bindreq-manage-table-container {
+    overflow-x: auto;
+  }
+  
+  .bindreq-manage-table {
+    min-width: 800px;
+  }
+  
+  .bindreq-paginator {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+</style>
+
+<div class="section">
+    <div class="section__body">
+        <div class="bindreq-manage-container">
+            <div class="bindreq-manage-header">
+                <div class="bindreq-manage-header-content">
+                    <div class="bindreq-manage-title-group">
+                        <h1><span>⚖️</span> 绑定申请管理</h1>
+                        <p>审核和管理用户的绑定申请</p>
+                    </div>
+                    <div class="bindreq-manage-actions">
+                        <a href="/management" class="bindreq-manage-btn bindreq-manage-btn--white">
+                            <span>🔙</span> 返回管理页
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            {% if success %}
+            <div class="bindreq-manage-notice bindreq-manage-notice--success">
+                <span>✅</span>
+                {{ message }}
+            </div>
+            {% endif %}
+            
+            {% if error %}
+            <div class="bindreq-manage-notice bindreq-manage-notice--error">
+                <span>❌</span>
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <!-- 筛选区域 -->
+            <div class="bindreq-manage-filters">
+                <div class="bindreq-manage-filters-title">
+                    <span>🔍</span> 筛选条件
+                </div>
+                <form method="get" class="bindreq-manage-filter-form">
+                    <select name="status" class="bindreq-manage-filter-select" onchange="this.form.submit()">
+                        <option value="">全部状态</option>
+                        <option value="pending" {% if status == 'pending' %}selected{% endif %}>⏳ 待审核</option>
+                        <option value="approved" {% if status == 'approved' %}selected{% endif %}>✅ 已同意</option>
+                        <option value="rejected" {% if status == 'rejected' %}selected{% endif %}>❌ 已拒绝</option>
+                    </select>
+                    <input type="hidden" name="page" value="1">
+                </form>
+            </div>
+
+            {% if requests %}
+            <div class="bindreq-manage-table-container">
+                <table class="bindreq-manage-table">
+                    <thead>
+                        <tr>
+                            <th>👤 用户</th>
+                            <th>🏫 学校组</th>
+                            <th>🆔 学号</th>
+                            <th>📝 姓名</th>
+                            <th>📅 申请时间</th>
+                            <th>📊 状态</th>
+                            <th>⚡ 操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request in requests %}
+                        <tr>
+                            <td>
+                                {% if request.user %}
+                                <a href="/user/{{ request.user._id }}" class="bindreq-user-link">{{ request.user.uname }}</a>
+                                {% else %}
+                                <span style="color: #ef4444;">用户不存在</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if request.school %}
+                                <span style="color: #374151; font-weight: 500;">{{ request.school.name }}</span>
+                                {% else %}
+                                <span style="color: #ef4444;">学校组不存在</span>
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ request.studentId }}</strong></td>
+                            <td><strong>{{ request.realName }}</strong></td>
+                            <td style="color: #6b7280;">{{ request.createdAt.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                {% if request.status == 'pending' %}
+                                <span class="bindreq-status-badge bindreq-status-badge--pending">
+                                    ⏳ 待审核
+                                </span>
+                                {% elif request.status == 'approved' %}
+                                <span class="bindreq-status-badge bindreq-status-badge--approved">
+                                    ✅ 已同意
+                                </span>
+                                {% elif request.status == 'rejected' %}
+                                <span class="bindreq-status-badge bindreq-status-badge--rejected">
+                                    ❌ 已拒绝
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if request.status == 'pending' %}
+                                <div class="bindreq-action-group">
+                                    <form method="post" style="display: inline;" onsubmit="return confirm('确定要同意这个申请吗？');">
+                                        <input type="hidden" name="requestId" value="{{ request._id }}">
+                                        <input type="hidden" name="action" value="approve">
+                                        <button type="submit" class="bindreq-action-btn bindreq-action-btn--approve">
+                                            <span>✓</span> 同意
+                                        </button>
+                                    </form>
+                                    <form method="post" style="display: inline;" onsubmit="return confirm('确定要拒绝这个申请吗？');">
+                                        <input type="hidden" name="requestId" value="{{ request._id }}">
+                                        <input type="hidden" name="action" value="reject">
+                                        <button type="submit" class="bindreq-action-btn bindreq-action-btn--reject">
+                                            <span>✗</span> 拒绝
+                                        </button>
+                                        <input type="text" name="reviewComment" placeholder="拒绝理由" class="bindreq-reject-input">
+                                    </form>
+                                </div>
+                                {% else %}
+                                <div class="bindreq-review-info">
+                                    {% if request.reviewer %}
+                                    <div><strong>审核者：</strong>{{ request.reviewer.uname }}</div>
+                                    {% endif %}
+                                    {% if request.reviewedAt %}
+                                    <div><strong>审核时间：</strong>{{ request.reviewedAt.strftime('%Y-%m-%d %H:%M') }}</div>
+                                    {% endif %}
+                                    {% if request.reviewComment %}
+                                    <div><strong>备注：</strong>{{ request.reviewComment }}</div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页器 -->
+            {% if pageCount > 1 %}
+            <div class="bindreq-paginator">
+                {% if page > 1 %}
+                <a href="?page={{ page - 1 }}{% if status %}&status={{ status }}{% endif %}" 
+                   class="bindreq-paginator-btn">
+                    ← 上一页
+                </a>
+                {% endif %}
+                
+                <div class="bindreq-paginator-info">
+                    第 {{ page }} 页，共 {{ pageCount }} 页，总计 {{ total }} 个申请
+                </div>
+                
+                {% if page < pageCount %}
+                <a href="?page={{ page + 1 }}{% if status %}&status={{ status }}{% endif %}" 
+                   class="bindreq-paginator-btn">
+                    下一页 →
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="bindreq-empty-state">
+                <div class="bindreq-empty-icon">📋</div>
+                <div class="bindreq-empty-title">暂无绑定申请</div>
+                <div class="bindreq-empty-desc">当前没有需要审核的绑定申请</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 自动刷新功能
+    let refreshInterval;
+    
+    function startAutoRefresh() {
+        refreshInterval = setInterval(() => {
+            // 只有在页面可见时才自动刷新
+            if (!document.hidden && window.location.search.includes('status=pending')) {
+                const url = new URL(window.location);
+                url.searchParams.set('_refresh', Date.now());
+                fetch(url.toString())
+                    .then(response => response.text())
+                    .then(html => {
+                        // 这里可以更智能地更新页面内容
+                        // 比如只更新表格部分
+                    })
+                    .catch(err => console.log('自动刷新失败:', err));
+            }
+        }, 30000); // 30秒刷新一次
+    }
+    
+    // 当显示待审核状态时开始自动刷新
+    if (window.location.search.includes('status=pending')) {
+        startAutoRefresh();
+    }
+    
+    // 页面可见性变化时控制自动刷新
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            clearInterval(refreshInterval);
+        } else if (window.location.search.includes('status=pending')) {
+            startAutoRefresh();
+        }
+    });
+    
+    // 添加表格行的悬停效果
+    const tableRows = document.querySelectorAll('.bindreq-manage-table tbody tr');
+    tableRows.forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateX(2px)';
+            this.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+        });
+        
+        row.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateX(0)';
+            this.style.boxShadow = 'none';
+        });
+    });
+    
+    // 批量操作功能（可扩展）
+    const approveButtons = document.querySelectorAll('.bindreq-action-btn--approve');
+    const rejectButtons = document.querySelectorAll('.bindreq-action-btn--reject');
+    
+    approveButtons.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            const icon = this.querySelector('span');
+            icon.style.animation = 'none';
+            icon.offsetHeight;
+            icon.style.animation = 'bindreq-pending-pulse 0.5s ease-in-out';
+        });
+    });
+    
+    rejectButtons.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            const form = this.closest('form');
+            const commentInput = form.querySelector('.bindreq-reject-input');
+            if (commentInput && !commentInput.value.trim()) {
+                if (!confirm('您没有填写拒绝理由，确定要继续吗？')) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        });
+    });
+    
+    // 键盘快捷键支持
+    document.addEventListener('keydown', function(e) {
+        // Ctrl+R 或 F5 刷新页面
+        if ((e.ctrlKey && e.key === 'r') || e.key === 'F5') {
+            e.preventDefault();
+            window.location.reload();
+        }
+        
+        // 数字键快速筛选
+        if (e.key >= '1' && e.key <= '3' && !e.ctrlKey && !e.altKey) {
+            const select = document.querySelector('.bindreq-manage-filter-select');
+            if (select && document.activeElement !== select) {
+                const options = select.options;
+                if (options[parseInt(e.key)]) {
+                    select.selectedIndex = parseInt(e.key);
+                    select.form.submit();
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
