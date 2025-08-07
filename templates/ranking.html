@@ -47,7 +47,7 @@
               {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
               <tr>
                 <td class="col--rank">{{ handler.user.rank|default('-') }}</td>
-                <td class="col--user">{{ user.render_inline(udoc) }}</td>
+                <td class="col--user">{{ user.render_inline(handler.user) }}</td>
                 <td class="col--student_info">
                   <span style="font-size: 12px; color: #666; white-space: nowrap;">
                     {{ handler.user.studentInfo|default('') }}
