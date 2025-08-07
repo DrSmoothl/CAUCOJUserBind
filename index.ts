@@ -1474,15 +1474,33 @@ const userBindModel = {
 
     // 审核绑定申请
     async reviewBindingRequest(requestId: any, action: 'approve' | 'reject', reviewerId: number, reviewComment?: string): Promise<void> {
+        // 调试日志：输出接收到的 requestId
+        console.log('reviewBindingRequest 接收到的参数:', {
+            requestId: requestId,
+            requestIdType: typeof requestId,
+            requestIdString: String(requestId),
+            isObjectId: requestId && requestId.constructor && requestId.constructor.name === 'ObjectId',
+            action: action
+        });
+        
         // 使用灵活的查询方式
         let request: any = null;
         
         try {
+            // 方式1: 直接使用传入的ID查询
             request = await bindingRequestsColl.findOne({ _id: requestId });
         } catch (error) {
-            // 查询失败，尝试字符串匹配
-            const allRequests = await bindingRequestsColl.find().toArray();
-            request = allRequests.find(r => r._id.toString() === requestId.toString()) || null;
+            // 查询失败，继续尝试其他方式
+        }
+        
+        // 方式2: 字符串匹配查找
+        if (!request && requestId) {
+            try {
+                const allRequests = await bindingRequestsColl.find().toArray();
+                request = allRequests.find(r => r._id.toString() === requestId.toString()) || null;
+            } catch (error) {
+                // 查询失败
+            }
         }
         
         if (!request) {
@@ -2712,6 +2730,14 @@ class BindingRequestManageHandler extends Handler {
         }
 
         try {
+            // 调试日志：输出接收到的 requestId 的类型和值
+            console.log('BindingRequestManageHandler 接收到的参数:', {
+                requestId: requestId,
+                requestIdType: typeof requestId,
+                requestIdString: String(requestId),
+                action: action
+            });
+            
             await userBindModel.reviewBindingRequest(requestId, action, this.user._id, reviewComment);
             
             const actionText = action === 'approve' ? '同意' : '拒绝';
