@@ -1,103 +1,563 @@
 {% extends "layout/basic.html" %}
+{% block title %}身份绑定说明{% endblock %}
+
 {% block content %}
+<style>
+/* 绑定说明页面样式 */
+.binding-notice-container {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.binding-notice-hero {
+  text-align: center;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  padding: 50px 40px;
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 32px;
+}
+
+.binding-notice-hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 25px,
+    rgba(255,255,255,0.1) 25px,
+    rgba(255,255,255,0.1) 50px
+  );
+  animation: binding-notice-flow 12s linear infinite;
+}
+
+@keyframes binding-notice-flow {
+  0% { transform: translateX(-100px) translateY(-100px); }
+  100% { transform: translateX(100px) translateY(100px); }
+}
+
+.binding-notice-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  display: block;
+  position: relative;
+  z-index: 1;
+  animation: binding-notice-pulse 2s ease-in-out infinite;
+}
+
+@keyframes binding-notice-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.binding-notice-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.binding-notice-subtitle {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+  line-height: 1.6;
+}
+
+.binding-notice-content {
+  display: grid;
+  gap: 24px;
+}
+
+/* 方式说明卡片 */
+.binding-methods-section {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: 2px solid #e5e7eb;
+}
+
+.binding-methods-header {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.binding-methods-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.binding-methods-body {
+  padding: 32px 24px;
+}
+
+.binding-method-list {
+  display: grid;
+  gap: 24px;
+}
+
+.binding-method-item {
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border-radius: 12px;
+  padding: 24px;
+  border-left: 4px solid;
+  transition: all 0.3s ease;
+}
+
+.binding-method-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.binding-method-recommended {
+  border-left-color: #10b981;
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+}
+
+.binding-method-alternative {
+  border-left-color: #f59e0b;
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+}
+
+.binding-method-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.binding-method-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.binding-method-badge-recommended {
+  background: #10b981;
+  color: white;
+}
+
+.binding-method-badge-alternative {
+  background: #f59e0b;
+  color: white;
+}
+
+.binding-method-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.binding-method-name-recommended {
+  color: #065f46;
+}
+
+.binding-method-name-alternative {
+  color: #92400e;
+}
+
+.binding-method-description {
+  margin: 0;
+  line-height: 1.6;
+  color: #374151;
+}
+
+.binding-method-description-recommended {
+  color: #065f46;
+}
+
+.binding-method-description-alternative {
+  color: #92400e;
+}
+
+/* 操作选择区域 */
+.binding-actions-section {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: 2px solid #e5e7eb;
+}
+
+.binding-actions-header {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.binding-actions-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.binding-actions-body {
+  padding: 32px 24px;
+}
+
+.binding-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.binding-action-card {
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  color: inherit;
+}
+
+.binding-action-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  text-decoration: none;
+  color: inherit;
+}
+
+.binding-action-card-primary {
+  border-color: #3b82f6;
+}
+
+.binding-action-card-primary:hover {
+  border-color: #1d4ed8;
+}
+
+.binding-action-card-secondary {
+  border-color: #f59e0b;
+}
+
+.binding-action-card-secondary:hover {
+  border-color: #d97706;
+}
+
+.binding-action-header {
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.binding-action-icon {
+  font-size: 2.5rem;
+  opacity: 0.8;
+}
+
+.binding-action-content {
+  flex: 1;
+}
+
+.binding-action-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: #1f2937;
+}
+
+.binding-action-description {
+  margin: 0;
+  color: #6b7280;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.binding-action-footer {
+  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+  padding: 20px 24px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.binding-action-button {
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.binding-action-button-primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+}
+
+.binding-action-button-primary:hover {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+.binding-action-button-secondary {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+}
+
+.binding-action-button-secondary:hover {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+/* 帮助信息 */
+.binding-help-section {
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border-radius: 12px;
+  padding: 24px;
+  border: 2px solid #0ea5e9;
+  text-align: center;
+}
+
+.binding-help-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #0369a1;
+  margin: 0 0 12px 0;
+}
+
+.binding-help-description {
+  margin: 0;
+  color: #0c4a6e;
+  line-height: 1.6;
+}
+
+/* section重置 */
+.section {
+  background: transparent;
+  box-shadow: none;
+}
+
+.section__header {
+  display: none;
+}
+
+.section__body {
+  padding: 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .binding-notice-container {
+    margin: 20px auto;
+    padding: 0 16px;
+  }
+  
+  .binding-notice-hero {
+    padding: 40px 20px;
+  }
+  
+  .binding-notice-title {
+    font-size: 2rem;
+  }
+  
+  .binding-methods-body,
+  .binding-actions-body {
+    padding: 24px 20px;
+  }
+  
+  .binding-actions-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .binding-action-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+  
+  .binding-method-item {
+    padding: 20px;
+  }
+}
+
+/* 加载动画 */
+@keyframes binding-notice-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.binding-notice-container > * {
+  animation: binding-notice-fade-in 0.6s ease-out;
+}
+
+.binding-notice-container > *:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.binding-notice-container > *:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.binding-notice-container > *:nth-child(4) {
+  animation-delay: 0.3s;
+}
+</style>
+
 <div class="section">
-    <div class="ui container">
-        <div class="ui icon message">
-            <i class="exclamation triangle icon"></i>
-            <div class="content">
-                <div class="header">
-                    您尚未完成身份绑定
-                </div>
-                <p>由于您的账户尚未绑定学号和真实姓名，您将无法访问训练、作业、比赛等大部分功能。</p>
-            </div>
-        </div>
-
-        <div class="ui raised segment">
-            <h3 class="ui header">
-                <i class="link icon"></i>
-                绑定方式说明
-            </h3>
-            
-            <div class="ui info message">
-                <div class="header">方式一：使用绑定链接（推荐）</div>
-                <p>请联系您的老师或管理员获取专用的绑定链接，通过绑定链接可以快速完成身份认证。</p>
+    <div class="section__body">
+        <div class="binding-notice-container">
+            <!-- 页面头部 -->
+            <div class="binding-notice-hero">
+                <div class="binding-notice-icon">🔗</div>
+                <h1 class="binding-notice-title">身份绑定说明</h1>
+                <p class="binding-notice-subtitle">您需要完成身份绑定才能访问训练、作业、比赛等功能<br>请选择以下方式完成绑定</p>
             </div>
 
-            <div class="ui warning message">
-                <div class="header">方式二：申请手动绑定</div>
-                <p>如果您确认自己的学号和姓名信息正确，但可能尚未被导入到学校组中，您可以提交绑定申请，等待管理员审核。</p>
-            </div>
-        </div>
-
-        <div class="ui segment">
-            <h4 class="ui header">请选择您的操作：</h4>
-            
-            <div class="ui two column stackable grid">
-                <div class="column">
-                    <div class="ui fluid card">
-                        <div class="content">
-                            <div class="header">
-                                <i class="external alternate icon"></i>
-                                返回首页
+            <div class="binding-notice-content">
+                <!-- 绑定方式说明 -->
+                <div class="binding-methods-section">
+                    <div class="binding-methods-header">
+                        <span>📚</span>
+                        <h2 class="binding-methods-title">绑定方式说明</h2>
+                    </div>
+                    <div class="binding-methods-body">
+                        <div class="binding-method-list">
+                            <div class="binding-method-item binding-method-recommended">
+                                <div class="binding-method-header">
+                                    <span class="binding-method-badge binding-method-badge-recommended">推荐</span>
+                                    <h3 class="binding-method-name binding-method-name-recommended">方式一：使用绑定链接</h3>
+                                </div>
+                                <p class="binding-method-description binding-method-description-recommended">
+                                    联系您的老师或管理员获取专用的绑定链接。通过绑定链接可以快速完成身份认证，这是最便捷和可靠的绑定方式。
+                                </p>
                             </div>
-                            <div class="description">
-                                返回首页，联系老师获取绑定链接
+                            
+                            <div class="binding-method-item binding-method-alternative">
+                                <div class="binding-method-header">
+                                    <span class="binding-method-badge binding-method-badge-alternative">备选</span>
+                                    <h3 class="binding-method-name binding-method-name-alternative">方式二：申请手动绑定</h3>
+                                </div>
+                                <p class="binding-method-description binding-method-description-alternative">
+                                    如果您确认自己的学号和姓名信息正确，但可能尚未被导入到学校组中，您可以提交绑定申请，等待管理员审核。
+                                </p>
                             </div>
                         </div>
-                        <div class="extra content">
-                            <a href="/" class="ui primary fluid button">
-                                <i class="home icon"></i>
-                                返回首页
+                    </div>
+                </div>
+
+                <!-- 操作选择 -->
+                <div class="binding-actions-section">
+                    <div class="binding-actions-header">
+                        <span>🚀</span>
+                        <h2 class="binding-actions-title">请选择您的操作</h2>
+                    </div>
+                    <div class="binding-actions-body">
+                        <div class="binding-actions-grid">
+                            <a href="/" class="binding-action-card binding-action-card-primary">
+                                <div class="binding-action-header">
+                                    <div class="binding-action-icon">🏠</div>
+                                    <div class="binding-action-content">
+                                        <h3 class="binding-action-name">返回首页</h3>
+                                        <p class="binding-action-description">返回首页，联系老师获取专用绑定链接</p>
+                                    </div>
+                                </div>
+                                <div class="binding-action-footer">
+                                    <div class="binding-action-button binding-action-button-primary">
+                                        <span>🔗</span> 返回首页获取链接
+                                    </div>
+                                </div>
+                            </a>
+                            
+                            <a href="/binding-request" class="binding-action-card binding-action-card-secondary">
+                                <div class="binding-action-header">
+                                    <div class="binding-action-icon">📝</div>
+                                    <div class="binding-action-content">
+                                        <h3 class="binding-action-name">提交绑定申请</h3>
+                                        <p class="binding-action-description">如果确认信息无误但可能未导入，可申请手动绑定</p>
+                                    </div>
+                                </div>
+                                <div class="binding-action-footer">
+                                    <div class="binding-action-button binding-action-button-secondary">
+                                        <span>✉️</span> 进入申请页面
+                                    </div>
+                                </div>
                             </a>
                         </div>
                     </div>
                 </div>
-                
-                <div class="column">
-                    <div class="ui fluid card">
-                        <div class="content">
-                            <div class="header">
-                                <i class="paper plane icon"></i>
-                                提交绑定申请
-                            </div>
-                            <div class="description">
-                                如果确认信息无误但可能未导入，可申请手动绑定
-                            </div>
-                        </div>
-                        <div class="extra content">
-                            <a href="/binding-request" class="ui orange fluid button">
-                                <i class="edit icon"></i>
-                                进入申请页面
-                            </a>
-                        </div>
-                    </div>
+
+                <!-- 帮助信息 -->
+                <div class="binding-help-section">
+                    <h3 class="binding-help-title">
+                        <span>❓</span> 需要帮助？
+                    </h3>
+                    <p class="binding-help-description">
+                        如果您对绑定流程有疑问，请联系系统管理员或您的老师获取帮助。我们会尽快为您解决问题。
+                    </p>
                 </div>
             </div>
-        </div>
-
-        <div class="ui message">
-            <div class="header">需要帮助？</div>
-            <p>如果您对绑定流程有疑问，请联系系统管理员或您的老师获取帮助。</p>
         </div>
     </div>
 </div>
 
-<style>
-.ui.card .content .header {
-    color: #2185d0;
-}
+<script>
+// 页面加载动画
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.querySelector('.binding-notice-container');
+    container.style.opacity = '0';
+    container.style.transform = 'translateY(30px)';
+    container.style.transition = 'all 0.8s ease';
+    
+    setTimeout(() => {
+        container.style.opacity = '1';
+        container.style.transform = 'translateY(0)';
+    }, 100);
+});
 
-.ui.card {
-    box-shadow: 0 2px 4px 0 rgba(34,36,38,.15);
-    transition: box-shadow 0.3s ease;
-}
-
-.ui.card:hover {
-    box-shadow: 0 4px 8px 0 rgba(34,36,38,.25);
-}
-
-.ui.icon.message .icon {
-    font-size: 2em;
-}
-</style>
+// 卡片悬停效果
+document.querySelectorAll('.binding-action-card').forEach(card => {
+    card.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-6px)';
+    });
+    
+    card.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(-4px)';
+    });
+});
+</script>
 {% endblock %}
