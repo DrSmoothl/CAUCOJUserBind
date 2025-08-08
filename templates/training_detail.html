@@ -1,0 +1,364 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+/* 训练详情页面美化样式 */
+.training-detail-container {
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  min-height: 100vh;
+  padding: 20px 0;
+}
+
+.training-section {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  margin-bottom: 24px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.training-section:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.training-section .section__body {
+  padding: 32px;
+}
+
+.training-side-section {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  margin-bottom: 24px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.training-user-menu {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 16px;
+  margin-bottom: 24px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.2);
+}
+
+.training-user-menu .section {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+}
+
+.enroll_user_menu_item a.menu__link {
+  padding: 12px 20px;
+  border-radius: 12px;
+  margin: 4px 8px;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.enroll_user_menu_item a.menu__link:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.enroll_user_menu_item a.menu__link.active {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+}
+
+.user-profile-avatar {
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.enroll_user_menu_item:hover .user-profile-avatar {
+  border-color: rgba(255, 255, 255, 0.6);
+  transform: scale(1.1);
+}
+
+.training-note {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 2px solid #f59e0b;
+  border-radius: 16px;
+  padding: 24px;
+  margin: 24px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.training-note::before {
+  content: '💡';
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-size: 1.5rem;
+  opacity: 0.7;
+}
+
+.training-note p {
+  margin: 0;
+  color: #92400e;
+  font-weight: 500;
+  font-size: 1.1rem;
+}
+
+.training-menu-button {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: 2px solid #3b82f6;
+  border-radius: 12px;
+  padding: 12px 20px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 4px 0;
+}
+
+.training-menu-button:hover {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+  color: white;
+  text-decoration: none;
+}
+
+.training-enroll-button {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-color: #10b981;
+}
+
+.training-enroll-button:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+}
+
+.training-stats {
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border-radius: 16px;
+  padding: 24px;
+  border: 2px solid #0ea5e9;
+}
+
+.training-stats dl {
+  margin: 0;
+}
+
+.training-stats dt {
+  color: #0369a1;
+  font-weight: 600;
+  margin-bottom: 8px;
+  margin-top: 16px;
+}
+
+.training-stats dt:first-child {
+  margin-top: 0;
+}
+
+.training-stats dd {
+  color: #0c4a6e;
+  font-weight: 500;
+  font-size: 1.1rem;
+  margin: 0 0 8px 0;
+  padding: 8px 16px;
+  background: rgba(14, 165, 233, 0.1);
+  border-radius: 8px;
+  border-left: 4px solid #0ea5e9;
+}
+
+.training-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.training-progress-fill {
+  height: 100%;
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.training-search-form {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.training-search-form select,
+.training-search-form input {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #374151;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.training-search-form select:focus,
+.training-search-form input:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .training-detail-container {
+    padding: 10px;
+  }
+  
+  .training-section .section__body {
+    padding: 20px;
+  }
+  
+  .training-stats {
+    padding: 16px;
+  }
+}
+</style>
+
+<div class="training-detail-container">
+<div class="row" data-sticky-parent>
+  {%- if Object.keys(udict).length -%}
+  <div class="medium-2 columns mobile--hide">
+    <div data-sticky="large">
+      <div class="training-user-menu">
+        <div class="section side">
+          <ol class="menu">
+            <li class="menu__item nojs--hide">
+              <form method="get" id="searchForm" class="training-search-form">
+                <select name="group" class="select"{% if not groups.length %} style="display:none"{% endif %}>
+                  <option value="all" selected>{{ _('All') }}</option>
+                  {% for group in groups %}
+                    <option value="{{ group.uids.join(',') }}">{{ group.name }}</option>
+                  {% endfor %}
+                </select>
+                <input name="uid" type="text" class="search__input textbox" placeholder="{{ _('Select User') }}">
+              </form>
+            </li>
+            <ul class="enroll_user_menu">
+            {%- for uid, udoc in udict -%}
+            <li class="menu__item enroll_user_menu_item" data-uid="{{ uid }}" data-uname="{{ udoc.uname }}" {% if handler.user.hasPerm(perm.PERM_VIEW_DISPLAYNAME) and udoc.displayName %}data-displayname="{{ udoc.displayName }}"{% endif %}>
+              <a href="./{{ tdoc._id }}?uid={{ uid }}" class="menu__link{% if (handler.request.query.uid or handler.user._id) == uid %} active{% endif %}">
+                <span class="user-profile-link">
+                  <img class="small user-profile-avatar v-center" loading="lazy" src="{{ avatarUrl(udoc.avatar|default('')) }}" width="20" height="20">
+                  <span class="user-profile-name">
+                    {% if handler.user.hasPerm(perm.PERM_VIEW_DISPLAYNAME) and udoc.displayName and udoc.displayName != udoc.uname %}
+                      {{ udoc.displayName }} ({{ udoc.uname }})
+                    {% else %}
+                      {{ udoc.uname }}
+                    {% endif %}
+                  </span>
+                </span>
+              </a>
+            </li>
+            {%- endfor -%}
+            </ul>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="medium-7 columns">
+  {%- else -%}
+  <div class="medium-9 columns">
+  {%- endif -%}
+    <div class="training-section section">
+      <div class="section__body typo">
+        {{ tdoc['content'] }}
+      </div>
+      <div class="section__body typo richmedia">
+        {% if not handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+          <div class="training-note">
+            <p>{{ _('Login to join training plan') }}</p>
+          </div>
+        {% elif not tsdoc.enroll %}
+          <div class="training-note">
+            <p>{{ _('page.training_detail.invalid_when_not_enrolled') }}</p>
+          </div>
+        {% endif %}
+        {{ tdoc.description|default('')|markdown|safe }}
+      </div>
+    </div>
+    <div class="training-section section">
+      {% include "partials/training_detail.html" %}
+    </div>
+  </div>
+  <div class="medium-3 columns" data-sticky="large">
+    <div class="training-side-section section side">
+      <div>
+        <ol class="menu">
+        {% if not tsdoc['enroll'] and handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+          <li class="menu__item">
+            <form action="" method="POST">
+              <input type="hidden" name="operation" value="enroll">
+              <button class="training-menu-button training-enroll-button" type="submit">
+                <span class="icon icon-add"></span> {{ _('Enroll Training') }}
+              </button>
+            </form>
+          </li>
+        {% endif %}
+        {% if handler.user.own(tdoc) or handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
+          <li class="menu__item">
+            <a class="training-menu-button" href="{{ url('training_edit', tid=tdoc.docId) }}">
+              <span class="icon icon-edit"></span> {{ _('Edit') }}
+            </a>
+          </li>
+          <li class="menu__item">
+            <a class="training-menu-button" href="{{ url('training_files', tid=tdoc.docId) }}">
+              <span class="icon icon-file"></span> {{ _('Files') }}
+            </a>
+          </li>
+        {% endif %}
+          <li class="menu__item">
+            <a class="training-menu-button" href="{{ url('wiki_help', anchor='training') }}">
+              <span class="icon icon-help"></span> {{ _('Help') }}
+            </a>
+          </li>
+          <li class="menu__seperator"></li>
+        </ol>
+      </div>
+      <div class="training-stats">
+        <dl class="large horizontal">
+        {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+          <dt>{{ _('Status') }}</dt>
+          <dd>{% if tsdoc['enroll'] %}{{ _('Completed' if tsdoc['done'] else 'In Progress') }}{% else %}{{ _('Not Enrolled') }}{% endif %}</dd>
+        {% endif %}
+          {% if tsdoc['enroll'] %}
+          <dt>{{ _('Progress') }}</dt>
+          <dd>
+            {{ _('Completed') }} {{ (100 * tsdoc['donePids']|length / pids|length)|round|int }}%
+            <div class="training-progress-bar">
+              <div class="training-progress-fill" style="width: {{ (100 * tsdoc['donePids']|length / pids|length)|round|int }}%"></div>
+            </div>
+          </dd>
+          {% endif %}
+          <dt>{{ _('Enrollees') }}</dt><dd>{{ tdoc.attend|default(0) }}</dd>
+          <dt>{{ _('Created By') }}</dt>
+          <dd>{{ user.render_inline(udoc, badge=false) }}</dd>
+        </dl>
+      </div>
+    </div>
+    <div class="training-side-section section side">
+      <ol class="menu">
+        {{ sidemenu.render_item('list', 'training_detail', {tid:tdoc._id}, label='tasks_list', menu_item='training_detail') }}
+      </ol>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}
