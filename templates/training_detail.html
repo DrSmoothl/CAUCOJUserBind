@@ -3,9 +3,37 @@
 <style>
 /* 简洁的训练详情页面样式 */
 .training-container {
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 0 20px;
+}
+
+/* 调整网格布局以适应更大宽度 */
+.training-main-content {
+  width: 100%;
+  max-width: none;
+}
+
+@media (min-width: 1200px) {
+  .training-main-content.medium-7 {
+    width: 70%;
+    max-width: 1000px;
+  }
+  
+  .training-main-content.medium-9 {
+    width: 75%;
+    max-width: 1200px;
+  }
+  
+  .training-sidebar {
+    width: 23%;
+    min-width: 280px;
+  }
+  
+  .training-userlist {
+    width: 15%;
+    min-width: 200px;
+  }
 }
 
 /* 训练问题表格响应式设计 */
@@ -20,36 +48,36 @@
 }
 
 .training__problems .data-table {
-  min-width: 1000px;
+  min-width: 1200px;
   width: 100%;
   table-layout: auto;
 }
 
 /* 调整列宽以适应大屏幕 */
 .training__problems .col--status {
-  width: 140px;
-  min-width: 140px;
+  width: 160px;
+  min-width: 160px;
 }
 
 .training__problems .col--name {
   width: auto;
-  min-width: 400px;
+  min-width: 500px;
   max-width: none;
 }
 
 .training__problems .col--tried {
-  width: 100px;
-  min-width: 100px;
+  width: 120px;
+  min-width: 120px;
 }
 
 .training__problems .col--ac {
-  width: 100px;
-  min-width: 100px;
+  width: 120px;
+  min-width: 120px;
 }
 
 .training__problems .col--difficulty {
-  width: 120px;
-  min-width: 120px;
+  width: 140px;
+  min-width: 140px;
 }
 
 /* 题目名称样式优化 */
@@ -83,15 +111,15 @@
 /* 响应式设计 */
 @media (max-width: 1440px) {
   .training-container {
-    max-width: 1200px;
+    max-width: 1400px;
   }
   
   .training__problems .data-table {
-    min-width: 900px;
+    min-width: 1000px;
   }
   
   .training__problems .col--name {
-    min-width: 350px;
+    min-width: 400px;
   }
 }
 
@@ -99,6 +127,22 @@
   .training-container {
     max-width: 100%;
     padding: 0 15px;
+  }
+  
+  .training-main-content.medium-7,
+  .training-main-content.medium-9 {
+    width: auto !important;
+    max-width: none !important;
+  }
+  
+  .training-sidebar {
+    width: auto !important;
+    min-width: auto !important;
+  }
+  
+  .training-userlist {
+    width: auto !important;
+    min-width: auto !important;
   }
   
   .training__problems .data-table {
@@ -172,7 +216,7 @@
 <div class="training-container">
 <div class="row" data-sticky-parent>
   {%- if Object.keys(udict).length -%}
-  <div class="medium-2 columns mobile--hide">
+  <div class="medium-2 columns mobile--hide training-userlist">
     <div data-sticky="large"><div class="section side">
       <ol class="menu">
         <li class="menu__item nojs--hide">
@@ -207,9 +251,9 @@
       </ol>
     </div></div>
   </div>
-  <div class="medium-7 columns">
+  <div class="medium-7 columns training-main-content">
   {%- else -%}
-  <div class="medium-9 columns">
+  <div class="medium-9 columns training-main-content">
   {%- endif -%}
     <div class="section">
       <div class="section__body typo">
@@ -232,7 +276,7 @@
       {% include "partials/training_detail.html" %}
     </div>
   </div>
-  <div class="medium-3 columns" data-sticky="large">
+  <div class="medium-3 columns training-sidebar" data-sticky="large">
     <div class="section side">
       <div>
         <ol class="menu">
