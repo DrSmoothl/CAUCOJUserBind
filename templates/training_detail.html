@@ -1,416 +1,690 @@
 {% extends "layout/basic.html" %}
 {% block content %}
 <style>
-/* 全局重置 - 彻底移除Foundation约束 */
-* {
-  box-sizing: border-box;
+/* 训练详情页面专用样式 - 简洁设计 */
+.training-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
-.row, .row * {
-  max-width: none !important;
+/* 主要布局容器 */
+.training-layout {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
 }
 
-/* 强制全宽度布局 */
-.main, .main-content, .content, 
-.section, .page, .page-content,
-.medium-7, .medium-7.columns,
-.columns, .column {
-  width: 100% !important;
-  max-width: 100% !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  float: none !important;
-  display: block !important;
+/* 左侧用户列表 */
+.training-userlist {
+  width: 200px;
+  min-width: 200px;
+  flex-shrink: 0;
 }
 
-/* 简洁的训练详情页面样式 */
-.training-container {
-  max-width: 100vw !important;
-  width: calc(100vw - 40px) !important;
-  margin: 0 auto !important;
-  padding: 0 20px !important;
+/* 中间主要内容区域 */
+.training-main {
+  flex: 1;
+  min-width: 0;
 }
 
-/* 强制移除所有可能的布局约束 */
-body, html {
-  margin: 0 !important;
-  padding: 0 !important;
-  width: 100% !important;
-  overflow-x: auto !important;
+/* 右侧边栏 */
+.training-sidebar {
+  width: 280px;
+  min-width: 280px;
+  flex-shrink: 0;
 }
 
-.row {
-  max-width: 100% !important;
-  width: 100% !important;
-  margin: 0 !important;
+/* 卡片样式 */
+.training-card {
+  background: #fff;
+  border: 1px solid #e1e4e8;
+  border-radius: 6px;
+  margin-bottom: 20px;
 }
 
-.medium-7.columns {
-  width: 100% !important;
-  max-width: 100% !important;
-  float: none !important;
-  display: block !important;
+.training-card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e1e4e8;
+  font-weight: 600;
+  color: #24292e;
 }
 
-/* 调整网格布局以适应更大宽度 */
-.training-main-content {
-  width: 100% !important;
-  max-width: 100% !important;
+.training-card-body {
+  padding: 20px;
 }
 
-@media (min-width: 1200px) {
-  .training-main-content.medium-7 {
-    width: 75% !important;
-    max-width: 1200px !important;
-    flex: 0 0 75% !important;
-  }
-  
-  .training-main-content.medium-9 {
-    width: 80% !important;
-    max-width: 1300px !important;
-    flex: 0 0 80% !important;
-  }
-  
-  .training-sidebar {
-    width: 20% !important;
-    min-width: 280px !important;
-    flex: 0 0 20% !important;
-  }
-  
-  .training-userlist {
-    width: 12% !important;
-    min-width: 180px !important;
-    flex: 0 0 12% !important;
-  }
+/* 用户列表样式 */
+.training-users {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
-@media (min-width: 1440px) {
-  .training-main-content.medium-7 {
-    width: 78% !important;
-    max-width: 1400px !important;
-    flex: 0 0 78% !important;
-  }
-  
-  .training-main-content.medium-9 {
-    width: 85% !important;
-    max-width: 1500px !important;
-    flex: 0 0 85% !important;
-  }
-  
-  .training-sidebar {
-    width: 18% !important;
-    min-width: 300px !important;
-    flex: 0 0 18% !important;
-  }
-  
-  .training-userlist {
-    width: 10% !important;
-    min-width: 160px !important;
-    flex: 0 0 10% !important;
-  }
+.training-user-item {
+  border-bottom: 1px solid #f1f3f4;
 }
 
-/* 训练问题表格响应式设计 */
-.training__problems {
-  overflow-x: auto !important;
-  -webkit-overflow-scrolling: touch !important;
-  width: 100% !important;
-  max-width: 100% !important;
+.training-user-item:last-child {
+  border-bottom: none;
 }
 
-.training__problems .section__table-container {
-  min-width: 100% !important;
-  overflow-x: auto !important;
-  width: 100% !important;
-  max-width: 100% !important;
+.training-user-link {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  text-decoration: none;
+  color: #586069;
+  transition: background-color 0.2s;
 }
 
-.training__problems .data-table {
-  min-width: 1600px !important; /* 增加最小宽度 */
-  width: 100% !important;
-  table-layout: fixed !important; /* 改为固定布局 */
-  max-width: 100% !important;
+.training-user-link:hover {
+  background-color: #f6f8fa;
+  color: #24292e;
 }
 
-/* 调整列宽以适应大屏幕 */
-.training__problems .col--status {
-  width: 200px !important; /* 增加宽度 */
-  min-width: 200px !important;
-  max-width: 200px !important;
+.training-user-link.active {
+  background-color: #0366d6;
+  color: white;
 }
 
-.training__problems .col--name {
-  width: auto !important;
-  min-width: 800px !important; /* 增加最小宽度 */
-  max-width: none !important;
+.training-user-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  margin-right: 8px;
 }
 
-.training__problems .col--tried {
-  width: 120px;
-  min-width: 120px;
+/* 搜索框样式 */
+.training-search {
+  padding: 12px;
+  border-bottom: 1px solid #e1e4e8;
 }
 
-.training__problems .col--ac {
-  width: 120px;
-  min-width: 120px;
+.training-search-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  font-size: 12px;
 }
 
-.training__problems .col--difficulty {
-  width: 140px;
-  min-width: 140px;
+.training-search-select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-bottom: 8px;
 }
 
-/* 题目名称样式优化 */
-.training__problems .col--problem-name {
-  white-space: nowrap;
+/* 主要内容样式 */
+.training-content {
+  line-height: 1.6;
+  color: #24292e;
+}
+
+.training-description {
+  margin-bottom: 30px;
+}
+
+/* 问题表格样式 */
+.training-problems {
+  overflow-x: auto;
+  margin: 20px 0;
+}
+
+.training-table {
+  width: 100%;
+  min-width: 800px;
+  border-collapse: collapse;
+  background: white;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.training__problems .col--problem-name a {
-  display: inline-block;
-  max-width: calc(100% - 50px);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.training-table thead {
+  background: #f6f8fa;
 }
 
-/* 保持原有简洁风格的表格样式 */
-.training__problems .data-table thead th {
+.training-table th {
   padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #24292e;
+  border-bottom: 1px solid #d0d7de;
+  white-space: nowrap;
 }
 
-.training__problems .data-table tbody td {
+.training-table td {
   padding: 10px 16px;
+  border-bottom: 1px solid #f1f3f4;
+  vertical-align: middle;
 }
 
-.training__problems .data-table tbody tr:hover {
-  background-color: #f8f9fa;
+.training-table tbody tr:hover {
+  background-color: #f6f8fa;
+}
+
+.training-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* 表格列宽设置 */
+.training-col-status {
+  width: 120px;
+  text-align: center;
+}
+
+.training-col-name {
+  min-width: 300px;
+}
+
+.training-col-stats {
+  width: 80px;
+  text-align: center;
+}
+
+.training-col-difficulty {
+  width: 100px;
+  text-align: center;
+}
+
+/* 问题链接样式 */
+.training-problem-link {
+  color: #0366d6;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.training-problem-link:hover {
+  text-decoration: underline;
+}
+
+/* 侧边栏菜单样式 */
+.training-menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.training-menu-item {
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.training-menu-item:last-child {
+  border-bottom: none;
+}
+
+.training-menu-link {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  text-decoration: none;
+  color: #586069;
+  transition: background-color 0.2s;
+}
+
+.training-menu-link:hover {
+  background-color: #f6f8fa;
+  color: #24292e;
+}
+
+.training-menu-icon {
+  margin-right: 8px;
+  width: 16px;
+  text-align: center;
+}
+
+/* 按钮样式 */
+.training-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  background: #0366d6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.training-btn:hover {
+  background: #0256c4;
+  color: white;
+}
+
+.training-btn-block {
+  width: 100%;
+  justify-content: center;
+}
+
+/* 状态信息样式 */
+.training-info {
+  margin: 0;
+  padding: 0;
+}
+
+.training-info dt {
+  font-weight: 600;
+  color: #24292e;
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+
+.training-info dt:first-child {
+  margin-top: 0;
+}
+
+.training-info dd {
+  margin: 0;
+  color: #586069;
+}
+
+/* 通知消息样式 */
+.training-notice {
+  padding: 16px;
+  margin: 20px 0;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  color: #856404;
+}
+
+.training-notice p {
+  margin: 0;
 }
 
 /* 响应式设计 */
-@media (max-width: 1440px) {
-  .training-container {
-    max-width: 1400px;
-  }
-  
-  .training__problems .data-table {
-    min-width: 1200px;
-  }
-  
-  .training__problems .col--name {
-    min-width: 500px;
-  }
-  
-  .training__problems .col--status {
-    width: 160px;
-    min-width: 160px;
-  }
-}
-
 @media (max-width: 1200px) {
-  .training-container {
-    max-width: 100%;
-    padding: 0 15px;
+  .training-layout {
+    flex-direction: column;
   }
   
-  .training-main-content.medium-7,
-  .training-main-content.medium-9 {
-    width: auto !important;
-    max-width: none !important;
-  }
-  
+  .training-userlist,
   .training-sidebar {
-    width: auto !important;
-    min-width: auto !important;
+    width: 100%;
+    min-width: auto;
   }
   
   .training-userlist {
-    width: auto !important;
-    min-width: auto !important;
+    order: 2;
   }
   
-  .training__problems .data-table {
-    min-width: 800px;
+  .training-main {
+    order: 1;
   }
   
-  .training__problems .col--name {
-    min-width: 300px;
+  .training-sidebar {
+    order: 3;
   }
 }
 
 @media (max-width: 768px) {
-  .training-container {
-    padding: 0 10px;
+  .training-page {
+    padding: 10px;
   }
   
-  .training__problems .data-table {
-    min-width: 650px;
+  .training-layout {
+    gap: 15px;
+  }
+  
+  .training-card-body {
+    padding: 15px;
+  }
+  
+  .training-table {
+    min-width: 600px;
     font-size: 14px;
   }
   
-  .training__problems .col--status {
-    width: 120px;
-    min-width: 120px;
-  }
-  
-  .training__problems .col--name {
-    min-width: 250px;
-  }
-  
-  .training__problems .col--tried,
-  .training__problems .col--ac {
-    width: 80px;
-    min-width: 80px;
-  }
-  
-  .training__problems .col--difficulty {
-    width: 100px;
-    min-width: 100px;
+  .training-table th,
+  .training-table td {
+    padding: 8px 12px;
   }
 }
 
-@media (max-width: 480px) {
-  .training__problems .data-table {
-    min-width: 550px;
-    font-size: 12px;
-  }
-  
-  .training__problems .col--name {
-    min-width: 200px;
-  }
-  
-  .training__problems .col--status {
-    width: 100px;
-    min-width: 100px;
-  }
-  
-  .training__problems .col--tried,
-  .training__problems .col--ac {
-    width: 60px;
-    min-width: 60px;
-  }
-  
-  .training__problems .col--difficulty {
-    width: 80px;
-    min-width: 80px;
-  }
+/* 隐藏Foundation框架的样式影响 */
+.row {
+  display: block !important;
+  margin: 0 !important;
+  max-width: none !important;
+}
+
+.columns {
+  display: block !important;
+  width: auto !important;
+  float: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* 训练节选状态样式 */
+.training-section-status {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.training-section-status.done {
+  color: #28a745;
+  background: #d4edda;
+}
+
+.training-section-status.progress {
+  color: #ffc107;
+  background: #fff3cd;
+}
+
+.training-section-status.open {
+  color: #17a2b8;
+  background: #d1ecf1;
+}
+
+.training-section-status.invalid {
+  color: #dc3545;
+  background: #f8d7da;
+}
+
+/* 节选展开/折叠样式 */
+.training-section-toggle {
+  color: #0366d6;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.training-section-toggle:hover {
+  text-decoration: underline;
+}
+
+.training-card.collapsed .training-section-detail,
+.training-card.collapsed .collapsed-hidden {
+  display: none;
+}
+
+.training-card.expanded .expanded-hidden {
+  display: none;
+}
+
+.training-section-detail {
+  border-top: 1px solid #e1e4e8;
+  margin-top: 0;
 }
 </style>
 
-<div class="training-container">
-<div class="row" data-sticky-parent>
-  {%- if Object.keys(udict).length -%}
-  <div class="medium-2 columns mobile--hide training-userlist">
-    <div data-sticky="large"><div class="section side">
-      <ol class="menu">
-        <li class="menu__item nojs--hide">
+<div class="training-page">
+  <div class="training-layout">
+    {%- if Object.keys(udict).length -%}
+    <!-- 左侧用户列表 -->
+    <div class="training-userlist">
+      <div class="training-card">
+        <div class="training-search">
           <form method="get" id="searchForm">
-            <select name="group" class="select"{% if not groups.length %} style="display:none"{% endif %}>
+            <select name="group" class="training-search-select"{% if not groups.length %} style="display:none"{% endif %}>
               <option value="all" selected>{{ _('All') }}</option>
               {% for group in groups %}
                 <option value="{{ group.uids.join(',') }}">{{ group.name }}</option>
               {% endfor %}
             </select>
-            <input name="uid" type="text" class="search__input textbox" placeholder="{{ _('Select User') }}">
+            <input name="uid" type="text" class="training-search-input" placeholder="{{ _('Select User') }}">
           </form>
-        </li>
-        <ul class="enroll_user_menu">
-        {%- for uid, udoc in udict -%}
-        <li class="menu__item enroll_user_menu_item" data-uid="{{ uid }}" data-uname="{{ udoc.uname }}" {% if handler.user.hasPerm(perm.PERM_VIEW_DISPLAYNAME) and udoc.displayName %}data-displayname="{{ udoc.displayName }}"{% endif %}>
-          <a href="./{{ tdoc._id }}?uid={{ uid }}" class="menu__link{% if (handler.request.query.uid or handler.user._id) == uid %} active{% endif %}">
-            <span class="user-profile-link">
-              <img class="small user-profile-avatar v-center" loading="lazy" src="{{ avatarUrl(udoc.avatar|default('')) }}" width="20" height="20">
-              <span class="user-profile-name">
+        </div>
+        <ul class="training-users">
+          {%- for uid, udoc in udict -%}
+          <li class="training-user-item">
+            <a href="./{{ tdoc._id }}?uid={{ uid }}" class="training-user-link{% if (handler.request.query.uid or handler.user._id) == uid %} active{% endif %}">
+              <img class="training-user-avatar" loading="lazy" src="{{ avatarUrl(udoc.avatar|default('')) }}" width="20" height="20">
+              <span class="training-user-name">
                 {% if handler.user.hasPerm(perm.PERM_VIEW_DISPLAYNAME) and udoc.displayName and udoc.displayName != udoc.uname %}
                   {{ udoc.displayName }} ({{ udoc.uname }})
                 {% else %}
                   {{ udoc.uname }}
                 {% endif %}
               </span>
-            </span>
-          </a>
-        </li>
-        {%- endfor -%}
-        </ul>
-      </ol>
-    </div></div>
-  </div>
-  <div class="medium-7 columns training-main-content">
-  {%- else -%}
-  <div class="medium-9 columns training-main-content">
-  {%- endif -%}
-    <div class="section">
-      <div class="section__body typo">
-        {{ tdoc['content'] }}
-      </div>
-      <div class="section__body typo richmedia">
-        {% if not handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
-          <blockquote class="typo note">
-            <p>{{ _('Login to join training plan') }}</p>
-          </blockquote>
-        {% elif not tsdoc.enroll %}
-          <blockquote class="typo note">
-            <p>{{ _('page.training_detail.invalid_when_not_enrolled') }}</p>
-          </blockquote>
-        {% endif %}
-        {{ tdoc.description|default('')|markdown|safe }}
-      </div>
-    </div>
-    <div class="section">
-      {% include "partials/training_detail.html" %}
-    </div>
-  </div>
-  <div class="medium-3 columns training-sidebar" data-sticky="large">
-    <div class="section side">
-      <div>
-        <ol class="menu">
-        {% if not tsdoc['enroll'] and handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
-          <li class="menu__item">
-            <form action="" method="POST">
-              <input type="hidden" name="operation" value="enroll">
-              <button class="menu__link" type="submit">
-                <span class="icon icon-add"></span> {{ _('Enroll Training') }}
-              </button>
-            </form>
+            </a>
           </li>
-        {% endif %}
-        {% if handler.user.own(tdoc) or handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
-          <li class="menu__item"><a class="menu__link" href="{{ url('training_edit', tid=tdoc.docId) }}">
-            <span class="icon icon-edit"></span>  {{ _('Edit') }}
-          </a></li>
-          <li class="menu__item"><a class="menu__link" href="{{ url('training_files', tid=tdoc.docId) }}">
-            <span class="icon icon-file"></span> {{ _('Files') }}
-          </a></li>
-        {% endif %}
-          <li class="menu__item"><a class="menu__link" href="{{ url('wiki_help', anchor='training') }}">
-            <span class="icon icon-help"></span> {{ _('Help') }}
-          </a></li>
-          <li class="menu__seperator"></li>
-        </ol>
-      </div>
-      <div class="section__body typo">
-        <dl class="large horizontal">
-        {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
-          <dt>{{ _('Status') }}</dt><dd>{% if tsdoc['enroll'] %}{{ _('Completed' if tsdoc['done'] else 'In Progress') }}{% else %}{{ _('Not Enrolled') }}{% endif %}</dd>
-        {% endif %}
-          {% if tsdoc['enroll'] %}
-          <dt>{{ _('Progress') }}</dt><dd>{{ _('Completed') }} {{ (100 * tsdoc['donePids']|length / pids|length)|round|int }}%</dd>
-          {% endif %}
-          <dt>{{ _('Enrollees') }}</dt><dd>{{ tdoc.attend|default(0) }}</dd>
-          <dt>{{ _('Created By') }}</dt>
-          <dd>{{ user.render_inline(udoc, badge=false) }}</dd>
-        </dl>
+          {%- endfor -%}
+        </ul>
       </div>
     </div>
-    <div class="section side">
-      <ol class="menu">
-        {{ sidemenu.render_item('list', 'training_detail', {tid:tdoc._id}, label='tasks_list', menu_item='training_detail') }}
-      </ol>
+    {%- endif -%}
+
+    <!-- 中间主要内容 -->
+    <div class="training-main">
+      <!-- 训练描述 -->
+      <div class="training-card">
+        <div class="training-card-body">
+          <div class="training-content">
+            {{ tdoc['content'] }}
+          </div>
+          <div class="training-description">
+            {% if not handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+              <div class="training-notice">
+                <p>{{ _('Login to join training plan') }}</p>
+              </div>
+            {% elif not tsdoc.enroll %}
+              <div class="training-notice">
+                <p>{{ _('page.training_detail.invalid_when_not_enrolled') }}</p>
+              </div>
+            {% endif %}
+            {{ tdoc.description|default('')|markdown|safe }}
+          </div>
+        </div>
+      </div>
+
+      <!-- 问题列表 -->
+      <div class="training-card">
+        <div class="training-card-header">
+          {{ _('Problems') }}
+        </div>
+        <div class="training-problems">
+          {% import "components/record.html" as record with context %}
+          {% import "components/problem.html" as problem with context %}
+          {% set expanded = 0 %}
+          <div data-fragment-id="training_detail">
+            {% if handler.request.query.uid and handler.request.query.uid != handler.user._id %}
+            <div class="training-notice">
+              <p>{{ _('page.training_detail.see_other_user_detail').format(udict[handler.request.query.uid].uname) }}</p>
+            </div>
+            {% endif %}
+            {%- for node in tdoc['dag'] -%}
+              <div class="training-card {% if expanded < 5 and (nsdict[node['_id']]['isProgress'] or nsdict[node['_id']]['isOpen']) %}expanded{% set expanded = expanded + 1 %}{% else %}collapsed{% endif %}">
+                <div class="training-card-header">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                      <h3 style="margin: 0; color: #24292e;">{{ _('Section') }} {{ node['_id'] }}. {{ node['title'].split('\n')[0] }}</h3>
+                      {% if node['title'].split('\n')[1] %}<h5 style="margin: 5px 0 0 0; color: #586069;">{{ node['title'].split('\n')[1] }}</h5>{% endif %}
+                    </div>
+                    <div>
+                      <span class="training-section-status {% if nsdict[node['_id']]['isDone'] %}done{% elif nsdict[node['_id']]['isProgress'] %}progress{% elif nsdict[node['_id']]['isOpen'] %}open{% else %}invalid{% endif %}">
+                        {% if nsdict[node['_id']]['isDone'] %}
+                          ✓ {{ _('Completed') }}
+                        {% elif nsdict[node['_id']]['isProgress'] %}
+                          ⟲ {{ _('In Progress') }}
+                        {% elif nsdict[node['_id']]['isOpen'] %}
+                          ○ {{ _('Open') }}
+                        {% else %}
+                          ✗ {{ _('Invalid') }}
+                        {% endif %}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div class="training-card-body">
+                  <div style="margin-bottom: 15px;">
+                    <a href="javascript:;" class="training-section-toggle expanded-hidden" onclick="this.closest('.training-card').classList.toggle('expanded'); this.closest('.training-card').classList.toggle('collapsed');">
+                      ▼ {{ _('expand') }}
+                    </a>
+                    <a href="javascript:;" class="training-section-toggle collapsed-hidden" onclick="this.closest('.training-card').classList.toggle('expanded'); this.closest('.training-card').classList.toggle('collapsed');">
+                      ▲ {{ _('collapse') }}
+                    </a>
+                  </div>
+                </div>
+                <div class="training-section-detail">
+                  {% if nsdict[node['_id']]['isInvalid'] %}
+                    <div class="training-card-body">
+                      <div class="training-notice">
+                        <p>{{ _('This section cannot be challenged at present, so please complete the following sections first') }}:</p>
+                        <ul>
+                          {%- for nid in node['requireNids'] -%}
+                            <li>{{ _('Section') }} {{ _(nid) }}. {{ ndict[nid]['title'] }} ({{ _('Completed') }} {{ nsdict[nid]['progress'] }}%)</li>
+                          {%- endfor -%}
+                        </ul>
+                      </div>
+                    </div>
+                  {% endif %}
+                  {% if node['content'] %}
+                    <div class="training-card-body">
+                      <div class="training-content">
+                        {{ node['content']|markdown|safe }}
+                      </div>
+                    </div>
+                  {% endif %}
+                  <div class="training-problems">
+                    {% set should_compare = (handler.request.query.uid or handler.user._id) != handler.user._id and tsdoc["enroll"] %}
+                    <table class="training-table">
+                      <thead>
+                        <tr>
+                          {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+                            {% if should_compare %}
+                              <th class="training-col-status">{{ _('Status') }}</th>
+                              <th class="training-col-status">{{ _('My status') }}</th>
+                            {% else %}
+                              <th class="training-col-status">{{ _('Status') }}</th>
+                            {% endif %}
+                          {% endif %}
+                          <th class="training-col-name">{{ _('Problem') }}</th>
+                          <th class="training-col-stats">{{ _('Tried') }}</th>
+                          <th class="training-col-stats">{{ _('AC') }}</th>
+                          <th class="training-col-difficulty">{{ _('Difficulty') }}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {%- for pid in node['pids'] -%}
+                          {% if pid in pdict %}
+                            {% set pdoc=pdict[pid] %}
+                            {% set psdoc=psdict[pid] %}
+                            {% set self_psdoc=selfPsdict[pid] %}
+                            <tr data-pid="{{ pid }}">
+                              {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+                                {% if psdoc['rid'] %}
+                                  {{ record.render_status_td(psdoc, rid_key='rid', short=should_compare) }}
+                                {% else %}
+                                  <td class="training-col-status"></td>
+                                {% endif %}
+                                {% if should_compare %}
+                                  {% if self_psdoc['rid'] %}
+                                    {{ record.render_status_td(self_psdoc, rid_key='rid', short=true) }}
+                                  {% else %}
+                                    <td class="training-col-status"></td>
+                                  {% endif %}
+                                {% endif %}
+                              {% endif %}
+                              <td class="training-col-name"{% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %} data-star="{{ psdoc.star }}"{% endif %}>
+                                <a href="/p/{{ pdoc.docId or pdoc._id }}" class="training-problem-link"{% if not tsdoc['enroll'] or nsdict[node['_id']]['isInvalid'] %} style="color:#999"{% endif %}>
+                                  {{ pdoc.title }}
+                                </a>
+                              </td>
+                              <td class="training-col-stats">{{ pdoc.nSubmit }}</td>
+                              <td class="training-col-stats">{{ pdoc.nAccept }}</td>
+                              <td class="training-col-difficulty">{{ pdoc['difficulty'] or lib.difficulty(pdoc.nSubmit, pdoc.nAccept) or _('(None)') }}</td>
+                            </tr>
+                          {% else %}
+                            {% set pdoc = {'_id': pid, 'hidden': true, 'title': '*'} %}
+                            <tr>
+                              <td class="training-col-status">
+                              </td>
+                              <td class="training-col-name">
+                                <span style="color:#999">{{ pdoc.title }}</span>
+                              </td>
+                              <td class="training-col-stats">*</td>
+                              <td class="training-col-stats">*</td>
+                              <td class="training-col-difficulty">*</td>
+                            </tr>
+                          {% endif %}
+                        {%- endfor -%}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            {%- endfor -%}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧边栏 -->
+    <div class="training-sidebar">
+      <!-- 操作菜单 -->
+      <div class="training-card">
+        <ul class="training-menu">
+          {% if not tsdoc['enroll'] and handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+            <li class="training-menu-item">
+              <form action="" method="POST">
+                <input type="hidden" name="operation" value="enroll">
+                <button class="training-btn training-btn-block" type="submit">
+                  <span class="training-menu-icon">+</span> {{ _('Enroll Training') }}
+                </button>
+              </form>
+            </li>
+          {% endif %}
+          {% if handler.user.own(tdoc) or handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
+            <li class="training-menu-item">
+              <a class="training-menu-link" href="{{ url('training_edit', tid=tdoc.docId) }}">
+                <span class="training-menu-icon">✎</span> {{ _('Edit') }}
+              </a>
+            </li>
+            <li class="training-menu-item">
+              <a class="training-menu-link" href="{{ url('training_files', tid=tdoc.docId) }}">
+                <span class="training-menu-icon">📁</span> {{ _('Files') }}
+              </a>
+            </li>
+          {% endif %}
+          <li class="training-menu-item">
+            <a class="training-menu-link" href="{{ url('wiki_help', anchor='training') }}">
+              <span class="training-menu-icon">?</span> {{ _('Help') }}
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- 训练信息 -->
+      <div class="training-card">
+        <div class="training-card-header">
+          {{ _('Training Info') }}
+        </div>
+        <div class="training-card-body">
+          <dl class="training-info">
+            {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+              <dt>{{ _('Status') }}</dt>
+              <dd>{% if tsdoc['enroll'] %}{{ _('Completed' if tsdoc['done'] else 'In Progress') }}{% else %}{{ _('Not Enrolled') }}{% endif %}</dd>
+            {% endif %}
+            {% if tsdoc['enroll'] %}
+              <dt>{{ _('Progress') }}</dt>
+              <dd>{{ _('Completed') }} {{ (100 * tsdoc['donePids']|length / pids|length)|round|int }}%</dd>
+            {% endif %}
+            <dt>{{ _('Enrollees') }}</dt>
+            <dd>{{ tdoc.attend|default(0) }}</dd>
+            <dt>{{ _('Created By') }}</dt>
+            <dd>{{ user.render_inline(udoc, badge=false) }}</dd>
+          </dl>
+        </div>
+      </div>
+
+      <!-- 导航菜单 -->
+      <div class="training-card">
+        <ul class="training-menu">
+          {{ sidemenu.render_item('list', 'training_detail', {tid:tdoc._id}, label='tasks_list', menu_item='training_detail') }}
+        </ul>
+      </div>
     </div>
   </div>
-</div>
 </div>
 {% endblock %}
