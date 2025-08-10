@@ -1,3 +1,8 @@
+<!-- 调试信息 -->
+<script>
+console.log('Admin notification template - rootNotification:', {{ rootNotification | tojson | safe if rootNotification else 'null' }});
+</script>
+
 {% if rootNotification and rootNotification.showNotification %}
 <!-- 管理员通知弹窗 -->
 <div id="adminNotificationModal" class="admin-notification-overlay">
@@ -314,14 +319,6 @@ function shouldShowAdminNotification() {
     return sessionStorage.getItem('adminNotificationClosed') !== 'true';
 }
 
-// 页面加载时检查是否显示通知
-document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.getElementById('adminNotificationModal');
-    if (modal && !shouldShowAdminNotification()) {
-        modal.remove();
-    }
-});
-
 // 自动关闭功能（10秒后自动关闭，除非用户鼠标悬停）
 let autoCloseTimer;
 let isHovering = false;
@@ -334,24 +331,44 @@ function startAutoCloseTimer() {
     }, 10000); // 10秒后自动关闭
 }
 
+// 页面加载时统一处理所有逻辑
 document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('adminNotificationModal');
-    if (modal && shouldShowAdminNotification()) {
-        // 开始自动关闭计时器
-        startAutoCloseTimer();
-        
-        // 鼠标悬停时暂停自动关闭
-        modal.addEventListener('mouseenter', () => {
-            isHovering = true;
-            clearTimeout(autoCloseTimer);
-        });
-        
-        // 鼠标离开时重新开始计时器
-        modal.addEventListener('mouseleave', () => {
-            isHovering = false;
-            startAutoCloseTimer();
-        });
+    console.log('Admin notification debug - Modal element:', modal);
+    
+    if (!modal) {
+        console.log('Admin notification debug - No modal element found');
+        return; // 如果没有弹窗元素，直接返回
     }
+    
+    // 检查是否应该显示通知
+    const shouldShow = shouldShowAdminNotification();
+    console.log('Admin notification debug - Should show notification:', shouldShow);
+    console.log('Admin notification debug - sessionStorage value:', sessionStorage.getItem('adminNotificationClosed'));
+    
+    if (!shouldShow) {
+        console.log('Admin notification debug - Removing modal due to sessionStorage');
+        modal.remove();
+        return;
+    }
+    
+    console.log('Admin notification debug - Modal will be displayed');
+    
+    // 如果应该显示通知，则设置自动关闭和鼠标事件
+    // 开始自动关闭计时器
+    startAutoCloseTimer();
+    
+    // 鼠标悬停时暂停自动关闭
+    modal.addEventListener('mouseenter', () => {
+        isHovering = true;
+        clearTimeout(autoCloseTimer);
+    });
+    
+    // 鼠标离开时重新开始计时器
+    modal.addEventListener('mouseleave', () => {
+        isHovering = false;
+        startAutoCloseTimer();
+    });
 });
 </script>
 {% endif %}
