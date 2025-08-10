@@ -2870,26 +2870,9 @@ export async function apply(ctx: Context) {
         try {
             const currentPath = h.request.path;
             
-            // 超级管理员 root（uid=2）可以访问所有页面，无需检查，但需要检查待处理申请
+            // 超级管理员 root（uid=2）可以访问所有页面，无需检查
             if (h.user._id === 2) {
-                console.log(`[Admin Notification] Root user (${h.user._id}) detected on path: ${currentPath}`);
-                
-                // 为root用户注入待处理申请通知信息
-                const pendingRequestCount = await bindingRequestsColl.countDocuments({
-                    status: 'pending'
-                });
-                
-                console.log(`[Admin Notification] Pending request count: ${pendingRequestCount}`);
-                
-                // 注入到页面模板变量中
-                h.response.body = h.response.body || {};
-                h.response.body.rootNotification = {
-                    pendingBindingRequests: pendingRequestCount,
-                    showNotification: pendingRequestCount > 0,
-                    manageUrl: '/binding-request/manage'
-                };
-                
-                console.log(`[Admin Notification] rootNotification set:`, h.response.body.rootNotification);
+                console.log(`[Admin Notification - Before-Prepare] Root user (${h.user._id}) detected on path: ${currentPath}`);
                 return;
             }
             
