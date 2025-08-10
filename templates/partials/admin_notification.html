@@ -1,8 +1,15 @@
 <!-- 调试信息 -->
 <script>
-console.log('Admin notification template - rootNotification:', {{ rootNotification | tojson | safe if rootNotification else 'null' }});
-console.log('Admin notification template - current user:', {{ handler.user._id if handler.user else 'not logged in' }});
-console.log('Admin notification template - all response body:', {{ handler.response.body | tojson | safe if handler.response.body else 'null' }});
+{% if rootNotification %}
+console.log('Admin notification template - rootNotification found:', {
+    pendingBindingRequests: {{ rootNotification.pendingBindingRequests }},
+    showNotification: {{ rootNotification.showNotification | string | lower }},
+    manageUrl: '{{ rootNotification.manageUrl }}'
+});
+{% else %}
+console.log('Admin notification template - rootNotification is null or undefined');
+{% endif %}
+console.log('Admin notification template - current user ID:', {{ handler.user._id if handler.user else 'null' }});
 </script>
 
 {% if rootNotification and rootNotification.showNotification %}
