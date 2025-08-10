@@ -6,9 +6,9 @@ console.log('Admin notification template - Global rootNotification:', typeof roo
 
 {% if rootNotification %}
 console.log('Admin notification template - rootNotification found:', {
-    pendingBindingRequests: {{ rootNotification.pendingBindingRequests }},
+    pendingCount: {{ rootNotification.pendingCount }},
     showNotification: {{ rootNotification.showNotification | string | lower }},
-    manageUrl: '{{ rootNotification.manageUrl }}'
+    message: '{{ rootNotification.message }}'
 });
 {% else %}
 console.log('Admin notification template - rootNotification is null or undefined');
@@ -38,14 +38,14 @@ console.log('Admin notification template - current user ID:', {{ handler.user._i
                 <div class="admin-notification-item-icon">📋</div>
                 <div class="admin-notification-item-content">
                     <h4>绑定申请待审核</h4>
-                    <p>当前有 <strong>{{ rootNotification.pendingBindingRequests }}</strong> 个绑定申请等待您的审核</p>
+                    <p>{{ rootNotification.message }}</p>
                 </div>
-                <div class="admin-notification-item-badge">{{ rootNotification.pendingBindingRequests }}</div>
+                <div class="admin-notification-item-badge">{{ rootNotification.pendingCount }}</div>
             </div>
         </div>
         
         <div class="admin-notification-actions">
-            <button class="admin-notification-btn admin-notification-btn-primary" onclick="window.location.href='{{ rootNotification.manageUrl }}'">
+            <button class="admin-notification-btn admin-notification-btn-primary" onclick="window.location.href='/binding-request/manage'">
                 <span>🔍</span> 立即处理
             </button>
             <button class="admin-notification-btn admin-notification-btn-secondary" onclick="closeAdminNotification()">
