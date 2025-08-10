@@ -2913,7 +2913,9 @@ export async function apply(ctx: Context) {
                 '.svg',
                 '.woff',
                 '.woff2',
-                '.ttf'
+                '.ttf',
+                '.chunk.js',
+                '.chunk.css'
             ];
             
             // 检查是否应该跳过此路径
@@ -2986,8 +2988,12 @@ export async function apply(ctx: Context) {
 
     // 使用通用的 handler/after 事件来捕获所有 GET 请求
     ctx.on('handler/after', async (h) => {
+        // 记录所有请求以便调试
+        console.log(`[Admin Notification - Handler/After] Path: ${h.request.path}, Method: ${h.request.method}, Template: ${h.response.template || 'none'}, User ID: ${h.user?._id || 'none'}`);
+        
         // 只处理 GET 请求和模板响应
-        if (h.request.method === 'GET' && h.response.template) {
+        if (h.request.method === 'GET' && h.response.template && h.user && h.user._id === 2) {
+            console.log(`[Admin Notification - Handler/After] Processing root user notification for template: ${h.response.template}`);
             await addRootNotification(h);
         }
     });
