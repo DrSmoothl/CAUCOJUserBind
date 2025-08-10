@@ -2977,13 +2977,13 @@ export async function apply(ctx: Context) {
     // 为超级管理员在各种页面添加待处理申请通知
     const addRootNotification = async (h) => {
         if (h.user && h.user._id === 2) {
-            console.log(`[Admin Notification - After] Root user detected on path: ${h.request.path}`);
+            console.log(`[Admin Notification - Global] Root user detected on path: ${h.request.path}, method: ${h.request.method}`);
             
             const pendingRequestCount = await bindingRequestsColl.countDocuments({
                 status: 'pending'
             });
             
-            console.log(`[Admin Notification - After] Pending request count: ${pendingRequestCount}`);
+            console.log(`[Admin Notification - Global] Pending request count: ${pendingRequestCount}`);
             
             h.response.body = h.response.body || {};
             
@@ -2997,23 +2997,17 @@ export async function apply(ctx: Context) {
             // 也直接设置到 h 对象上
             h.rootNotification = h.response.body.rootNotification;
             
-            console.log(`[Admin Notification - After] rootNotification set:`, h.response.body.rootNotification);
-            console.log(`[Admin Notification - After] h.rootNotification set:`, h.rootNotification);
+            console.log(`[Admin Notification - Global] rootNotification set:`, h.response.body.rootNotification);
         }
     };
 
-    // 在主要页面的 after 事件中添加通知
-    ctx.on('handler/after/DomainMain#get', addRootNotification);
-    ctx.on('handler/after/ProblemMain#get', addRootNotification);
-    ctx.on('handler/after/ContestMain#get', addRootNotification);
-    ctx.on('handler/after/RecordMain#get', addRootNotification);
-    ctx.on('handler/after/HomeworkMain#get', addRootNotification);
-    ctx.on('handler/after/TrainingMain#get', addRootNotification);
-    
-    // 添加更多常见页面
-    ctx.on('handler/after/UserDetail#get', addRootNotification);
-    ctx.on('handler/after/ManagementDashboard#get', addRootNotification);
-    ctx.on('handler/after/BindingRequestManage#get', addRootNotification);
+    // 使用通用的 handler/after 事件来捕获所有 GET 请求
+    ctx.on('handler/after', async (h) => {
+        // 只处理 GET 请求和模板响应
+        if (h.request.method === 'GET' && h.response.template) {
+            await addRootNotification(h);
+        }
+    });
 
     // 在用户登录成功后检查绑定状态
     ctx.on('handler/after/UserLogin#post', async (h) => {
