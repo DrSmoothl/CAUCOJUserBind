@@ -325,11 +325,25 @@ function closeAdminNotification() {
     
     // 将关闭状态保存到 sessionStorage，这个会话期间不再显示
     sessionStorage.setItem('adminNotificationClosed', 'true');
+    // 同时保存当前的待处理数量
+    const currentPendingCount = '{{ rootNotification.pendingCount if rootNotification else 0 }}';
+    sessionStorage.setItem('lastPendingCount', currentPendingCount);
 }
 
 // 检查是否应该显示通知
 function shouldShowAdminNotification() {
-    return sessionStorage.getItem('adminNotificationClosed') !== 'true';
+    const closedFlag = sessionStorage.getItem('adminNotificationClosed');
+    const lastPendingCount = sessionStorage.getItem('lastPendingCount');
+    const currentPendingCount = '{{ rootNotification.pendingCount if rootNotification else 0 }}';
+    
+    // 如果有新的待处理申请（数量增加），则重新显示通知
+    if (currentPendingCount > 0 && currentPendingCount !== lastPendingCount) {
+        sessionStorage.removeItem('adminNotificationClosed');
+        sessionStorage.setItem('lastPendingCount', currentPendingCount);
+        return true;
+    }
+    
+    return closedFlag !== 'true';
 }
 
 // 自动关闭功能（10秒后自动关闭，除非用户鼠标悬停）
@@ -356,8 +370,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 检查是否应该显示通知
     const shouldShow = shouldShowAdminNotification();
+    const currentPendingCount = '{{ rootNotification.pendingCount if rootNotification else 0 }}';
+    const lastPendingCount = sessionStorage.getItem('lastPendingCount');
+    const closedFlag = sessionStorage.getItem('adminNotificationClosed');
+    
     console.log('Admin notification debug - Should show notification:', shouldShow);
-    console.log('Admin notification debug - sessionStorage value:', sessionStorage.getItem('adminNotificationClosed'));
+    console.log('Admin notification debug - Current pending count:', currentPendingCount);
+    console.log('Admin notification debug - Last pending count:', lastPendingCount);
+    console.log('Admin notification debug - Closed flag:', closedFlag);
     
     if (!shouldShow) {
         console.log('Admin notification debug - Removing modal due to sessionStorage');
