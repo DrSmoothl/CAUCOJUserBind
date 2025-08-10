@@ -2974,6 +2974,47 @@ export async function apply(ctx: Context) {
         }
     });
 
+    // 为超级管理员在各种页面添加待处理申请通知
+    const addRootNotification = async (h) => {
+        if (h.user && h.user._id === 2) {
+            console.log(`[Admin Notification - After] Root user detected on path: ${h.request.path}`);
+            
+            const pendingRequestCount = await bindingRequestsColl.countDocuments({
+                status: 'pending'
+            });
+            
+            console.log(`[Admin Notification - After] Pending request count: ${pendingRequestCount}`);
+            
+            h.response.body = h.response.body || {};
+            
+            // 尝试多种方式确保变量传递
+            h.response.body.rootNotification = {
+                pendingBindingRequests: pendingRequestCount,
+                showNotification: pendingRequestCount > 0,
+                manageUrl: '/binding-request/manage'
+            };
+            
+            // 也直接设置到 h 对象上
+            h.rootNotification = h.response.body.rootNotification;
+            
+            console.log(`[Admin Notification - After] rootNotification set:`, h.response.body.rootNotification);
+            console.log(`[Admin Notification - After] h.rootNotification set:`, h.rootNotification);
+        }
+    };
+
+    // 在主要页面的 after 事件中添加通知
+    ctx.on('handler/after/DomainMain#get', addRootNotification);
+    ctx.on('handler/after/ProblemMain#get', addRootNotification);
+    ctx.on('handler/after/ContestMain#get', addRootNotification);
+    ctx.on('handler/after/RecordMain#get', addRootNotification);
+    ctx.on('handler/after/HomeworkMain#get', addRootNotification);
+    ctx.on('handler/after/TrainingMain#get', addRootNotification);
+    
+    // 添加更多常见页面
+    ctx.on('handler/after/UserDetail#get', addRootNotification);
+    ctx.on('handler/after/ManagementDashboard#get', addRootNotification);
+    ctx.on('handler/after/BindingRequestManage#get', addRootNotification);
+
     // 在用户登录成功后检查绑定状态
     ctx.on('handler/after/UserLogin#post', async (h) => {
         if (!h.user || !h.user._id) {
