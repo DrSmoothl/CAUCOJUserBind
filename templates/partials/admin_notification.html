@@ -1,6 +1,8 @@
 <!-- 调试信息 -->
 <script>
 console.log('Admin notification template - rootNotification:', {{ rootNotification | tojson | safe if rootNotification else 'null' }});
+console.log('Admin notification template - current user:', {{ handler.user._id if handler.user else 'not logged in' }});
+console.log('Admin notification template - all response body:', {{ handler.response.body | tojson | safe if handler.response.body else 'null' }});
 </script>
 
 {% if rootNotification and rootNotification.showNotification %}
