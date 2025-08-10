@@ -2996,18 +2996,52 @@ export async function apply(ctx: Context) {
         }
     }
 
-    // 扩展 HomeHandler 以添加 rootNotification
+    // 为 root 用户添加 rootNotification
     ctx.on('handler/after', async (h) => {
-        // 只处理首页并且是root用户
-        if (h.request.path === '/' && h.request.method === 'get' && h.user?._id === 2) {
-            console.log('=== 首页root用户检测到，添加通知 ===');
+        // 为所有页面的root用户添加通知
+        if (h.request.method === 'get' && h.user?._id === 2) {
+            const currentPath = h.request.path;
+            
+            // 需要排除的路径（不进行通知处理）
+            const excludePaths = [
+                '/api/', 
+                '/assets/',
+                '/favicon.ico',
+                '.js',
+                '.css',
+                '.map',
+                '.png',
+                '.jpg',
+                '.jpeg',
+                '.gif',
+                '.svg',
+                '.woff',
+                '.woff2',
+                '.ttf',
+                '.chunk.js',
+                '.chunk.css',
+                '.ico'
+            ];
+            
+            // 检查是否应该跳过此路径
+            const shouldSkip = excludePaths.some(path => 
+                currentPath === path || 
+                currentPath.startsWith(path) ||
+                currentPath.endsWith(path)
+            );
+            
+            if (shouldSkip) {
+                return;
+            }
+            
+            console.log(`=== Root用户检测到，路径: ${currentPath} ===`);
             
             const rootNotification = await addRootNotification(h);
             if (rootNotification) {
-                console.log('[HomePageNotification] 添加 rootNotification 到 response.body');
+                console.log('[RootNotification] 添加 rootNotification 到 response.body');
                 h.response.body = h.response.body || {};
                 h.response.body.rootNotification = rootNotification;
-                console.log('[HomePageNotification] response.body.rootNotification:', h.response.body.rootNotification);
+                console.log('[RootNotification] response.body.rootNotification:', h.response.body.rootNotification);
             }
         }
     });
