@@ -2959,42 +2959,56 @@ export async function apply(ctx: Context) {
         }
     });
 
-    // 为超级管理员在各种页面添加待处理申请通知
-    const addRootNotification = async (h) => {
-        if (h.user && h.user._id === 2) {
-            console.log(`[Admin Notification - Global] Root user detected on path: ${h.request.path}, method: ${h.request.method}`);
+    // 添加根用户通知的函数
+    async function addRootNotification(handler: any): Promise<any> {
+        try {
+            console.log('[addRootNotification] 开始执行');
             
-            const pendingRequestCount = await bindingRequestsColl.countDocuments({
-                status: 'pending'
-            });
-            
-            console.log(`[Admin Notification - Global] Pending request count: ${pendingRequestCount}`);
-            
-            h.response.body = h.response.body || {};
-            
-            // 尝试多种方式确保变量传递
-            h.response.body.rootNotification = {
-                pendingBindingRequests: pendingRequestCount,
-                showNotification: pendingRequestCount > 0,
-                manageUrl: '/binding-request/manage'
-            };
-            
-            // 也直接设置到 h 对象上
-            h.rootNotification = h.response.body.rootNotification;
-            
-            console.log(`[Admin Notification - Global] rootNotification set:`, h.response.body.rootNotification);
-        }
-    };
+            if (!handler.user || handler.user._id !== 2) {
+                console.log('[addRootNotification] 不是root用户，返回null');
+                return null;
+            }
 
-    // 使用通用的 handler/after 事件来捕获所有 GET 请求
+            console.log('[addRootNotification] 正在查询未处理的绑定申请...');
+            const pendingCount = await bindingRequestsColl.countDocuments({ 
+                $or: [
+                    { status: 'pending' },
+                    { status: { $exists: false } }
+                ]
+            });
+            console.log(`[addRootNotification] 查询结果: ${pendingCount} 个未处理申请`);
+
+            if (pendingCount > 0) {
+                const rootNotification = {
+                    showNotification: true,
+                    pendingCount: pendingCount,
+                    message: `您有 ${pendingCount} 个待处理的用户绑定申请`
+                };
+                console.log('[addRootNotification] 返回通知对象:', rootNotification);
+                return rootNotification;
+            }
+            
+            console.log('[addRootNotification] 没有未处理申请，返回null');
+            return null;
+        } catch (error) {
+            console.error('[addRootNotification] 执行出错:', error);
+            return null;
+        }
+    }
+
+    // 扩展 HomeHandler 以添加 rootNotification
     ctx.on('handler/after', async (h) => {
-        // 记录所有请求以便调试
-        console.log(`[Admin Notification - Handler/After] Path: ${h.request.path}, Method: ${h.request.method}, Template: ${h.response.template || 'none'}, User ID: ${h.user?._id || 'none'}`);
-        
-        // 只处理 GET 请求和模板响应
-        if (h.request.method === 'GET' && h.response.template && h.user && h.user._id === 2) {
-            console.log(`[Admin Notification - Handler/After] Processing root user notification for template: ${h.response.template}`);
-            await addRootNotification(h);
+        // 只处理首页并且是root用户
+        if (h.request.path === '/' && h.request.method === 'get' && h.user?._id === 2) {
+            console.log('=== 首页root用户检测到，添加通知 ===');
+            
+            const rootNotification = await addRootNotification(h);
+            if (rootNotification) {
+                console.log('[HomePageNotification] 添加 rootNotification 到 response.body');
+                h.response.body = h.response.body || {};
+                h.response.body.rootNotification = rootNotification;
+                console.log('[HomePageNotification] response.body.rootNotification:', h.response.body.rootNotification);
+            }
         }
     });
 
