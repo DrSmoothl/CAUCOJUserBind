@@ -274,6 +274,22 @@
       </div>
       
       <div class="form__group">
+        <label for="groupType" class="form__label">📋 用户组类型</label>
+        <select id="groupType" name="groupType" class="form__select">
+          <option value="0" {% if not groupType or groupType == 0 %}selected{% endif %}>
+            🎓 普通用户组
+          </option>
+          <option value="1" {% if groupType == 1 %}selected{% endif %}>
+            🏆 比赛用户组
+          </option>
+        </select>
+        <div class="form__help">
+          普通用户组：用于日常教学和管理<br>
+          比赛用户组：专门用于比赛权限控制，可在比赛中设置特殊访问权限
+        </div>
+      </div>
+      
+      <div class="form__group">
         <label for="studentsData" class="form__label">👥 学生信息</label>
         <textarea id="studentsData" 
                   name="studentsData" 

@@ -2,3 +2,4 @@ node_modules
 example-plugins
 canuse-templates
 .VSCodeCounter
+dev/
