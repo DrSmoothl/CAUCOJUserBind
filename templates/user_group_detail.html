@@ -425,6 +425,22 @@ input[type="checkbox"] {
                 <td><strong>{{ userGroup.name }}</strong></td>
               </tr>
               <tr>
+                <th>用户组类型</th>
+                <td>
+                  {% if userGroup.groupType == 1 %}
+                    <span class="badge badge--warning" title="比赛用户组">🏆 比赛用户组</span>
+                    <small class="form-text" style="display: block; margin-top: 4px;">
+                      专用于比赛权限控制，可在比赛中设置特殊访问权限
+                    </small>
+                  {% else %}
+                    <span class="badge badge--info" title="普通用户组">🎓 普通用户组</span>
+                    <small class="form-text" style="display: block; margin-top: 4px;">
+                      用于日常教学和管理
+                    </small>
+                  {% endif %}
+                </td>
+              </tr>
+              <tr>
                 <th>所属学校</th>
                 <td><span class="badge badge--info">{{ school.name if school else '未知' }}</span></td>
               </tr>

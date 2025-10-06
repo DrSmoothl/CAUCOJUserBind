@@ -503,6 +503,16 @@ const userBindModel = {
             groupType: group.groupType !== undefined ? group.groupType : 0
         }));
         
+        // 为每个用户组添加学校名称
+        const schoolIds = [...new Set(userGroups.map(g => g.parentSchoolId?.toString()).filter(Boolean))];
+        const schools = await schoolGroupsColl.find({}).toArray();
+        const schoolMap = new Map(schools.map(s => [s._id.toString(), s.name]));
+        
+        userGroups = userGroups.map(group => ({
+            ...group,
+            schoolName: group.parentSchoolId ? schoolMap.get(group.parentSchoolId.toString()) : undefined
+        }));
+        
         return {
             userGroups,
             total,
@@ -534,6 +544,16 @@ const userBindModel = {
         userGroups = userGroups.map(group => ({
             ...group,
             groupType: group.groupType !== undefined ? group.groupType : 0
+        }));
+        
+        // 为每个用户组添加学校名称
+        const schoolIds = [...new Set(userGroups.map(g => g.parentSchoolId?.toString()).filter(Boolean))];
+        const schools = await schoolGroupsColl.find({}).toArray();
+        const schoolMap = new Map(schools.map(s => [s._id.toString(), s.name]));
+        
+        userGroups = userGroups.map(group => ({
+            ...group,
+            schoolName: group.parentSchoolId ? schoolMap.get(group.parentSchoolId.toString()) : undefined
         }));
         
         return {

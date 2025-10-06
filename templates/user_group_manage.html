@@ -258,6 +258,7 @@
       <thead>
         <tr>
           <th>用户组名称</th>
+          <th>类型</th>
           <th>所属学校</th>
           <th>学生数量</th>
           <th>绑定进度</th>
@@ -270,6 +271,13 @@
         <tr>
           <td>
             <strong>{{ group.name }}</strong>
+          </td>
+          <td>
+            {% if group.groupType == 1 %}
+              <span class="badge badge--warning" title="比赛用户组">🏆 比赛组</span>
+            {% else %}
+              <span class="badge badge--info" title="普通用户组">🎓 普通组</span>
+            {% endif %}
           </td>
           <td>
             <span class="badge badge--info">{{ group.schoolName or '未知学校' }}</span>
