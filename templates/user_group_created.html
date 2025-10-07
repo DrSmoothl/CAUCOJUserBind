@@ -295,6 +295,22 @@
             <p class="stats-label">名学生已成功导入</p>
           </div>
           
+          {% if autoBindStats %}
+          <div class="alert alert--info">
+            <p><strong>🔗 自动绑定结果：</strong></p>
+            <ul>
+              <li>✅ <strong>已自动绑定：{{ autoBindStats.autoBound }} 人</strong> - 已有账号且学校匹配</li>
+              <li>⚠️ <strong>需手动绑定：{{ autoBindStats.needManualBind }} 人</strong> - 新学生或学校不匹配</li>
+              <li>📊 <strong>总计：{{ autoBindStats.total }} 人</strong></li>
+            </ul>
+            {% if autoBindStats.autoBound > 0 %}
+            <p style="margin-top: 12px; color: #059669;">
+              💡 已自动绑定的学生可以立即使用相关功能，无需访问绑定链接。
+            </p>
+            {% endif %}
+          </div>
+          {% endif %}
+          
           <div class="form__group">
             <label class="form__label">🔑 绑定令牌</label>
             <div class="input-group">
@@ -330,10 +346,17 @@
           <div class="alert alert--info">
             <p><strong>📖 使用说明：</strong></p>
             <ul>
-              <li>📤 将此绑定链接发送给班级学生</li>
+              {% if autoBindStats and autoBindStats.needManualBind > 0 %}
+              <li>📤 将绑定链接发送给<strong>需要手动绑定</strong>的学生</li>
+              {% else %}
+              <li>📤 将此绑定链接发送给班级学生（如有新学生需要绑定）</li>
+              {% endif %}
               <li>🔍 学生访问链接后输入学号和姓名进行绑定</li>
               <li>✅ 只有导入的学生才能成功绑定</li>
               <li>🎯 绑定成功后学生将获得相应的访问权限</li>
+              {% if autoBindStats and autoBindStats.autoBound > 0 %}
+              <li>⚡ 已自动绑定的学生无需访问此链接</li>
+              {% endif %}
             </ul>
           </div>
         </div>

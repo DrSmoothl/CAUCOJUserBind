@@ -142,12 +142,66 @@ const userBindModel = {
             throw new Error('指定的学校组不存在');
         }
 
-        const studentsData = students.map(s => ({
-            studentId: s.studentId,
-            realName: s.realName,
-            bound: false
-        }));
+        // 获取用户集合，用于检查已绑定的用户
+        const userColl = db.collection('user');
+        
+        // 处理每个学生，检查是否已绑定用户
+        const studentsData = [];
+        const autoBindResults = { success: 0, failed: 0 };
+        
+        for (const student of students) {
+            // 查找已绑定该学号和姓名的用户
+            const boundUser = await userColl.findOne({
+                studentId: student.studentId,
+                realName: student.realName,
+                isSchoolStudent: true
+            });
+            
+            if (boundUser) {
+                // 用户已绑定，检查学校组是否一致
+                let schoolMatched = false;
+                
+                if (boundUser.parentSchoolId && Array.isArray(boundUser.parentSchoolId)) {
+                    // 使用字符串匹配检查学校组
+                    schoolMatched = boundUser.parentSchoolId.some((userSchoolId: any) => {
+                        try {
+                            return userSchoolId.toString() === school!._id.toString();
+                        } catch (e) {
+                            return false;
+                        }
+                    });
+                }
+                
+                if (schoolMatched) {
+                    // 学校组一致，自动绑定到用户组
+                    studentsData.push({
+                        studentId: student.studentId,
+                        realName: student.realName,
+                        bound: true,
+                        boundBy: boundUser._id,
+                        boundAt: new Date()
+                    });
+                    autoBindResults.success++;
+                } else {
+                    // 学校组不一致，需要链接绑定
+                    studentsData.push({
+                        studentId: student.studentId,
+                        realName: student.realName,
+                        bound: false
+                    });
+                    autoBindResults.failed++;
+                }
+            } else {
+                // 用户未绑定，需要链接绑定
+                studentsData.push({
+                    studentId: student.studentId,
+                    realName: student.realName,
+                    bound: false
+                });
+            }
+        }
 
+        // 创建用户组
         const result = await userGroupsColl.insertOne({
             name,
             createdAt: new Date(),
@@ -157,7 +211,36 @@ const userBindModel = {
             students: studentsData
         });
         
-        return result.insertedId;
+        const userGroupId = result.insertedId;
+        
+        // 将自动绑定成功的用户添加到用户组
+        if (autoBindResults.success > 0) {
+            const boundUserIds = studentsData
+                .filter(s => s.bound && s.boundBy)
+                .map(s => s.boundBy)
+                .filter((id): id is number => id !== undefined); // 过滤undefined并断言类型
+            
+            if (boundUserIds.length > 0) {
+                // 批量更新用户，将用户组ID添加到用户的parentUserGroupId数组
+                await userColl.updateMany(
+                    { _id: { $in: boundUserIds } },
+                    { $addToSet: { parentUserGroupId: userGroupId } }
+                );
+            }
+        }
+        
+        // 记录自动绑定结果
+        console.log(`用户组创建完成: ${name}, 自动绑定: ${autoBindResults.success}/${students.length}`);
+        
+        // 返回用户组ID和自动绑定统计
+        return {
+            userGroupId,
+            autoBindStats: {
+                total: students.length,
+                autoBound: autoBindResults.success,
+                needManualBind: students.length - autoBindResults.success
+            }
+        };
     },
 
     // 为用户组创建绑定令牌
@@ -2485,9 +2568,9 @@ class UserGroupCreateHandler extends Handler {
         }
 
         try {
-            // 解析用户组种类，默认为0（普通用户组）
+            // 解析用户组种类,默认为0(普通用户组)
             const parsedGroupType = parseInt(groupType) || 0;
-            const userGroupId = await userBindModel.createUserGroup(name, parentSchoolId, this.user._id, students, parsedGroupType);
+            const { userGroupId, autoBindStats } = await userBindModel.createUserGroup(name, parentSchoolId, this.user._id, students, parsedGroupType);
             const bindToken = await userBindModel.createUserGroupBindToken(userGroupId, this.user._id);
             
             this.response.template = 'user_group_created.html';
@@ -2495,7 +2578,8 @@ class UserGroupCreateHandler extends Handler {
                 userGroup: { _id: userGroupId, name },
                 bindToken,
                 bindUrl: `/bind/${bindToken}`,
-                studentsCount: students.length
+                studentsCount: students.length,
+                autoBindStats  // 添加自动绑定统计信息
             };
         } catch (error: any) {
             const { schools } = await userBindModel.getSchoolGroups(1, 1000);
