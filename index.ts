@@ -120,14 +120,19 @@ const userBindModel = {
 
     // 创建用户组
     async createUserGroup(name: string, parentSchoolId: any, createdBy: number, students: Array<{studentId: string, realName: string}>, groupType: number = 0): Promise<any> {
+        console.log(`[createUserGroup] 开始创建用户组 - name: ${name}, groupType: ${groupType}, students count: ${students.length}`);
+        
         // 统一使用字符串匹配查找学校组
         let school: SchoolGroup | null = null;
         const allSchools = await schoolGroupsColl.find().toArray();
         school = allSchools.find(s => s._id.toString() === parentSchoolId.toString()) || null;
         
         if (!school) {
+            console.log(`[createUserGroup] 学校组不存在 - parentSchoolId: ${parentSchoolId}`);
             throw new Error('指定的学校组不存在');
         }
+
+        console.log(`[createUserGroup] 找到学校组: ${school.name}, ID: ${school._id}`);
 
         // 获取用户集合，用于检查已绑定的用户
         const userColl = db.collection('user');
@@ -137,29 +142,38 @@ const userBindModel = {
         const autoBindResults = { success: 0, failed: 0 };
         
         for (const student of students) {
-            // 查找已绑定该学号和姓名的用户（使用精确匹配）
+            console.log(`[createUserGroup] 处理学生: ${student.studentId} ${student.realName}`);
+            
+            // 查找匹配学号和姓名的用户
             const boundUser = await userColl.findOne({
                 studentId: student.studentId,
                 realName: student.realName
             });
             
             if (boundUser) {
-                // 用户已绑定，检查学校组是否一致（使用字符串匹配）
+                console.log(`[createUserGroup] 找到匹配用户: uid=${boundUser._id}, studentId=${boundUser.studentId}, realName=${boundUser.realName}`);
+                console.log(`[createUserGroup] 用户当前学校组:`, boundUser.parentSchoolId);
+                
+                // 检查用户是否已绑定学校组，并且学校组是否一致
                 let schoolMatched = false;
                 
-                if (boundUser.parentSchoolId && Array.isArray(boundUser.parentSchoolId)) {
+                if (boundUser.parentSchoolId && Array.isArray(boundUser.parentSchoolId) && boundUser.parentSchoolId.length > 0) {
                     // 使用字符串匹配检查学校组
                     schoolMatched = boundUser.parentSchoolId.some((userSchoolId: any) => {
                         try {
-                            return userSchoolId.toString() === school!._id.toString();
+                            const match = userSchoolId.toString() === school!._id.toString();
+                            console.log(`[createUserGroup] 学校组比较: ${userSchoolId.toString()} === ${school!._id.toString()} = ${match}`);
+                            return match;
                         } catch (e) {
+                            console.log(`[createUserGroup] 学校组比较异常:`, e);
                             return false;
                         }
                     });
                 }
                 
                 if (schoolMatched) {
-                    // 学校组一致，自动绑定到用户组
+                    // 用户已绑定相同学校组，且学号姓名完全匹配，自动绑定到用户组
+                    console.log(`[createUserGroup] ✓ 自动绑定成功 - uid: ${boundUser._id}, ${student.studentId} ${student.realName}`);
                     studentsData.push({
                         studentId: student.studentId,
                         realName: student.realName,
@@ -169,7 +183,8 @@ const userBindModel = {
                     });
                     autoBindResults.success++;
                 } else {
-                    // 学校组不一致，需要链接绑定
+                    // 用户存在但学校组不匹配，需要链接绑定
+                    console.log(`[createUserGroup] ✗ 学校组不匹配，需要手动绑定 - ${student.studentId} ${student.realName}`);
                     studentsData.push({
                         studentId: student.studentId,
                         realName: student.realName,
@@ -178,7 +193,8 @@ const userBindModel = {
                     autoBindResults.failed++;
                 }
             } else {
-                // 用户未绑定，需要链接绑定
+                // 未找到匹配的用户，需要链接绑定
+                console.log(`[createUserGroup] ✗ 未找到匹配用户，需要手动绑定 - ${student.studentId} ${student.realName}`);
                 studentsData.push({
                     studentId: student.studentId,
                     realName: student.realName,
@@ -198,6 +214,7 @@ const userBindModel = {
         });
         
         const userGroupId = result.insertedId;
+        console.log(`[createUserGroup] 用户组创建成功 - ID: ${userGroupId}`);
         
         // 将自动绑定成功的用户添加到用户组（使用字符串匹配更新）
         if (autoBindResults.success > 0) {
@@ -206,17 +223,35 @@ const userBindModel = {
                 .map(s => s.boundBy)
                 .filter((id): id is number => id !== undefined); // 过滤undefined并断言类型
             
+            console.log(`[createUserGroup] 准备批量更新用户 - 用户数: ${boundUserIds.length}, IDs:`, boundUserIds);
+            
             if (boundUserIds.length > 0) {
                 // 批量更新用户，将用户组ID添加到用户的parentUserGroupId数组
-                await userColl.updateMany(
+                const updateResult = await userColl.updateMany(
                     { _id: { $in: boundUserIds } },
                     { $addToSet: { parentUserGroupId: userGroupId } }
                 );
+                console.log(`[createUserGroup] 用户批量更新结果 - matched: ${updateResult.matchedCount}, modified: ${updateResult.modifiedCount}`);
             }
         }
         
-        // 记录自动绑定结果
-        console.log(`用户组创建完成: ${name}, 自动绑定: ${autoBindResults.success}/${students.length}`);
+        // 生成详细的绑定结果信息
+        const autoBoundStudents = studentsData.filter(s => s.bound);
+        const needBindStudents = studentsData.filter(s => !s.bound);
+        
+        console.log(`[createUserGroup] ========== 用户组创建完成 ==========`);
+        console.log(`[createUserGroup] 用户组名称: ${name}`);
+        console.log(`[createUserGroup] 用户组ID: ${userGroupId}`);
+        console.log(`[createUserGroup] 学生总数: ${students.length}`);
+        console.log(`[createUserGroup] ✓ 自动绑定成功: ${autoBindResults.success} 人`);
+        if (autoBoundStudents.length > 0) {
+            console.log(`[createUserGroup]   已绑定学生:`, autoBoundStudents.map(s => `${s.studentId} ${s.realName}`).join(', '));
+        }
+        console.log(`[createUserGroup] ✗ 需要手动绑定: ${needBindStudents.length} 人`);
+        if (needBindStudents.length > 0) {
+            console.log(`[createUserGroup]   待绑定学生:`, needBindStudents.map(s => `${s.studentId} ${s.realName}`).join(', '));
+        }
+        console.log(`[createUserGroup] =====================================`);
         
         // 返回用户组ID和自动绑定统计
         return {
@@ -224,7 +259,9 @@ const userBindModel = {
             autoBindStats: {
                 total: students.length,
                 autoBound: autoBindResults.success,
-                needManualBind: students.length - autoBindResults.success
+                needManualBind: students.length - autoBindResults.success,
+                autoBoundStudents: autoBoundStudents.map(s => ({ studentId: s.studentId, realName: s.realName })),
+                needBindStudents: needBindStudents.map(s => ({ studentId: s.studentId, realName: s.realName }))
             }
         };
     },
@@ -265,46 +302,62 @@ const userBindModel = {
         target: UserGroup | SchoolGroup;
         bindToken: BindToken;
     } | null> {
+        console.log(`[getBindInfo] 查询令牌: ${token}`);
+        
         const bindToken = await bindTokensColl.findOne({ _id: token });
         
         if (!bindToken) {
+            console.log(`[getBindInfo] 令牌不存在`);
             return null;
         }
+
+        console.log(`[getBindInfo] 找到令牌 - type: ${bindToken.type}, targetId: ${bindToken.targetId}`);
 
         let target;
         if (bindToken.type === 'user_group') {
             // 使用字符串匹配查找用户组
             const allUserGroups = await userGroupsColl.find().toArray();
             target = allUserGroups.find(g => g._id.toString() === bindToken.targetId.toString()) || null;
+            console.log(`[getBindInfo] 查找用户组结果: ${target ? `找到 - ${(target as UserGroup).name}` : '未找到'}`);
         } else {
             // 使用字符串匹配查找学校组
             const allSchoolGroups = await schoolGroupsColl.find().toArray();
             target = allSchoolGroups.find(s => s._id.toString() === bindToken.targetId.toString()) || null;
+            console.log(`[getBindInfo] 查找学校组结果: ${target ? `找到 - ${(target as SchoolGroup).name}` : '未找到'}`);
         }
 
         if (!target) {
+            console.log(`[getBindInfo] 目标组不存在`);
             return null;
         }
 
+        console.log(`[getBindInfo] 绑定信息获取成功`);
         return { type: bindToken.type, target, bindToken };
     },
 
     // 用户绑定到用户组
     async bindUserToGroup(userId: number, token: string, studentId: string, realName: string): Promise<void> {
+        console.log(`[bindUserToGroup] 开始绑定 - userId: ${userId}, studentId: ${studentId}, realName: ${realName}`);
+        
         const bindInfo = await this.getBindInfo(token);
         if (!bindInfo || bindInfo.type !== 'user_group') {
+            console.log(`[bindUserToGroup] 绑定信息无效或类型错误`);
             throw new Error('无效的绑定令牌');
         }
 
         const userGroup = bindInfo.target as UserGroup;
+        console.log(`[bindUserToGroup] 找到用户组: ${userGroup.name}, ID: ${userGroup._id}`);
         
         // 检查学生是否在用户组中
         const student = userGroup.students.find(s => s.studentId === studentId && s.realName === realName);
         if (!student) {
+            console.log(`[bindUserToGroup] 学生不在用户组中 - studentId: ${studentId}, realName: ${realName}`);
+            console.log(`[bindUserToGroup] 用户组学生列表:`, userGroup.students.map(s => `${s.studentId} ${s.realName}`));
             throw new Error('学号或姓名不匹配，请检查输入信息');
         }
 
         if (student.bound) {
+            console.log(`[bindUserToGroup] 学生已被绑定 - boundBy: ${student.boundBy}`);
             throw new Error('该学生信息已被绑定');
         }
 
@@ -313,20 +366,27 @@ const userBindModel = {
         const userColl = db.collection('user');
         const dbUser = await userColl.findOne({ _id: userId });
 
+        console.log(`[bindUserToGroup] 用户当前学校组:`, dbUser?.parentSchoolId);
+        console.log(`[bindUserToGroup] 目标用户组学校ID: ${userGroup.parentSchoolId}`);
+
         if (dbUser?.parentSchoolId && dbUser.parentSchoolId.length > 0) {
             // 用户已有学校组，检查是否一致（使用字符串匹配）
             const userSchoolId = dbUser.parentSchoolId[0];
             const schoolMatches = userSchoolId.toString() === userGroup.parentSchoolId.toString();
+            
+            console.log(`[bindUserToGroup] 学校组匹配检查: ${schoolMatches}`);
             
             if (!schoolMatches) {
                 throw new Error('您已属于其他学校，无法绑定到此用户组');
             }
         }
 
-        // 更新用户信息
+        // 更新用户信息 - 使用原子操作符
         const updateData: any = {
-            realName,
-            studentId,
+            $set: {
+                realName,
+                studentId
+            },
             $addToSet: {
                 parentUserGroupId: userGroup._id
             }
@@ -335,15 +395,22 @@ const userBindModel = {
         // 如果用户还没有学校组，添加学校组
         if (!dbUser?.parentSchoolId || dbUser.parentSchoolId.length === 0) {
             updateData.$addToSet.parentSchoolId = userGroup.parentSchoolId;
+            console.log(`[bindUserToGroup] 将添加学校组到用户: ${userGroup.parentSchoolId}`);
         }
 
-        await userColl.updateOne({ _id: userId }, updateData);
+        console.log(`[bindUserToGroup] 准备更新用户文档 - userId: ${userId}`);
+        const userUpdateResult = await userColl.updateOne({ _id: userId }, updateData);
+        console.log(`[bindUserToGroup] 用户文档更新结果 - matched: ${userUpdateResult.matchedCount}, modified: ${userUpdateResult.modifiedCount}`);
 
         // 更新用户组中的学生状态 - 统一使用字符串匹配查找并更新
         const allUserGroups = await userGroupsColl.find().toArray();
         const targetUserGroup = allUserGroups.find(g => g._id.toString() === userGroup._id.toString());
         
+        console.log(`[bindUserToGroup] 查找目标用户组进行更新 - 找到: ${!!targetUserGroup}`);
+        
         if (targetUserGroup) {
+            console.log(`[bindUserToGroup] 准备更新用户组绑定状态 - groupId: ${targetUserGroup._id}, studentId: ${studentId}, realName: ${realName}`);
+            
             const updateResult = await userGroupsColl.updateOne(
                 { _id: targetUserGroup._id, 'students.studentId': studentId, 'students.realName': realName },
                 {
@@ -355,14 +422,18 @@ const userBindModel = {
                 }
             );
             
+            console.log(`[bindUserToGroup] 用户组更新结果 - matched: ${updateResult.matchedCount}, modified: ${updateResult.modifiedCount}`);
+            
             if (updateResult.matchedCount === 0) {
-                console.warn(`用户组绑定状态更新失败: 未找到匹配的学生记录 (学号: ${studentId}, 姓名: ${realName})`);
+                console.warn(`[bindUserToGroup] 用户组绑定状态更新失败: 未找到匹配的学生记录 (学号: ${studentId}, 姓名: ${realName})`);
             } else {
-                console.log(`用户组绑定状态更新成功: 用户 ${userId} 绑定到学生 ${studentId} ${realName}`);
+                console.log(`[bindUserToGroup] 用户组绑定状态更新成功: 用户 ${userId} 绑定到学生 ${studentId} ${realName}`);
             }
         } else {
-            console.warn('用户组绑定状态更新失败: 未找到目标用户组，但用户信息已更新');
+            console.warn('[bindUserToGroup] 用户组绑定状态更新失败: 未找到目标用户组，但用户信息已更新');
         }
+        
+        console.log(`[bindUserToGroup] 绑定完成`);
     },
 
     // 用户绑定到学校组
@@ -997,22 +1068,46 @@ const userBindModel = {
                     return { allowed: false, reason: '您所在的用户组无权参加此比赛' };
                 }
 
+                console.log(`[checkContestPermission] 用户组权限检查通过，开始检查比赛结束状态 - userId: ${userId}`);
+                console.log(`[checkContestPermission] 用户的用户组IDs:`, userGroupIds);
+                console.log(`[checkContestPermission] 允许的用户组IDs:`, allowedGroupIds);
+
                 // 检查用户是否在比赛用户组中被标记为比赛已结束
                 for (const groupIdStr of allowedGroupIds) {
                     if (userGroupIds.includes(groupIdStr)) {
+                        console.log(`[checkContestPermission] 检查用户组: ${groupIdStr}`);
+                        
                         // 找到用户所在的比赛用户组
                         const allUserGroups = await userGroupsColl.find().toArray();
                         const userGroup = allUserGroups.find(g => g._id.toString() === groupIdStr);
                         
+                        console.log(`[checkContestPermission] 找到用户组:`, userGroup ? `${userGroup.name} (类型: ${userGroup.groupType})` : '未找到');
+                        
                         if (userGroup && userGroup.groupType === 1) {
                             // 这是一个比赛类型的用户组，检查用户是否被标记为比赛结束
+                            console.log(`[checkContestPermission] 这是比赛类型用户组，查找用户绑定记录 - userId: ${userId}`);
+                            console.log(`[checkContestPermission] 用户组学生列表:`, userGroup.students?.map(s => ({
+                                studentId: s.studentId,
+                                realName: s.realName,
+                                boundBy: s.boundBy,
+                                contestFinished: s.contestFinished
+                            })));
+                            
                             const student = userGroup.students?.find(s => s.boundBy === userId);
+                            
+                            console.log(`[checkContestPermission] 找到的学生记录:`, student);
+                            
                             if (student && student.contestFinished === true) {
+                                console.log(`[checkContestPermission] 用户比赛已结束，拒绝访问`);
                                 return { allowed: false, reason: '您在此比赛组中的比赛已结束，无法继续参加' };
+                            } else {
+                                console.log(`[checkContestPermission] 用户比赛未结束或未找到记录`);
                             }
                         }
                     }
                 }
+                
+                console.log(`[checkContestPermission] 所有检查通过，允许访问`);
             }
 
             return { allowed: true };
@@ -2878,36 +2973,93 @@ class BindHandler extends Handler {
 
         // 检查用户是否已经绑定
         if (await userBindModel.isUserBound(this.user._id) && bindInfo.type === 'user_group') {
+            console.log(`[BindHandler GET] 用户已绑定 - uid: ${this.user._id}`);
+            
             // 用户已绑定，检查学校组是否一致
             const userSchools = await userBindModel.getUserSchoolGroups(this.user._id);
             const targetGroup = bindInfo.target as UserGroup;
             
             const hasMatchingSchool = userSchools.some(school => {
-                // 使用灵活的ID比较方式
+                // 使用字符串比较
                 try {
-                    // 尝试ObjectId比较
-                    return school._id.equals && school._id.equals(targetGroup.parentSchoolId);
+                    const match = school._id.toString() === targetGroup.parentSchoolId.toString();
+                    console.log(`[BindHandler GET] 学校组比较: ${school._id.toString()} === ${targetGroup.parentSchoolId.toString()} = ${match}`);
+                    return match;
                 } catch (error) {
-                    // 如果ObjectId比较失败，使用字符串比较
-                    return school._id.toString() === targetGroup.parentSchoolId.toString();
+                    console.log(`[BindHandler GET] 学校组比较异常:`, error);
+                    return false;
                 }
             });
 
             if (hasMatchingSchool) {
-                // 学校组一致，直接加入用户组
-                const userColl = db.collection('user');
-                await userColl.updateOne(
-                    { _id: this.user._id },
-                    { $addToSet: { parentUserGroupId: targetGroup._id } }
-                );
+                console.log(`[BindHandler GET] 学校组匹配，尝试自动绑定`);
                 
-                this.response.template = 'bind_success.html';
+                // 获取用户的学号和姓名
+                const userColl = db.collection('user');
+                const dbUser = await userColl.findOne({ _id: this.user._id });
+                
+                if (dbUser && dbUser.studentId && dbUser.realName) {
+                    console.log(`[BindHandler GET] 用户已有学号姓名 - studentId: ${dbUser.studentId}, realName: ${dbUser.realName}`);
+                    
+                    // 检查该学号姓名是否在用户组的学生列表中
+                    const student = targetGroup.students.find(s => 
+                        s.studentId === dbUser.studentId && s.realName === dbUser.realName
+                    );
+                    
+                    if (student) {
+                        console.log(`[BindHandler GET] 在用户组中找到匹配的学生信息，开始自动绑定`);
+                        
+                        try {
+                            // 直接调用绑定方法
+                            await userBindModel.bindUserToGroup(
+                                this.user._id, 
+                                token, 
+                                dbUser.studentId, 
+                                dbUser.realName
+                            );
+                            
+                            console.log(`[BindHandler GET] 自动绑定成功`);
+                            this.response.template = 'bind_success.html';
+                            this.response.body = { 
+                                studentId: dbUser.studentId,
+                                realName: dbUser.realName,
+                                groupName: targetGroup.name,
+                                autoBinding: true
+                            };
+                            return;
+                        } catch (error: any) {
+                            console.log(`[BindHandler GET] 自动绑定失败: ${error.message}`);
+                            // 自动绑定失败，显示表单让用户手动填写
+                            this.response.template = 'bind_form.html';
+                            this.response.body = { 
+                                bindInfo,
+                                token,
+                                error: `自动绑定失败: ${error.message}`,
+                                studentId: dbUser.studentId,
+                                realName: dbUser.realName
+                            };
+                            return;
+                        }
+                    } else {
+                        console.log(`[BindHandler GET] 用户的学号姓名不在该用户组中，需要手动填写`);
+                    }
+                } else {
+                    console.log(`[BindHandler GET] 用户未绑定学号姓名，需要手动填写`);
+                }
+                
+                // 学校组一致，但需要用户填写学号姓名以匹配用户组的学生列表
+                // 显示绑定表单
+                this.response.template = 'bind_form.html';
                 this.response.body = { 
-                    message: '成功加入用户组',
-                    groupName: targetGroup.name
+                    bindInfo,
+                    token,
+                    message: '请填写您在该用户组中的学号和姓名',
+                    studentId: dbUser?.studentId || '',
+                    realName: dbUser?.realName || ''
                 };
                 return;
             } else {
+                console.log(`[BindHandler GET] 学校组不匹配`);
                 // 学校组不一致，需要重新绑定学校
                 // 获取目标用户组所属的学校信息
                 const targetSchool = await userBindModel.getSchoolGroupById(targetGroup.parentSchoolId);
@@ -3767,9 +3919,9 @@ export async function apply(ctx: Context) {
             }
 
             // 超级管理员跳过权限检查
-            if (h.user._id === 2 || h.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)) {
-                return;
-            }
+            // if (h.user._id === 2 || h.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)) {
+            //     return;
+            // }
 
             // 检查用户是否拥有学校组绕过权限
             const userColl = db.collection('user');
