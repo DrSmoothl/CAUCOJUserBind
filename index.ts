@@ -596,25 +596,9 @@ const userBindModel = {
 
     // 向学校组添加成员
     async addSchoolGroupMembers(schoolGroupId: any, members: Array<{studentId: string, realName: string}>): Promise<void> {
-        // 使用灵活的查询方式
-        let school: SchoolGroup | null = null;
-        
-        // 方式1: 直接使用传入的ID查询
-        try {
-            school = await schoolGroupsColl.findOne({ _id: schoolGroupId });
-        } catch (error) {
-            // 查询失败，继续尝试其他方式
-        }
-        
-        // 方式2: 如果直接查询失败，尝试字符串匹配
-        if (!school) {
-            try {
-                const allSchools = await schoolGroupsColl.find().toArray();
-                school = allSchools.find(s => s._id.toString() === schoolGroupId.toString()) || null;
-            } catch (error) {
-                // 查询失败
-            }
-        }
+        // 统一使用字符串匹配
+        const allSchools = await schoolGroupsColl.find().toArray();
+        const school = allSchools.find(s => s._id.toString() === schoolGroupId.toString());
         
         if (!school) {
             throw new Error('学校组不存在');
@@ -642,25 +626,9 @@ const userBindModel = {
 
     // 从学校组移除成员
     async removeSchoolGroupMembers(schoolGroupId: any, studentIds: string[]): Promise<void> {
-        // 使用灵活的查询方式
-        let school: SchoolGroup | null = null;
-        
-        // 方式1: 直接使用传入的ID查询
-        try {
-            school = await schoolGroupsColl.findOne({ _id: schoolGroupId });
-        } catch (error) {
-            // 查询失败，继续尝试其他方式
-        }
-        
-        // 方式2: 如果直接查询失败，尝试字符串匹配
-        if (!school) {
-            try {
-                const allSchools = await schoolGroupsColl.find().toArray();
-                school = allSchools.find(s => s._id.toString() === schoolGroupId.toString()) || null;
-            } catch (error) {
-                // 查询失败
-            }
-        }
+        // 统一使用字符串匹配
+        const allSchools = await schoolGroupsColl.find().toArray();
+        const school = allSchools.find(s => s._id.toString() === schoolGroupId.toString());
         
         if (!school) {
             throw new Error('学校组不存在');
@@ -1939,9 +1907,8 @@ const userBindModel = {
     // API 5: 标记比赛用户组中的用户结束比赛
     async markUserContestFinished(userId: number, contestUserGroupId: any): Promise<{ success: boolean; message: string }> {
         // 统一使用字符串匹配查找用户组
-        let userGroup: UserGroup | null = null;
         const allUserGroups = await userGroupsColl.find().toArray();
-        userGroup = allUserGroups.find(group => group._id.toString() === contestUserGroupId.toString()) || null;
+        const userGroup = allUserGroups.find(group => group._id.toString() === contestUserGroupId.toString());
         
         if (!userGroup) {
             return { success: false, message: '比赛用户组不存在' };
@@ -1970,7 +1937,7 @@ const userBindModel = {
             return { success: false, message: '未找到用户在该比赛组中的绑定记录' };
         }
 
-        // 标记用户比赛结束
+        // 标记用户比赛结束 - 使用字符串匹配查找到的实际用户组ID
         await userGroupsColl.updateOne(
             { _id: userGroup._id, 'students.boundBy': userId },
             {
