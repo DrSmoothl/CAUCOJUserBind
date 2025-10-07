@@ -24,6 +24,8 @@ interface UserGroup {
         bound: boolean;
         boundBy?: number;
         boundAt?: Date;
+        contestFinished?: boolean; // 比赛是否已结束
+        contestFinishedAt?: Date; // 比赛结束时间
     }>;
 }
 
@@ -118,25 +120,10 @@ const userBindModel = {
 
     // 创建用户组
     async createUserGroup(name: string, parentSchoolId: any, createdBy: number, students: Array<{studentId: string, realName: string}>, groupType: number = 0): Promise<any> {
-        // 使用灵活的查询方式验证学校组是否存在
+        // 统一使用字符串匹配查找学校组
         let school: SchoolGroup | null = null;
-        
-        // 方式1: 直接使用传入的ID查询
-        try {
-            school = await schoolGroupsColl.findOne({ _id: parentSchoolId });
-        } catch (error) {
-            // 查询失败，继续尝试其他方式
-        }
-        
-        // 方式2: 如果直接查询失败，尝试字符串匹配
-        if (!school) {
-            try {
-                const allSchools = await schoolGroupsColl.find().toArray();
-                school = allSchools.find(s => s._id.toString() === parentSchoolId.toString()) || null;
-            } catch (error) {
-                // 查询失败
-            }
-        }
+        const allSchools = await schoolGroupsColl.find().toArray();
+        school = allSchools.find(s => s._id.toString() === parentSchoolId.toString()) || null;
         
         if (!school) {
             throw new Error('指定的学校组不存在');
@@ -150,15 +137,14 @@ const userBindModel = {
         const autoBindResults = { success: 0, failed: 0 };
         
         for (const student of students) {
-            // 查找已绑定该学号和姓名的用户
+            // 查找已绑定该学号和姓名的用户（使用精确匹配）
             const boundUser = await userColl.findOne({
                 studentId: student.studentId,
-                realName: student.realName,
-                isSchoolStudent: true
+                realName: student.realName
             });
             
             if (boundUser) {
-                // 用户已绑定，检查学校组是否一致
+                // 用户已绑定，检查学校组是否一致（使用字符串匹配）
                 let schoolMatched = false;
                 
                 if (boundUser.parentSchoolId && Array.isArray(boundUser.parentSchoolId)) {
@@ -213,7 +199,7 @@ const userBindModel = {
         
         const userGroupId = result.insertedId;
         
-        // 将自动绑定成功的用户添加到用户组
+        // 将自动绑定成功的用户添加到用户组（使用字符串匹配更新）
         if (autoBindResults.success > 0) {
             const boundUserIds = studentsData
                 .filter(s => s.bound && s.boundBy)
@@ -287,9 +273,13 @@ const userBindModel = {
 
         let target;
         if (bindToken.type === 'user_group') {
-            target = await userGroupsColl.findOne({ _id: bindToken.targetId });
+            // 使用字符串匹配查找用户组
+            const allUserGroups = await userGroupsColl.find().toArray();
+            target = allUserGroups.find(g => g._id.toString() === bindToken.targetId.toString()) || null;
         } else {
-            target = await schoolGroupsColl.findOne({ _id: bindToken.targetId });
+            // 使用字符串匹配查找学校组
+            const allSchoolGroups = await schoolGroupsColl.find().toArray();
+            target = allSchoolGroups.find(s => s._id.toString() === bindToken.targetId.toString()) || null;
         }
 
         if (!target) {
@@ -324,18 +314,9 @@ const userBindModel = {
         const dbUser = await userColl.findOne({ _id: userId });
 
         if (dbUser?.parentSchoolId && dbUser.parentSchoolId.length > 0) {
-            // 用户已有学校组，检查是否一致
+            // 用户已有学校组，检查是否一致（使用字符串匹配）
             const userSchoolId = dbUser.parentSchoolId[0];
-            
-            // 使用灵活的ID比较方式
-            let schoolMatches = false;
-            try {
-                // 尝试直接比较
-                schoolMatches = userSchoolId.equals && userSchoolId.equals(userGroup.parentSchoolId);
-            } catch (error) {
-                // 如果直接比较失败，尝试字符串比较
-                schoolMatches = userSchoolId.toString() === userGroup.parentSchoolId.toString();
-            }
+            const schoolMatches = userSchoolId.toString() === userGroup.parentSchoolId.toString();
             
             if (!schoolMatches) {
                 throw new Error('您已属于其他学校，无法绑定到此用户组');
@@ -358,12 +339,13 @@ const userBindModel = {
 
         await userColl.updateOne({ _id: userId }, updateData);
 
-        // 更新用户组中的学生状态 - 使用灵活的ID处理方式
-        let updateResult = null;
-        try {
-            // 方式1: 直接使用userGroup._id更新
-            updateResult = await userGroupsColl.updateOne(
-                { _id: userGroup._id, 'students.studentId': studentId, 'students.realName': realName },
+        // 更新用户组中的学生状态 - 统一使用字符串匹配查找并更新
+        const allUserGroups = await userGroupsColl.find().toArray();
+        const targetUserGroup = allUserGroups.find(g => g._id.toString() === userGroup._id.toString());
+        
+        if (targetUserGroup) {
+            const updateResult = await userGroupsColl.updateOne(
+                { _id: targetUserGroup._id, 'students.studentId': studentId, 'students.realName': realName },
                 {
                     $set: {
                         'students.$.bound': true,
@@ -372,31 +354,14 @@ const userBindModel = {
                     }
                 }
             );
-        } catch (error) {
-            // 直接更新失败
-        }
-        
-        // 方式2: 如果直接更新失败或没有匹配到文档，尝试重新查找用户组进行更新
-        if (!updateResult || updateResult.matchedCount === 0) {
-            try {
-                // 重新获取最新的用户组信息
-                const latestUserGroup = await this.getUserGroupById(userGroup._id);
-                if (latestUserGroup) {
-                    await userGroupsColl.updateOne(
-                        { _id: latestUserGroup._id, 'students.studentId': studentId, 'students.realName': realName },
-                        {
-                            $set: {
-                                'students.$.bound': true,
-                                'students.$.boundBy': userId,
-                                'students.$.boundAt': new Date()
-                            }
-                        }
-                    );
-                }
-            } catch (error) {
-                // 如果仍然失败，记录但不抛出异常，因为用户信息已经正确更新
-                console.warn('用户组绑定状态更新失败，但用户信息已更新:', error);
+            
+            if (updateResult.matchedCount === 0) {
+                console.warn(`用户组绑定状态更新失败: 未找到匹配的学生记录 (学号: ${studentId}, 姓名: ${realName})`);
+            } else {
+                console.log(`用户组绑定状态更新成功: 用户 ${userId} 绑定到学生 ${studentId} ${realName}`);
             }
+        } else {
+            console.warn('用户组绑定状态更新失败: 未找到目标用户组，但用户信息已更新');
         }
     },
 
@@ -448,13 +413,14 @@ const userBindModel = {
             }
         );
 
-        // 更新学校组中的成员状态 - 使用灵活的ID处理方式
-        let updateResult = null;
-        try {
-            // 方式1: 直接使用schoolGroup._id更新
-            updateResult = await schoolGroupsColl.updateOne(
+        // 更新学校组中的成员状态 - 统一使用字符串匹配查找并更新
+        const allSchoolGroups = await schoolGroupsColl.find().toArray();
+        const targetSchoolGroup = allSchoolGroups.find(s => s._id.toString() === schoolGroup._id.toString());
+        
+        if (targetSchoolGroup) {
+            const updateResult = await schoolGroupsColl.updateOne(
                 { 
-                    _id: schoolGroup._id, 
+                    _id: targetSchoolGroup._id, 
                     'members': {
                         $elemMatch: {
                             'studentId': studentId,
@@ -471,40 +437,14 @@ const userBindModel = {
                     }
                 }
             );
-        } catch (error) {
-            // 直接更新失败
-        }
-        
-        // 方式2: 如果直接更新失败或没有匹配到文档，尝试重新查找学校组进行更新
-        if (!updateResult || updateResult.matchedCount === 0) {
-            try {
-                // 重新获取最新的学校组信息
-                const latestSchoolGroup = await this.getSchoolGroupById(schoolGroup._id);
-                if (latestSchoolGroup) {
-                    await schoolGroupsColl.updateOne(
-                        { 
-                            _id: latestSchoolGroup._id, 
-                            'members': {
-                                $elemMatch: {
-                                    'studentId': studentId,
-                                    'realName': realName,
-                                    'bound': false
-                                }
-                            }
-                        },
-                        {
-                            $set: {
-                                'members.$.bound': true,
-                                'members.$.boundBy': userId,
-                                'members.$.boundAt': new Date()
-                            }
-                        }
-                    );
-                }
-            } catch (error) {
-                // 如果仍然失败，记录但不抛出异常，因为用户信息已经正确更新
-                console.warn('学校组绑定状态更新失败，但用户信息已更新:', error);
+            
+            if (updateResult.matchedCount === 0) {
+                console.warn(`学校组绑定状态更新失败: 未找到匹配的成员记录 (学号: ${studentId}, 姓名: ${realName})`);
+            } else {
+                console.log(`学校组绑定状态更新成功: 用户 ${userId} 绑定到成员 ${studentId} ${realName}`);
             }
+        } else {
+            console.warn('学校组绑定状态更新失败: 未找到目标学校组，但用户信息已更新');
         }
     },
 
@@ -743,25 +683,9 @@ const userBindModel = {
 
     // 向用户组添加学生
     async addUserGroupStudents(userGroupId: any, students: Array<{studentId: string, realName: string}>): Promise<void> {
-        // 使用灵活的查询方式
-        let userGroup: UserGroup | null = null;
-        
-        // 方式1: 直接使用传入的ID查询
-        try {
-            userGroup = await userGroupsColl.findOne({ _id: userGroupId });
-        } catch (error) {
-            // 查询失败，继续尝试其他方式
-        }
-        
-        // 方式2: 如果直接查询失败，尝试字符串匹配
-        if (!userGroup) {
-            try {
-                const allGroups = await userGroupsColl.find().toArray();
-                userGroup = allGroups.find(g => g._id.toString() === userGroupId.toString()) || null;
-            } catch (error) {
-                // 查询失败
-            }
-        }
+        // 统一使用字符串匹配
+        const allGroups = await userGroupsColl.find().toArray();
+        const userGroup = allGroups.find(g => g._id.toString() === userGroupId.toString());
         
         if (!userGroup) {
             throw new Error('用户组不存在');
@@ -788,25 +712,9 @@ const userBindModel = {
 
     // 从用户组移除学生
     async removeUserGroupStudents(userGroupId: any, studentIds: string[]): Promise<void> {
-        // 使用灵活的查询方式
-        let userGroup: UserGroup | null = null;
-        
-        // 方式1: 直接使用传入的ID查询
-        try {
-            userGroup = await userGroupsColl.findOne({ _id: userGroupId });
-        } catch (error) {
-            // 查询失败，继续尝试其他方式
-        }
-        
-        // 方式2: 如果直接查询失败，尝试字符串匹配
-        if (!userGroup) {
-            try {
-                const allGroups = await userGroupsColl.find().toArray();
-                userGroup = allGroups.find(g => g._id.toString() === userGroupId.toString()) || null;
-            } catch (error) {
-                // 查询失败
-            }
-        }
+        // 统一使用字符串匹配
+        const allGroups = await userGroupsColl.find().toArray();
+        const userGroup = allGroups.find(g => g._id.toString() === userGroupId.toString());
         
         if (!userGroup) {
             throw new Error('用户组不存在');
@@ -829,60 +737,16 @@ const userBindModel = {
 
     // 获取学校组详情
     async getSchoolGroupById(schoolGroupId: any): Promise<SchoolGroup | null> {
-        // 尝试多种查询方式
-        let result: SchoolGroup | null = null;
-        
-        // 方式1: 直接查询
-        try {
-            result = await schoolGroupsColl.findOne({ _id: schoolGroupId });
-        } catch (error) {
-            // 查询失败，继续尝试其他方式
-        }
-        
-        // 方式2: 如果直接查询失败，尝试字符串匹配
-        if (!result) {
-            try {
-                const allSchools = await schoolGroupsColl.find().toArray();
-                
-                // 尝试字符串匹配
-                result = allSchools.find(school => {
-                    return school._id.toString() === schoolGroupId.toString();
-                }) || null;
-            } catch (error) {
-                // 查询失败
-            }
-        }
-        
-        return result;
+        // 统一使用字符串匹配
+        const allSchools = await schoolGroupsColl.find().toArray();
+        return allSchools.find(school => school._id.toString() === schoolGroupId.toString()) || null;
     },
 
     // 获取用户组详情
     async getUserGroupById(userGroupId: any): Promise<UserGroup | null> {
-        // 尝试多种查询方式
-        let result: UserGroup | null = null;
-        
-        // 方式1: 直接查询
-        try {
-            result = await userGroupsColl.findOne({ _id: userGroupId });
-        } catch (error) {
-            // 查询失败，继续尝试其他方式
-        }
-        
-        // 方式2: 如果直接查询失败，尝试字符串匹配
-        if (!result) {
-            try {
-                const allGroups = await userGroupsColl.find().toArray();
-                
-                // 尝试字符串匹配
-                result = allGroups.find(group => {
-                    return group._id.toString() === userGroupId.toString();
-                }) || null;
-            } catch (error) {
-                // 查询失败
-            }
-        }
-        
-        return result;
+        // 统一使用字符串匹配
+        const allGroups = await userGroupsColl.find().toArray();
+        return allGroups.find(group => group._id.toString() === userGroupId.toString()) || null;
     },
 
     // 删除学校组（包括解绑所有成员、删除相关用户组）
@@ -1163,6 +1027,23 @@ const userBindModel = {
 
                 if (!hasPermission) {
                     return { allowed: false, reason: '您所在的用户组无权参加此比赛' };
+                }
+
+                // 检查用户是否在比赛用户组中被标记为比赛已结束
+                for (const groupIdStr of allowedGroupIds) {
+                    if (userGroupIds.includes(groupIdStr)) {
+                        // 找到用户所在的比赛用户组
+                        const allUserGroups = await userGroupsColl.find().toArray();
+                        const userGroup = allUserGroups.find(g => g._id.toString() === groupIdStr);
+                        
+                        if (userGroup && userGroup.groupType === 1) {
+                            // 这是一个比赛类型的用户组，检查用户是否被标记为比赛结束
+                            const student = userGroup.students?.find(s => s.boundBy === userId);
+                            if (student && student.contestFinished === true) {
+                                return { allowed: false, reason: '您在此比赛组中的比赛已结束，无法继续参加' };
+                            }
+                        }
+                    }
                 }
             }
 
@@ -2053,6 +1934,54 @@ const userBindModel = {
         }
 
         return { success: true, message: '用户已成功从学校组移除，相关用户组绑定已解除' };
+    },
+
+    // API 5: 标记比赛用户组中的用户结束比赛
+    async markUserContestFinished(userId: number, contestUserGroupId: any): Promise<{ success: boolean; message: string }> {
+        // 统一使用字符串匹配查找用户组
+        let userGroup: UserGroup | null = null;
+        const allUserGroups = await userGroupsColl.find().toArray();
+        userGroup = allUserGroups.find(group => group._id.toString() === contestUserGroupId.toString()) || null;
+        
+        if (!userGroup) {
+            return { success: false, message: '比赛用户组不存在' };
+        }
+
+        // 检查是否为比赛类型的用户组 (groupType = 1)
+        if (userGroup.groupType !== 1) {
+            return { success: false, message: '该用户组不是比赛类型用户组' };
+        }
+
+        const userColl = db.collection('user');
+        const user = await userColl.findOne({ _id: userId });
+        
+        if (!user) {
+            return { success: false, message: '用户不存在' };
+        }
+
+        // 检查用户是否在此用户组中
+        if (!user.parentUserGroupId || !user.parentUserGroupId.some((id: any) => id.toString() === contestUserGroupId.toString())) {
+            return { success: false, message: '用户不在此比赛用户组中' };
+        }
+
+        // 查找用户组中该用户的绑定记录
+        const boundStudent = userGroup.students?.find(s => s.boundBy === userId);
+        if (!boundStudent) {
+            return { success: false, message: '未找到用户在该比赛组中的绑定记录' };
+        }
+
+        // 标记用户比赛结束
+        await userGroupsColl.updateOne(
+            { _id: userGroup._id, 'students.boundBy': userId },
+            {
+                $set: {
+                    'students.$.contestFinished': true,
+                    'students.$.contestFinishedAt': new Date()
+                }
+            }
+        );
+
+        return { success: true, message: '用户已成功标记为比赛结束' };
     }
 };
 
@@ -3463,6 +3392,50 @@ class SchoolGroupRemoveUserHandler extends Handler {
     }
 }
 
+// API 5: 标记比赛用户组中的用户结束比赛
+class ContestUserGroupMarkFinishedHandler extends Handler {
+    async post(domainId: string) {
+        // API认证检查 - 支持header和body两种方式
+        const apiKey = this.request.headers['x-api-key'] || this.request.body.auth_key;
+        if (apiKey !== 'motricseven') {
+            this.response.body = { 
+                success: false, 
+                message: '无效的API密钥' 
+            };
+            this.response.type = 'application/json';
+            this.response.status = 401;
+            return;
+        }
+        
+        // 从路径参数获取比赛用户组ID
+        const { groupId } = this.request.params;
+        const { userId } = this.request.body;
+        
+        if (!userId) {
+            this.response.body = { 
+                success: false, 
+                message: '缺少必要参数: userId' 
+            };
+            this.response.type = 'application/json';
+            this.response.status = 400;
+            return;
+        }
+
+        try {
+            const result = await userBindModel.markUserContestFinished(parseInt(userId), groupId);
+            this.response.body = result;
+            this.response.type = 'application/json';
+        } catch (error: any) {
+            this.response.body = { 
+                success: false, 
+                message: error.message || '标记用户比赛结束失败' 
+            };
+            this.response.type = 'application/json';
+            this.response.status = 500;
+        }
+    }
+}
+
 // // // 调试接口 - 检查当前用户状态
 // class UserBindDebugHandler extends Handler {
 //     async get(domainId: string) {
@@ -3513,6 +3486,7 @@ export async function apply(ctx: Context) {
     ctx.Route('api_user_group_remove_user', '/api/user-groups/:groupId/remove-user', UserGroupRemoveUserHandler); // API: 从用户组移除用户
     ctx.Route('api_school_group_add_user', '/api/school-groups/:schoolId/add-user', SchoolGroupAddUserHandler); // API: 添加用户到学校组
     ctx.Route('api_school_group_remove_user', '/api/school-groups/:schoolId/remove-user', SchoolGroupRemoveUserHandler); // API: 从学校组移除用户
+    ctx.Route('api_contest_user_group_mark_finished', '/api/contest-user-groups/:groupId/mark-finished', ContestUserGroupMarkFinishedHandler); // API: 标记比赛用户组中的用户结束比赛
     // 使用 hook 在所有路由处理前检查用户绑定状态和访问权限
     ctx.on('handler/before-prepare', async (h) => {
         // 确保用户已登录且有用户信息
