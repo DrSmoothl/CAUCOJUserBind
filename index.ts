@@ -721,32 +721,144 @@ const userBindModel = {
     },
 
     // 向用户组添加学生
-    async addUserGroupStudents(userGroupId: any, students: Array<{studentId: string, realName: string}>): Promise<void> {
+    async addUserGroupStudents(userGroupId: any, students: Array<{studentId: string, realName: string}>): Promise<{
+        total: number;
+        autoBound: number;
+        needManualBind: number;
+        autoBoundStudents: Array<{studentId: string, realName: string}>;
+        needBindStudents: Array<{studentId: string, realName: string}>;
+    }> {
+        console.log(`[addUserGroupStudents] 开始添加学生 - userGroupId: ${userGroupId}, students count: ${students.length}`);
+        
         // 统一使用字符串匹配
         const allGroups = await userGroupsColl.find().toArray();
         const userGroup = allGroups.find(g => g._id.toString() === userGroupId.toString());
         
         if (!userGroup) {
+            console.log(`[addUserGroupStudents] 用户组不存在`);
             throw new Error('用户组不存在');
         }
 
-        const newStudents = students.map(s => ({
-            studentId: s.studentId,
-            realName: s.realName,
-            bound: false
-        }));
+        console.log(`[addUserGroupStudents] 找到用户组: ${userGroup.name}, 学校ID: ${userGroup.parentSchoolId}`);
 
         // 检查是否有重复的学号
         const existingIds = userGroup.students?.map(s => s.studentId) || [];
-        const duplicateIds = newStudents.filter(s => existingIds.includes(s.studentId));
+        const duplicateIds = students.filter(s => existingIds.includes(s.studentId));
         if (duplicateIds.length > 0) {
+            console.log(`[addUserGroupStudents] 发现重复学号:`, duplicateIds.map(s => s.studentId));
             throw new Error(`以下学号已存在: ${duplicateIds.map(s => s.studentId).join(', ')}`);
         }
 
+        // 获取用户集合，检查是否可以自动绑定
+        const userColl = db.collection('user');
+        const newStudents = [];
+        const autoBindResults = { success: 0, failed: 0 };
+        const autoBoundUserIds: number[] = [];
+        
+        for (const student of students) {
+            console.log(`[addUserGroupStudents] 处理学生: ${student.studentId} ${student.realName}`);
+            
+            // 查找匹配学号和姓名的用户
+            const boundUser = await userColl.findOne({
+                studentId: student.studentId,
+                realName: student.realName
+            });
+            
+            if (boundUser) {
+                console.log(`[addUserGroupStudents] 找到匹配用户: uid=${boundUser._id}, studentId=${boundUser.studentId}, realName=${boundUser.realName}`);
+                console.log(`[addUserGroupStudents] 用户当前学校组:`, boundUser.parentSchoolId);
+                
+                // 检查用户是否已绑定学校组，并且学校组是否一致
+                let schoolMatched = false;
+                
+                if (boundUser.parentSchoolId && Array.isArray(boundUser.parentSchoolId) && boundUser.parentSchoolId.length > 0) {
+                    // 使用字符串匹配检查学校组
+                    schoolMatched = boundUser.parentSchoolId.some((userSchoolId: any) => {
+                        try {
+                            const match = userSchoolId.toString() === userGroup.parentSchoolId.toString();
+                            console.log(`[addUserGroupStudents] 学校组比较: ${userSchoolId.toString()} === ${userGroup.parentSchoolId.toString()} = ${match}`);
+                            return match;
+                        } catch (e) {
+                            console.log(`[addUserGroupStudents] 学校组比较异常:`, e);
+                            return false;
+                        }
+                    });
+                }
+                
+                if (schoolMatched) {
+                    // 用户已绑定相同学校组，且学号姓名完全匹配，自动绑定到用户组
+                    console.log(`[addUserGroupStudents] ✓ 自动绑定成功 - uid: ${boundUser._id}, ${student.studentId} ${student.realName}`);
+                    newStudents.push({
+                        studentId: student.studentId,
+                        realName: student.realName,
+                        bound: true,
+                        boundBy: boundUser._id,
+                        boundAt: new Date()
+                    });
+                    autoBoundUserIds.push(boundUser._id);
+                    autoBindResults.success++;
+                } else {
+                    // 用户存在但学校组不匹配，需要手动绑定
+                    console.log(`[addUserGroupStudents] ✗ 学校组不匹配，需要手动绑定 - ${student.studentId} ${student.realName}`);
+                    newStudents.push({
+                        studentId: student.studentId,
+                        realName: student.realName,
+                        bound: false
+                    });
+                    autoBindResults.failed++;
+                }
+            } else {
+                // 未找到匹配的用户，需要手动绑定
+                console.log(`[addUserGroupStudents] ✗ 未找到匹配用户，需要手动绑定 - ${student.studentId} ${student.realName}`);
+                newStudents.push({
+                    studentId: student.studentId,
+                    realName: student.realName,
+                    bound: false
+                });
+            }
+        }
+
+        console.log(`[addUserGroupStudents] 学生数据处理完成 - 自动绑定: ${autoBindResults.success}, 需手动: ${newStudents.length - autoBindResults.success}`);
+
+        // 添加学生到用户组
         await userGroupsColl.updateOne(
             { _id: userGroup._id },
             { $push: { students: { $each: newStudents } } }
         );
+
+        // 将自动绑定成功的用户添加到用户组
+        if (autoBoundUserIds.length > 0) {
+            console.log(`[addUserGroupStudents] 准备批量更新用户 - 用户数: ${autoBoundUserIds.length}, IDs:`, autoBoundUserIds);
+            
+            const updateResult = await userColl.updateMany(
+                { _id: { $in: autoBoundUserIds } },
+                { $addToSet: { parentUserGroupId: userGroup._id } }
+            );
+            console.log(`[addUserGroupStudents] 用户批量更新结果 - matched: ${updateResult.matchedCount}, modified: ${updateResult.modifiedCount}`);
+        }
+
+        const autoBoundStudents = newStudents.filter(s => s.bound);
+        const needBindStudents = newStudents.filter(s => !s.bound);
+        
+        console.log(`[addUserGroupStudents] ========== 添加学生完成 ==========`);
+        console.log(`[addUserGroupStudents] 学生总数: ${students.length}`);
+        console.log(`[addUserGroupStudents] ✓ 自动绑定成功: ${autoBindResults.success} 人`);
+        if (autoBoundStudents.length > 0) {
+            console.log(`[addUserGroupStudents]   已绑定学生:`, autoBoundStudents.map(s => `${s.studentId} ${s.realName}`).join(', '));
+        }
+        console.log(`[addUserGroupStudents] ✗ 需要手动绑定: ${needBindStudents.length} 人`);
+        if (needBindStudents.length > 0) {
+            console.log(`[addUserGroupStudents]   待绑定学生:`, needBindStudents.map(s => `${s.studentId} ${s.realName}`).join(', '));
+        }
+        console.log(`[addUserGroupStudents] =====================================`);
+
+        return {
+            total: students.length,
+            autoBound: autoBindResults.success,
+            needManualBind: needBindStudents.length,
+            autoBoundStudents: autoBoundStudents.map(s => ({ studentId: s.studentId, realName: s.realName })),
+            needBindStudents: needBindStudents.map(s => ({ studentId: s.studentId, realName: s.realName }))
+        };
     },
 
     // 从用户组移除学生
@@ -2490,7 +2602,11 @@ class UserGroupDetailHandler extends Handler {
                     throw new Error('请添加学生信息');
                 }
 
-                await userBindModel.addUserGroupStudents(groupId, students);
+                const autoBindStats = await userBindModel.addUserGroupStudents(groupId, students);
+                
+                // 重定向时带上自动绑定统计信息
+                this.response.redirect = `/user-group/detail/${groupId}?addSuccess=true&total=${autoBindStats.total}&autoBound=${autoBindStats.autoBound}&needBind=${autoBindStats.needManualBind}`;
+                return;
                 
             } else if (action === 'remove_students') {
                 // 移除学生
