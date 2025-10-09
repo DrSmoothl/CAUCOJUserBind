@@ -409,8 +409,23 @@ input:checked + .slider:before {
           <span class="switch-label">启用参赛权限限制</span>
         </div>
         
-        <p style="color: #718096; margin: 0; font-size: 14px;">
+        <p style="color: #718096; margin: 0 0 20px 0; font-size: 14px;">
           启用后，只有指定的用户组或学校组成员才能参加此比赛
+        </p>
+
+        <!-- 仅客户端登录开关 -->
+        <div class="switch-container" style="margin-top: 20px;">
+          <label class="switch">
+            <input type="checkbox" name="onlyClientLoginMode" value="true" 
+                   {% if contestPermission.onlyClientLoginMode %}checked{% endif %}>
+            <span class="slider"></span>
+          </label>
+          <span class="switch-label">仅允许客户端登录</span>
+        </div>
+        
+        <p style="color: #718096; margin: 0; font-size: 14px;">
+          <span style="color: #f59e0b; font-weight: 500;">⚠️</span> 
+          开启后，用户只能通过专用客户端访问此比赛，网页端将被拒绝访问
         </p>
       </div>
 

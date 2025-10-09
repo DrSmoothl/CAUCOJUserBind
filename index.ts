@@ -2156,6 +2156,74 @@ const userBindModel = {
         );
 
         return { success: true, message: '用户已成功标记为比赛结束' };
+    },
+
+    // API 6: 撤销比赛用户组中的用户结束比赛标记
+    async unmarkUserContestFinished(userId: number, contestUserGroupId: any): Promise<{ success: boolean; message: string }> {
+        console.log(`[unmarkUserContestFinished] 开始撤销 - userId: ${userId}, groupId: ${contestUserGroupId}`);
+        
+        // 统一使用字符串匹配查找用户组
+        const allUserGroups = await userGroupsColl.find().toArray();
+        const userGroup = allUserGroups.find(group => group._id.toString() === contestUserGroupId.toString());
+        
+        if (!userGroup) {
+            console.log(`[unmarkUserContestFinished] 用户组不存在`);
+            return { success: false, message: '比赛用户组不存在' };
+        }
+
+        console.log(`[unmarkUserContestFinished] 找到用户组: ${userGroup.name}, 类型: ${userGroup.groupType}`);
+
+        // 检查是否为比赛类型的用户组 (groupType = 1)
+        if (userGroup.groupType !== 1) {
+            console.log(`[unmarkUserContestFinished] 不是比赛类型用户组`);
+            return { success: false, message: '该用户组不是比赛类型用户组' };
+        }
+
+        const userColl = db.collection('user');
+        const user = await userColl.findOne({ _id: userId });
+        
+        if (!user) {
+            console.log(`[unmarkUserContestFinished] 用户不存在`);
+            return { success: false, message: '用户不存在' };
+        }
+
+        // 检查用户是否在此用户组中
+        if (!user.parentUserGroupId || !user.parentUserGroupId.some((id: any) => id.toString() === contestUserGroupId.toString())) {
+            console.log(`[unmarkUserContestFinished] 用户不在此比赛用户组中`);
+            return { success: false, message: '用户不在此比赛用户组中' };
+        }
+
+        // 查找用户组中该用户的绑定记录
+        const boundStudent = userGroup.students?.find(s => s.boundBy === userId);
+        if (!boundStudent) {
+            console.log(`[unmarkUserContestFinished] 未找到用户绑定记录`);
+            return { success: false, message: '未找到用户在该比赛组中的绑定记录' };
+        }
+
+        console.log(`[unmarkUserContestFinished] 当前比赛结束状态: ${boundStudent.contestFinished}`);
+
+        // 撤销用户比赛结束标记 - 使用字符串匹配查找到的实际用户组ID
+        const updateResult = await userGroupsColl.updateOne(
+            { _id: userGroup._id, 'students.boundBy': userId },
+            {
+                $set: {
+                    'students.$.contestFinished': false
+                },
+                $unset: {
+                    'students.$.contestFinishedAt': ''
+                }
+            }
+        );
+
+        console.log(`[unmarkUserContestFinished] 更新结果 - matched: ${updateResult.matchedCount}, modified: ${updateResult.modifiedCount}`);
+
+        if (updateResult.modifiedCount > 0) {
+            console.log(`[unmarkUserContestFinished] 撤销成功`);
+            return { success: true, message: '已成功撤销用户的比赛结束标记' };
+        } else {
+            console.log(`[unmarkUserContestFinished] 撤销失败或状态未改变`);
+            return { success: false, message: '撤销失败，用户可能未被标记为比赛结束' };
+        }
     }
 };
 
@@ -2220,7 +2288,8 @@ class ContestPermissionHandler extends Handler {
         const contestPermission = contest.userBindPermission || {
             enabled: false,
             mode: 'school', // 'school' 或 'user_group'
-            allowedGroups: []
+            allowedGroups: [],
+            onlyClientLoginMode: false  // 是否仅允许客户端登录
         };
 
         // 检查是否有成功消息
@@ -2240,7 +2309,10 @@ class ContestPermissionHandler extends Handler {
     async post(domainId: string) {
         this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
         const { contestId } = this.request.params;
-        const { enabled, mode, allowedGroups } = this.request.body;
+        const { enabled, mode, allowedGroups, onlyClientLoginMode } = this.request.body;
+
+        console.log(`[ContestPermission] 更新比赛权限 - contestId: ${contestId}`);
+        console.log(`[ContestPermission] enabled: ${enabled}, mode: ${mode}, onlyClientLoginMode: ${onlyClientLoginMode}`);
 
         if (!contestId) {
             throw new NotFoundError('比赛ID无效');
@@ -2289,17 +2361,27 @@ class ContestPermissionHandler extends Handler {
             const permissionConfig = {
                 enabled: enabled === 'true',
                 mode: mode || 'school',
-                allowedGroups: Array.isArray(allowedGroups) ? allowedGroups : (allowedGroups ? [allowedGroups] : [])
+                allowedGroups: Array.isArray(allowedGroups) ? allowedGroups : (allowedGroups ? [allowedGroups] : []),
+                onlyClientLoginMode: onlyClientLoginMode === 'true'  // 仅客户端登录模式
             };
 
-            // 更新比赛权限配置 - 使用找到的实际比赛ID
-            await documentColl.updateOne(
-                { _id: contest._id, docType: 30 },
-                { $set: { userBindPermission: permissionConfig } }
-            );
+            console.log(`[ContestPermission] 权限配置:`, permissionConfig);
+
+            // 更新比赛权限配置 - 使用找到的实际比赛ID，使用字符串匹配
+            const allContests = await documentColl.find({ docType: 30 }).toArray();
+            const targetContest = allContests.find(c => c._id.toString() === contest._id.toString());
+            
+            if (targetContest) {
+                const updateResult = await documentColl.updateOne(
+                    { _id: targetContest._id, docType: 30 },
+                    { $set: { userBindPermission: permissionConfig } }
+                );
+                console.log(`[ContestPermission] 更新结果 - matched: ${updateResult.matchedCount}, modified: ${updateResult.modifiedCount}`);
+            }
 
             this.response.redirect = `/contest/${contestId}/permission?success=1&message=${encodeURIComponent('权限配置更新成功')}`;
         } catch (error: any) {
+            console.log(`[ContestPermission] 更新失败:`, error.message);
             const { schools } = await userBindModel.getSchoolGroups(1, 1000);
             const { userGroups } = await userBindModel.getUserGroupsList(1, 1000);
             
@@ -2311,7 +2393,8 @@ class ContestPermissionHandler extends Handler {
                 contestPermission: {
                     enabled: enabled === 'true',
                     mode: mode || 'school',
-                    allowedGroups: Array.isArray(allowedGroups) ? allowedGroups : (allowedGroups ? [allowedGroups] : [])
+                    allowedGroups: Array.isArray(allowedGroups) ? allowedGroups : (allowedGroups ? [allowedGroups] : []),
+                    onlyClientLoginMode: onlyClientLoginMode === 'true'
                 },
                 error: error.message
             };
@@ -3671,6 +3754,50 @@ class ContestUserGroupMarkFinishedHandler extends Handler {
     }
 }
 
+// API 6: 撤销标记用户比赛结束
+class ContestUserGroupUnmarkFinishedHandler extends Handler {
+    async post(domainId: string) {
+        // API认证检查 - 支持header和body两种方式
+        const apiKey = this.request.headers['x-api-key'] || this.request.body.auth_key;
+        if (apiKey !== 'motricseven') {
+            this.response.body = { 
+                success: false, 
+                message: '无效的API密钥' 
+            };
+            this.response.type = 'application/json';
+            this.response.status = 401;
+            return;
+        }
+        
+        // 从路径参数获取比赛用户组ID
+        const { groupId } = this.request.params;
+        const { userId } = this.request.body;
+        
+        if (!userId) {
+            this.response.body = { 
+                success: false, 
+                message: '缺少必要参数: userId' 
+            };
+            this.response.type = 'application/json';
+            this.response.status = 400;
+            return;
+        }
+
+        try {
+            const result = await userBindModel.unmarkUserContestFinished(parseInt(userId), groupId);
+            this.response.body = result;
+            this.response.type = 'application/json';
+        } catch (error: any) {
+            this.response.body = { 
+                success: false, 
+                message: error.message || '撤销用户比赛结束标记失败' 
+            };
+            this.response.type = 'application/json';
+            this.response.status = 500;
+        }
+    }
+}
+
 // // // 调试接口 - 检查当前用户状态
 // class UserBindDebugHandler extends Handler {
 //     async get(domainId: string) {
@@ -3721,7 +3848,9 @@ export async function apply(ctx: Context) {
     ctx.Route('api_user_group_remove_user', '/api/user-groups/:groupId/remove-user', UserGroupRemoveUserHandler); // API: 从用户组移除用户
     ctx.Route('api_school_group_add_user', '/api/school-groups/:schoolId/add-user', SchoolGroupAddUserHandler); // API: 添加用户到学校组
     ctx.Route('api_school_group_remove_user', '/api/school-groups/:schoolId/remove-user', SchoolGroupRemoveUserHandler); // API: 从学校组移除用户
-    ctx.Route('api_contest_user_group_mark_finished', '/api/contest-user-groups/:groupId/mark-finished', ContestUserGroupMarkFinishedHandler); // API: 标记比赛用户组中的用户结束比赛
+    ctx.Route('api_contest_user_group_mark_finished', '/api/contest-user-groups/:groupId/mark-finished', ContestUserGroupMarkFinishedHandler); // API 5: 标记比赛用户组中的用户结束比赛
+    ctx.Route('api_contest_user_group_unmark_finished', '/api/contest-user-groups/:groupId/unmark-finished', ContestUserGroupUnmarkFinishedHandler); // API 6: 撤销标记用户比赛结束
+    
     // 使用 hook 在所有路由处理前检查用户绑定状态和访问权限
     ctx.on('handler/before-prepare', async (h) => {
         // 确保用户已登录且有用户信息
