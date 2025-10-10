@@ -375,6 +375,88 @@ input[type="checkbox"] {
   color: #1f2937;
   margin: 0;
 }
+
+/* 分页样式 */
+.pagination-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  margin-top: 16px;
+  border-top: 1px solid #e5e7eb;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pagination-info {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.pagination {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.pagination-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  text-decoration: none;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  min-width: 36px;
+}
+
+.pagination-link:hover:not(.pagination-link--disabled):not(.pagination-link--active) {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  text-decoration: none;
+}
+
+.pagination-link--active {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border-color: #3b82f6;
+  color: white;
+  font-weight: 600;
+}
+
+.pagination-link--disabled {
+  background: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
+  border-color: #e5e7eb;
+}
+
+.pagination-ellipsis {
+  padding: 0 4px;
+  color: #9ca3af;
+}
+
+@media (max-width: 640px) {
+  .pagination-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .pagination {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .pagination-link {
+    font-size: 12px;
+    padding: 4px 8px;
+    min-width: 32px;
+  }
+}
 </style>
 
 <div class="section">
@@ -395,21 +477,21 @@ input[type="checkbox"] {
     <!-- 统计卡片 -->
     <div class="stats-grid">
       <div class="stats-card">
-        <div class="stats-number">{{ userGroup.students|length }}</div>
+        <div class="stats-number">{{ userGroup.allStudentsCount }}</div>
         <p class="stats-label">学生总数</p>
       </div>
       <div class="stats-card stats-card--success">
         {% set boundCount = userGroup.students|selectattr('bound')|list|length %}
         <div class="stats-number">{{ boundCount }}</div>
-        <p class="stats-label">已绑定学生</p>
+        <p class="stats-label">已绑定学生（当前页）</p>
       </div>
       <div class="stats-card stats-card--warning">
         <div class="stats-number">{{ userGroup.students|length - boundCount }}</div>
-        <p class="stats-label">未绑定学生</p>
+        <p class="stats-label">未绑定学生（当前页）</p>
       </div>
       <div class="stats-card stats-card--info">
-        <div class="stats-number">{{ ((boundCount / userGroup.students|length) * 100)|round(1) if userGroup.students|length > 0 else 0 }}%</div>
-        <p class="stats-label">绑定进度</p>
+        <div class="stats-number">第 {{ page }} / {{ pageCount }} 页</div>
+        <p class="stats-label">当前分页</p>
       </div>
     </div>
 
@@ -543,6 +625,51 @@ input[type="checkbox"] {
           {% endfor %}
         </tbody>
       </table>
+      
+      <!-- 分页组件 -->
+      {% if pageCount > 1 %}
+      <div class="pagination-container">
+        <div class="pagination-info">
+          显示第 {{ (page - 1) * 20 + 1 }} - {{ (page - 1) * 20 + userGroup.students|length }} 条，共 {{ total }} 条记录
+        </div>
+        <div class="pagination">
+          {% if page > 1 %}
+            <a href="/user-group/detail/{{ userGroup._id }}?page=1" class="pagination-link">首页</a>
+            <a href="/user-group/detail/{{ userGroup._id }}?page={{ page - 1 }}" class="pagination-link">上一页</a>
+          {% else %}
+            <span class="pagination-link pagination-link--disabled">首页</span>
+            <span class="pagination-link pagination-link--disabled">上一页</span>
+          {% endif %}
+          
+          {% set startPage = [1, page - 2]|max %}
+          {% set endPage = [pageCount, page + 2]|min %}
+          
+          {% if startPage > 1 %}
+            <span class="pagination-ellipsis">...</span>
+          {% endif %}
+          
+          {% for p in range(startPage, endPage + 1) %}
+            {% if p == page %}
+              <span class="pagination-link pagination-link--active">{{ p }}</span>
+            {% else %}
+              <a href="/user-group/detail/{{ userGroup._id }}?page={{ p }}" class="pagination-link">{{ p }}</a>
+            {% endif %}
+          {% endfor %}
+          
+          {% if endPage < pageCount %}
+            <span class="pagination-ellipsis">...</span>
+          {% endif %}
+          
+          {% if page < pageCount %}
+            <a href="/user-group/detail/{{ userGroup._id }}?page={{ page + 1 }}" class="pagination-link">下一页</a>
+            <a href="/user-group/detail/{{ userGroup._id }}?page={{ pageCount }}" class="pagination-link">末页</a>
+          {% else %}
+            <span class="pagination-link pagination-link--disabled">下一页</span>
+            <span class="pagination-link pagination-link--disabled">末页</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
     </form>
     {% else %}
     <div class="empty">

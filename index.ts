@@ -2478,12 +2478,33 @@ class SchoolGroupDetailHandler extends Handler {
             throw new NotFoundError('学校组不存在');
         }
         
+        // 获取分页参数
+        const page = +(this.request.query.page || '1');
+        const limit = 20; // 每页显示20条
+        
+        // 计算分页
+        const allMembers = school.members || [];
+        const total = allMembers.length;
+        const pageCount = Math.ceil(total / limit);
+        const offset = (page - 1) * limit;
+        const paginatedMembers = allMembers.slice(offset, offset + limit);
+        
+        // 创建带分页成员的学校对象
+        const schoolWithPagination = {
+            ...school,
+            members: paginatedMembers,
+            allMembersCount: total
+        };
+        
         // 检查是否有成功消息
         const { success, message } = this.request.query;
         
         this.response.template = 'school_group_detail.html';
         this.response.body = { 
-            school,
+            school: schoolWithPagination,
+            page,
+            pageCount,
+            total,
             success: success === '1',
             message: message ? decodeURIComponent(message as string) : null
         };
@@ -2652,8 +2673,32 @@ class UserGroupDetailHandler extends Handler {
         // 获取所属学校信息
         const school = await userBindModel.getSchoolGroupById(userGroup.parentSchoolId);
         
+        // 获取分页参数
+        const page = +(this.request.query.page || '1');
+        const limit = 20; // 每页显示20条
+        
+        // 计算分页
+        const allStudents = userGroup.students || [];
+        const total = allStudents.length;
+        const pageCount = Math.ceil(total / limit);
+        const offset = (page - 1) * limit;
+        const paginatedStudents = allStudents.slice(offset, offset + limit);
+        
+        // 创建带分页学生的用户组对象
+        const userGroupWithPagination = {
+            ...userGroup,
+            students: paginatedStudents,
+            allStudentsCount: total
+        };
+        
         this.response.template = 'user_group_detail.html';
-        this.response.body = { userGroup, school };
+        this.response.body = { 
+            userGroup: userGroupWithPagination, 
+            school,
+            page,
+            pageCount,
+            total
+        };
     }
 
     async post(domainId: string) {
