@@ -595,8 +595,8 @@
             <span class="pagination-link pagination-link--disabled">上一页</span>
           {% endif %}
           
-          {% set startPage = [1, page - 2]|max %}
-          {% set endPage = [pageCount, page + 2]|min %}
+          {% set startPage = 1 if (page - 2) < 1 else (page - 2) %}
+          {% set endPage = pageCount if (page + 2) > pageCount else (page + 2) %}
           
           {% if startPage > 1 %}
             <span class="pagination-ellipsis">...</span>
