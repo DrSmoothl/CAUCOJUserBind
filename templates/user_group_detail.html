@@ -124,6 +124,29 @@
   text-decoration: none;
 }
 
+/* 操作按钮样式 */
+.action-btn {
+  display: inline-block;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.action-btn--retry {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.action-btn--retry:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
 /* 美化表格 */
 .data-table {
   border-radius: 8px;
@@ -473,6 +496,16 @@ input[type="checkbox"] {
   </div>
   {% endif %}
   
+  {% if retryResult %}
+  <div class="section__body">
+    {% if retryResult == 'success' %}
+      <div class="alert alert--success">✅ {{ retryMessage }}</div>
+    {% else %}
+      <div class="alert alert--error">⚠️ {{ retryMessage }}</div>
+    {% endif %}
+  </div>
+  {% endif %}
+  
   <div class="section__body">
     <!-- 统计卡片 -->
     <div class="stats-grid">
@@ -588,6 +621,7 @@ input[type="checkbox"] {
             <th>绑定状态</th>
             <th>绑定用户</th>
             <th>绑定时间</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
@@ -619,6 +653,20 @@ input[type="checkbox"] {
                 <span class="badge badge--success">{{ student.boundAt.toISOString().substring(0, 10) if student.boundAt else '未知' }}</span>
               {% else %}
                 <span style="color: #9ca3af;">-</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if not student.bound %}
+              <form method="post" action="/user-group/detail/{{ userGroup._id }}" style="display: inline;">
+                <input type="hidden" name="action" value="retry_bind">
+                <input type="hidden" name="studentId" value="{{ student.studentId }}">
+                <input type="hidden" name="currentPage" value="{{ page }}">
+                <button type="submit" class="action-btn action-btn--retry" title="重新检测是否可以自动绑定">
+                  🔄 再次检测
+                </button>
+              </form>
+              {% else %}
+                <span style="color: #9ca3af; font-size: 12px;">-</span>
               {% endif %}
             </td>
           </tr>

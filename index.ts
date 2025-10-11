@@ -886,6 +886,105 @@ const userBindModel = {
         );
     },
 
+    // 重新检测单个学生的自动绑定
+    async retryStudentAutoBind(userGroupId: any, studentId: string): Promise<{
+        success: boolean;
+        message: string;
+        boundUserId?: number;
+    }> {
+        console.log(`[retryStudentAutoBind] 开始检测 - userGroupId: ${userGroupId}, studentId: ${studentId}`);
+        
+        // 获取用户组
+        const allGroups = await userGroupsColl.find().toArray();
+        const userGroup = allGroups.find(g => g._id.toString() === userGroupId.toString());
+        
+        if (!userGroup) {
+            console.log(`[retryStudentAutoBind] 用户组不存在`);
+            throw new Error('用户组不存在');
+        }
+
+        // 查找学生
+        const student = userGroup.students?.find(s => s.studentId === studentId);
+        if (!student) {
+            console.log(`[retryStudentAutoBind] 学生不存在`);
+            throw new Error('学生不存在');
+        }
+
+        if (student.bound) {
+            console.log(`[retryStudentAutoBind] 学生已绑定`);
+            return {
+                success: false,
+                message: '该学生已经绑定，无需再次检测'
+            };
+        }
+
+        console.log(`[retryStudentAutoBind] 检测学生: ${student.studentId} ${student.realName}`);
+
+        // 查找匹配的用户
+        const userColl = db.collection('user');
+        const boundUser = await userColl.findOne({
+            studentId: student.studentId,
+            realName: student.realName
+        });
+
+        if (!boundUser) {
+            console.log(`[retryStudentAutoBind] 未找到匹配用户`);
+            return {
+                success: false,
+                message: `未找到匹配的用户（学号: ${student.studentId}, 姓名: ${student.realName}）`
+            };
+        }
+
+        console.log(`[retryStudentAutoBind] 找到匹配用户: uid=${boundUser._id}`);
+
+        // 检查学校组是否匹配
+        let schoolMatched = false;
+        if (boundUser.parentSchoolId && Array.isArray(boundUser.parentSchoolId) && boundUser.parentSchoolId.length > 0) {
+            schoolMatched = boundUser.parentSchoolId.some((userSchoolId: any) => {
+                const match = userSchoolId.toString() === userGroup.parentSchoolId.toString();
+                console.log(`[retryStudentAutoBind] 学校组比较: ${userSchoolId.toString()} === ${userGroup.parentSchoolId.toString()} = ${match}`);
+                return match;
+            });
+        }
+
+        if (!schoolMatched) {
+            console.log(`[retryStudentAutoBind] 学校组不匹配`);
+            return {
+                success: false,
+                message: '找到匹配用户，但学校组不匹配，无法自动绑定'
+            };
+        }
+
+        // 自动绑定成功
+        console.log(`[retryStudentAutoBind] ✓ 自动绑定成功 - uid: ${boundUser._id}`);
+
+        // 更新用户组中的学生状态
+        await userGroupsColl.updateOne(
+            { _id: userGroup._id, 'students.studentId': studentId },
+            {
+                $set: {
+                    'students.$.bound': true,
+                    'students.$.boundBy': boundUser._id,
+                    'students.$.boundAt': new Date()
+                }
+            }
+        );
+
+        // 将用户组添加到用户的 parentUserGroupId
+        await userColl.updateOne(
+            { _id: boundUser._id },
+            { $addToSet: { parentUserGroupId: userGroup._id } }
+        );
+
+        console.log(`[retryStudentAutoBind] 绑定完成`);
+
+        return {
+            success: true,
+            message: `自动绑定成功！用户ID: ${boundUser._id}`,
+            boundUserId: boundUser._id
+        };
+    },
+
     // 获取学校组详情
     async getSchoolGroupById(schoolGroupId: any): Promise<SchoolGroup | null> {
         // 统一使用字符串匹配
@@ -2691,20 +2790,25 @@ class UserGroupDetailHandler extends Handler {
             allStudentsCount: total
         };
         
+        // 检查是否有重试检测的结果消息
+        const { retryResult, retryMessage } = this.request.query;
+        
         this.response.template = 'user_group_detail.html';
         this.response.body = { 
             userGroup: userGroupWithPagination, 
             school,
             page,
             pageCount,
-            total
+            total,
+            retryResult: retryResult as string,
+            retryMessage: retryMessage ? decodeURIComponent(retryMessage as string) : null
         };
     }
 
     async post(domainId: string) {
         this.checkPriv(PRIV.PRIV_EDIT_SYSTEM);
         const { groupId } = this.request.params;
-        const { action, studentsData, selectedStudents } = this.request.body;
+        const { action, studentsData, selectedStudents, studentId, currentPage } = this.request.body;
         
         if (!groupId) {
             throw new NotFoundError('用户组ID无效');
@@ -2744,16 +2848,52 @@ class UserGroupDetailHandler extends Handler {
                 
                 const studentIds = Array.isArray(selectedStudents) ? selectedStudents : [selectedStudents];
                 await userBindModel.removeUserGroupStudents(groupId, studentIds);
+                
+            } else if (action === 'retry_bind') {
+                // 重新检测自动绑定
+                if (!studentId) {
+                    throw new Error('学生ID无效');
+                }
+                
+                const result = await userBindModel.retryStudentAutoBind(groupId, studentId);
+                
+                // 重定向回当前页并显示结果
+                const page = currentPage || '1';
+                const status = result.success ? 'success' : 'warning';
+                const message = encodeURIComponent(result.message);
+                this.response.redirect = `/user-group/detail/${groupId}?page=${page}&retryResult=${status}&retryMessage=${message}`;
+                return;
             }
 
-            this.response.redirect = `/user-group/detail/${groupId}`;
+            // 默认重定向
+            const page = currentPage || '1';
+            this.response.redirect = `/user-group/detail/${groupId}?page=${page}`;
         } catch (error: any) {
             const userGroup = await userBindModel.getUserGroupById(groupId);
             const school = await userBindModel.getSchoolGroupById(userGroup?.parentSchoolId);
+            
+            // 获取分页参数
+            const page = +(currentPage || this.request.query.page || '1');
+            const limit = 20;
+            const allStudents = userGroup?.students || [];
+            const total = allStudents.length;
+            const pageCount = Math.ceil(total / limit);
+            const offset = (page - 1) * limit;
+            const paginatedStudents = allStudents.slice(offset, offset + limit);
+            
+            const userGroupWithPagination = {
+                ...userGroup,
+                students: paginatedStudents,
+                allStudentsCount: total
+            };
+            
             this.response.template = 'user_group_detail.html';
             this.response.body = { 
-                userGroup,
+                userGroup: userGroupWithPagination,
                 school,
+                page,
+                pageCount,
+                total,
                 error: error.message,
                 studentsData: this.request.body.studentsData
             };
