@@ -4349,9 +4349,9 @@ export async function apply(ctx: Context) {
             }
 
             // 超级管理员跳过权限检查
-            // if (h.user._id === 2 || h.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)) {
-            //     return;
-            // }
+            if (h.user._id === 2 || h.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM)) {
+                return;
+            }
 
             // 检查用户是否拥有学校组绕过权限
             const userColl = db.collection('user');
